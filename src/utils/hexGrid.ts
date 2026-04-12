@@ -26,10 +26,12 @@ export function hexCenter(hq: number, hr: number): { x: number; z: number } {
 
 /**
  * Visual rotation in degrees for a triangle slot.
- * slot * 60.
+ * The rendered triangle tip points inward toward the hex center.
+ * The outer edge (edge 1) faces outward at angle `slot * 60 + 30`.
+ * The tip is opposite: `slot * 60 + 210`.
  */
 export function triSlotRotationDeg(slot: number): number {
-  return slot * 60
+  return slot * 60 + 210
 }
 
 /**

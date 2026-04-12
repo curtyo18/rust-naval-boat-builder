@@ -7,6 +7,7 @@ import piecesConfig from '../data/pieces-config.json'
 import type { PiecesConfig, XYZ, PieceSide, PieceRotation } from '../types'
 import GhostPiece from './GhostPiece'
 import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, detectTriEdge } from '../utils/hexGrid'
+import { toTriKey } from '../utils/coordinateKey'
 import { PIECE_COLORS, DEFAULT_COLOR } from './pieceGeometry'
 import CellMesh from './CellMesh'
 import EdgeMesh from './EdgeMesh'
@@ -137,7 +138,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
 
     if (isEdgeType) {
       // For edge pieces, only show ghost if a triangle foundation exists at this slot
-      const triKey = `t:${hq},${floorY},${hr},${slot}`
+      const triKey = toTriKey(hq, floorY, hr, slot)
       if (coordinateIndex.has(triKey)) {
         const edge = detectTriEdge(hq, hr, slot, e.point.x, e.point.z)
         setGhost({ triCoord, y: floorY, triEdge: edge })

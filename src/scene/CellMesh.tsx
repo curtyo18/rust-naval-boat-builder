@@ -18,7 +18,7 @@ export default function CellMesh({ type, color, opacity = 1, roughness = 0.85, r
 
   if (type === 'triangle_hull' || type === 'floor_triangle' || type === 'floor_frame_triangle') {
     const h = type === 'triangle_hull' ? 0.15 : 0.1
-    return <TrianglePrism height={h} mat={mat} angleDeg={angleDeg ?? rotation * 1} />
+    return <TrianglePrism height={h} mat={mat} angleDeg={angleDeg ?? 210} />
   }
 
   const shape = getCellPieceShape(type)

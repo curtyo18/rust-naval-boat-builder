@@ -62,6 +62,7 @@ export function canPlace(
     const pieceConfig = config[type]
     if (!pieceConfig) return false
     if (!isFloorAllowed(position, pieceConfig.floorConstraint)) return false
+    if (isMaxCountReached(type, pieces, config)) return false
 
     if (pieceConfig.placementType === 'edge') {
       // Edge piece on a triangle edge

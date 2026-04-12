@@ -14,11 +14,6 @@ import {
 
 const SQRT3 = Math.sqrt(3)
 
-// Helper: approximately equal for floating point comparisons
-function approx(a: number, b: number, eps = 1e-10): boolean {
-  return Math.abs(a - b) < eps
-}
-
 function dist(a: { x: number; z: number }, b: { x: number; z: number }): number {
   return Math.sqrt((a.x - b.x) ** 2 + (a.z - b.z) ** 2)
 }
@@ -50,17 +45,17 @@ describe('hexCenter', () => {
 // triSlotRotationDeg
 // ---------------------------------------------------------------------------
 describe('triSlotRotationDeg', () => {
-  it('slot 0 → 0 degrees', () => {
-    expect(triSlotRotationDeg(0)).toBe(0)
+  it('slot 0 → 210 degrees (tip points toward hex center)', () => {
+    expect(triSlotRotationDeg(0)).toBe(210)
   })
 
-  it('slot 3 → 180 degrees', () => {
-    expect(triSlotRotationDeg(3)).toBe(180)
+  it('slot 3 → 390 degrees', () => {
+    expect(triSlotRotationDeg(3)).toBe(390)
   })
 
-  it('each slot increments by 60 degrees', () => {
+  it('each slot increments by 60 degrees with 210 offset', () => {
     for (let s = 0; s < 6; s++) {
-      expect(triSlotRotationDeg(s)).toBe(s * 60)
+      expect(triSlotRotationDeg(s)).toBe(s * 60 + 210)
     }
   })
 })
