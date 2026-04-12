@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useStore } from '../store/useStore'
 import { canPlace } from '../utils/validation'
-import { detectSide, detectTriangleRotation, isTriangleType, detectTriangleOffset } from './pieceGeometry'
+import { detectSide } from './pieceGeometry'
 import piecesConfig from '../data/pieces-config.json'
 import type { PiecesConfig, XYZ, PieceSide, PieceRotation } from '../types'
 import GhostPiece from './GhostPiece'
@@ -19,7 +19,6 @@ interface GhostState {
   pos: XYZ
   side?: PieceSide
   rotation: PieceRotation
-  offset?: { x: number; z: number }
 }
 
 export default function HitPlane({ floorY }: HitPlaneProps) {
@@ -34,7 +33,9 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
   const pieceConfig = config[selectedPieceType]
   if (!pieceConfig) return null
   const isEdgePiece = pieceConfig.placementType === 'edge'
-  const isTriangle = selectedPieceType!.includes('triangle')
+
+  // Triangle cell pieces are handled by TriHitPlane
+  if (selectedPieceType.includes('triangle') && !isEdgePiece) return null
 
   function toGhostState(point: { x: number; z: number }): GhostState {
     const cellX = Math.max(0, Math.min(GRID_W - 1, Math.floor(point.x)))
@@ -48,15 +49,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
       return { pos, side, rotation: 0 }
     }
 
-    const rotation = isTriangle
-      ? detectTriangleRotation(pos, coordinateIndex, pieces)
-      : 0
-
-    const offset = isTriangle
-      ? detectTriangleOffset(pos, coordinateIndex, pieces)
-      : undefined
-
-    return { pos, rotation, offset }
+    return { pos, rotation: 0 }
   }
 
   function handlePointerMove(e: ThreeEvent<PointerEvent>) {
@@ -99,7 +92,6 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
           valid={isValid}
           side={ghost.side}
           rotation={ghost.rotation}
-          offset={ghost.offset}
         />
       )}
     </>

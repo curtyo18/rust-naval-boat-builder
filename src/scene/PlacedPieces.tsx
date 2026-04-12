@@ -1,5 +1,5 @@
 import { useStore } from '../store/useStore'
-import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition, isTriangleType, detectTriangleOffset, detectTriangleRotation } from './pieceGeometry'
+import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition, isTriangleType } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
 
@@ -19,13 +19,8 @@ export default function PlacedPieces() {
         const baseColor = PIECE_COLORS[piece.type] ?? DEFAULT_COLOR
         const color = isSelected ? '#ff6666' : baseColor
         const worldPos = getPiecePosition(piece.position, piece.type, piece.side)
-        let position: [number, number, number] = worldPos
-        let renderRotation = piece.rotation
-        if (!piece.side && isTriangleType(piece.type)) {
-          const offset = detectTriangleOffset(piece.position, coordinateIndex, pieces)
-          position = [worldPos[0] + offset.x, worldPos[1], worldPos[2] + offset.z]
-          renderRotation = detectTriangleRotation(piece.position, coordinateIndex, pieces)
-        }
+        const position: [number, number, number] = worldPos
+        const renderRotation = piece.rotation
         const isSelectMode = selectedPieceType === null
 
         const canSelect = isSelectMode || piece.type === selectedPieceType
