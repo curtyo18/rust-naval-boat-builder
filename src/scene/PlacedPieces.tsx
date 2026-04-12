@@ -6,37 +6,37 @@ export default function PlacedPieces() {
   const pieces = useStore((s) => s.pieces)
   const visibleLevels = useStore((s) => s.visibleLevels)
   const selectedPieceType = useStore((s) => s.selectedPieceType)
-  const removePiece = useStore((s) => s.removePiece)
+  const selectedPieceId = useStore((s) => s.selectedPieceId)
+  const selectPiece = useStore((s) => s.selectPiece)
 
   return (
     <>
       {pieces.map((piece) => {
         if (!visibleLevels.has(piece.position.y as 0 | 1 | 2)) return null
-        const color = PIECE_COLORS[piece.type] ?? DEFAULT_COLOR
+        const isSelected = piece.id === selectedPieceId
+        const baseColor = PIECE_COLORS[piece.type] ?? DEFAULT_COLOR
+        const color = isSelected ? '#ff6666' : baseColor
         const position = getPiecePosition(piece.position, piece.type, piece.side)
-        const isDeleteMode = selectedPieceType === null
+        const isSelectMode = selectedPieceType === null
+
+        const canSelect = isSelectMode || piece.type === selectedPieceType
 
         const handleClick = (e: { stopPropagation: () => void }) => {
-          if (isDeleteMode) {
+          if (canSelect) {
             e.stopPropagation()
-            removePiece(piece.id)
+            selectPiece(isSelected ? null : piece.id)
           }
-        }
-
-        const handleContextMenu = (e: { stopPropagation: () => void }) => {
-          e.stopPropagation()
-          removePiece(piece.id)
         }
 
         // Edge pieces use EdgeMesh for distinct window/doorway shapes
         if (piece.side) {
           return (
-            <group key={piece.id} position={position} onClick={handleClick} onContextMenu={handleContextMenu}>
+            <group key={piece.id} position={position} onClick={handleClick}>
               <EdgeMesh
                 type={piece.type}
                 side={piece.side}
                 color={color}
-                opacity={isDeleteMode ? 0.8 : 1}
+                opacity={isSelectMode ? 0.8 : 1}
               />
             </group>
           )
@@ -45,13 +45,13 @@ export default function PlacedPieces() {
         // Cell pieces use simple box geometry
         const size = getPieceSize(piece.type)
         return (
-          <mesh key={piece.id} position={position} onClick={handleClick} onContextMenu={handleContextMenu}>
+          <mesh key={piece.id} position={position} onClick={handleClick}>
             <boxGeometry args={size} />
             <meshStandardMaterial
               color={color}
               roughness={0.85}
-              opacity={isDeleteMode ? 0.8 : 1}
-              transparent={isDeleteMode}
+              opacity={isSelectMode ? 0.8 : 1}
+              transparent={isSelectMode}
             />
           </mesh>
         )

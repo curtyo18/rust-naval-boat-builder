@@ -9,6 +9,7 @@ interface AppStore {
   coordinateIndex: Map<string, string>
   visibleLevels: Set<0 | 1 | 2>
   selectedPieceType: string | null
+  selectedPieceId: string | null
   cameraResetFn: (() => void) | null
 
   // History for undo/redo
@@ -19,6 +20,8 @@ interface AppStore {
   removePiece(id: string): void
   setVisibleLevels(levels: Set<0 | 1 | 2>): void
   selectPieceType(type: string | null): void
+  selectPiece(id: string | null): void
+  deleteSelectedPiece(): void
   clearAll(): void
   loadPieces(pieces: PlacedPiece[]): void
   setCameraResetFn(fn: () => void): void
@@ -49,6 +52,7 @@ export const useStore = create<AppStore>((set) => ({
   coordinateIndex: new Map(),
   visibleLevels: new Set([0, 1, 2]),
   selectedPieceType: null,
+  selectedPieceId: null,
   cameraResetFn: null,
   _history: [],
   _future: [],
@@ -73,6 +77,7 @@ export const useStore = create<AppStore>((set) => ({
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
+        selectedPieceId: null,
         _history: pushHistory(state._history, state.pieces),
         _future: [],
       }
@@ -84,7 +89,25 @@ export const useStore = create<AppStore>((set) => ({
   },
 
   selectPieceType(type) {
-    set({ selectedPieceType: type })
+    set({ selectedPieceType: type, selectedPieceId: null })
+  },
+
+  selectPiece(id) {
+    set({ selectedPieceId: id })
+  },
+
+  deleteSelectedPiece() {
+    set((state) => {
+      if (!state.selectedPieceId) return state
+      const pieces = state.pieces.filter((p) => p.id !== state.selectedPieceId)
+      return {
+        pieces,
+        coordinateIndex: buildIndex(pieces),
+        selectedPieceId: null,
+        _history: pushHistory(state._history, state.pieces),
+        _future: [],
+      }
+    })
   },
 
   clearAll() {
