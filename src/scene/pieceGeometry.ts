@@ -1,32 +1,32 @@
 import type { PieceSide, XYZ } from '../types'
 
-// Visual colors per piece type — wood-like palette
+// Visual colors per piece type
 export const PIECE_COLORS: Record<string, string> = {
-  // Hull — dark weathered wood
-  square_hull: '#4a3222',
-  triangle_hull: '#4a3222',
+  // Hull — warm timber
+  square_hull: '#8b6914',
+  triangle_hull: '#8b6914',
   // Floors — lighter planks
-  floor_square: '#6b4c30',
-  floor_triangle: '#6b4c30',
-  floor_frame_square: '#5a4028',
-  floor_frame_triangle: '#5a4028',
-  // Structural — mid-tone wood
-  wall: '#7a5a3a',
-  doorway: '#6b4e35',
-  window: '#6b4e35',
-  low_wall: '#7a5a3a',
-  low_cannon_wall: '#7a5a3a',
-  low_wall_barrier: '#8a6a4a',
-  boat_stairs: '#6b4c30',
-  // Deployables — accent colors
-  anchor: '#555555',
-  steering_wheel: '#8b7355',
-  cannon: '#444444',
-  sail: '#c8b89a',
-  boat_engine: '#666666',
+  floor_square: '#b8944a',
+  floor_triangle: '#b8944a',
+  floor_frame_square: '#a07830',
+  floor_frame_triangle: '#a07830',
+  // Structural — weathered wood
+  wall: '#9c7a3c',
+  doorway: '#8a6b30',
+  window: '#8a6b30',
+  low_wall: '#9c7a3c',
+  low_cannon_wall: '#9c7a3c',
+  low_wall_barrier: '#a8883e',
+  boat_stairs: '#9c7a3c',
+  // Deployables — distinct accents
+  anchor: '#7a7a7a',
+  steering_wheel: '#b09060',
+  cannon: '#5a5a5a',
+  sail: '#e8dcc8',
+  boat_engine: '#8a8a8a',
 }
 
-export const DEFAULT_COLOR = '#7a5a3a'
+export const DEFAULT_COLOR = '#9c7a3c'
 
 // Geometry dimensions for each piece category/type
 export interface PieceShape {
