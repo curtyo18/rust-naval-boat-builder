@@ -90,6 +90,28 @@ function getEdgeOffset(side: PieceSide, height: number): [number, number, number
   }
 }
 
+// Detect which direction a triangle should face based on adjacent foundations.
+// Returns the rotation (degrees) so the flat edge faces the neighbor with a foundation.
+// 0 = flat north, 90 = flat east, 180 = flat south, 270 = flat west.
+export function detectTriangleRotation(
+  pos: XYZ,
+  coordinateIndex: Map<string, string>,
+): 0 | 90 | 180 | 270 {
+  const neighbors: { dx: number; dz: number; rot: 0 | 90 | 180 | 270 }[] = [
+    { dx: 0, dz: -1, rot: 0 },    // north neighbor → flat edge north
+    { dx: 1, dz: 0, rot: 90 },    // east neighbor → flat edge east
+    { dx: 0, dz: 1, rot: 180 },   // south neighbor → flat edge south
+    { dx: -1, dz: 0, rot: 270 },  // west neighbor → flat edge west
+  ]
+
+  for (const { dx, dz, rot } of neighbors) {
+    const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
+    if (coordinateIndex.has(key)) return rot
+  }
+
+  return 0 // default: flat edge north
+}
+
 // Detect which edge of a cell the cursor is closest to
 export function detectSide(localX: number, localZ: number): PieceSide {
   const dx = Math.min(localX, 1 - localX)

@@ -1,4 +1,4 @@
-import type { XYZ, PieceSide } from '../types'
+import type { XYZ, PieceSide, PieceRotation } from '../types'
 import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
@@ -8,9 +8,10 @@ interface GhostPieceProps {
   type: string
   valid: boolean
   side?: PieceSide
+  rotation?: PieceRotation
 }
 
-export default function GhostPiece({ position, type, valid, side }: GhostPieceProps) {
+export default function GhostPiece({ position, type, valid, side, rotation = 0 }: GhostPieceProps) {
   const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
   const color = valid ? baseColor : '#ff3333'
   const worldPos = getPiecePosition(position, type, side)
@@ -26,7 +27,7 @@ export default function GhostPiece({ position, type, valid, side }: GhostPiecePr
 
   return (
     <group position={worldPos}>
-      <CellMesh type={type} color={color} opacity={0.45} roughness={0.85} />
+      <CellMesh type={type} color={color} opacity={0.45} roughness={0.85} rotation={rotation} />
     </group>
   )
 }

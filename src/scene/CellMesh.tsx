@@ -1,28 +1,30 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { getCellPieceShape } from './pieceGeometry'
+import type { PieceRotation } from '../types'
 
 interface CellMeshProps {
   type: string
   color: string
   opacity?: number
   roughness?: number
+  rotation?: PieceRotation
 }
 
 /**
  * Renders cell pieces with type-appropriate geometry.
  * Positioned at local origin — parent <group> handles world placement.
  *
- * - triangle_hull / floor_triangle / floor_frame_triangle: triangular prism
+ * - triangle_hull / floor_triangle / floor_frame_triangle: triangular prism (auto-rotated)
  * - everything else: box using getCellPieceShape dimensions
  */
-export default function CellMesh({ type, color, opacity = 1, roughness = 0.85 }: CellMeshProps) {
+export default function CellMesh({ type, color, opacity = 1, roughness = 0.85, rotation = 0 }: CellMeshProps) {
   const transparent = opacity < 1
   const mat = { color, opacity, transparent, roughness }
 
   if (type === 'triangle_hull' || type === 'floor_triangle' || type === 'floor_frame_triangle') {
     const h = type === 'triangle_hull' ? 0.15 : 0.1
-    return <TrianglePrism height={h} mat={mat} />
+    return <TrianglePrism height={h} mat={mat} rotation={rotation} />
   }
 
   const shape = getCellPieceShape(type)
@@ -41,46 +43,40 @@ interface MatProps {
   roughness: number
 }
 
+const DEG_TO_RAD: Record<PieceRotation, number> = {
+  0: 0,
+  90: Math.PI / 2,
+  180: Math.PI,
+  270: -Math.PI / 2,
+}
+
 /**
  * Triangular prism occupying half a cell.
- * Flat edge along the north side (z = -0.48), point at south center (z = +0.48).
- * Looks like:
- *   ____
- *   \  /
- *    \/
- * Place south of a square hull so the flat edge connects to it.
+ * Base geometry: flat edge north (z = -s), point south (z = +s).
+ * Rotation rotates the whole shape so the flat edge faces the foundation:
+ *   0 = flat north, 90 = flat east, 180 = flat south, 270 = flat west
  */
-function TrianglePrism({ height, mat }: { height: number; mat: MatProps }) {
+function TrianglePrism({ height, mat, rotation }: { height: number; mat: MatProps; rotation: PieceRotation }) {
   const s = 0.96 / 2 // half-size
   const hh = height / 2
 
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry()
 
-    // Use non-indexed geometry with explicit normals for reliable rendering
     const positions: number[] = []
-    const normals: number[] = []
 
-    function addQuad(
-      a: number[], b: number[], c: number[], d: number[], n: number[]
-    ) {
-      // Two triangles: a-b-c, a-c-d
+    function addQuad(a: number[], b: number[], c: number[], d: number[]) {
       positions.push(...a, ...b, ...c, ...a, ...c, ...d)
-      for (let i = 0; i < 6; i++) normals.push(...n)
     }
 
-    function addTri(a: number[], b: number[], c: number[], n: number[]) {
+    function addTri(a: number[], b: number[], c: number[]) {
       positions.push(...a, ...b, ...c)
-      for (let i = 0; i < 3; i++) normals.push(...n)
     }
 
-    // Vertices (top-down view):
+    // Top-down view (before rotation):
     // NW(-s, -s) ---- NE(+s, -s)   ← flat north edge
     //       \          /
     //        \        /
-    //         \      /
-    //          \    /
-    //           \  /
     //          S(0, +s)             ← south point
 
     const nw_t = [-s, hh, -s]
@@ -90,32 +86,27 @@ function TrianglePrism({ height, mat }: { height: number; mat: MatProps }) {
     const ne_b = [ s,-hh, -s]
     const sp_b = [ 0,-hh,  s]
 
-    // Top face (y = +hh)
-    addTri(nw_t, ne_t, sp_t, [0, 1, 0])
-
-    // Bottom face (y = -hh)
-    addTri(nw_b, sp_b, ne_b, [0, -1, 0])
-
-    // North face (flat edge, z = -s)
-    addQuad(nw_t, nw_b, ne_b, ne_t, [0, 0, -1])
-
-    // West face (nw to south point)
-    const westN = [-s, 0, -1]  // approximate normal
-    addQuad(sp_t, sp_b, nw_b, nw_t, westN)
-
-    // East face (ne to south point)
-    const eastN = [s, 0, -1]  // approximate normal
-    addQuad(ne_t, ne_b, sp_b, sp_t, eastN)
+    // Top face
+    addTri(nw_t, ne_t, sp_t)
+    // Bottom face
+    addTri(nw_b, sp_b, ne_b)
+    // North face (flat edge)
+    addQuad(nw_t, nw_b, ne_b, ne_t)
+    // West face
+    addQuad(sp_t, sp_b, nw_b, nw_t)
+    // East face
+    addQuad(ne_t, ne_b, sp_b, sp_t)
 
     geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-    geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
-    geo.computeVertexNormals() // recompute for correct shading
+    geo.computeVertexNormals()
 
     return geo
   }, [s, hh])
 
+  const rotY = DEG_TO_RAD[rotation]
+
   return (
-    <mesh geometry={geometry}>
+    <mesh geometry={geometry} rotation={[0, rotY, 0]}>
       <meshStandardMaterial {...mat} side={THREE.DoubleSide} />
     </mesh>
   )

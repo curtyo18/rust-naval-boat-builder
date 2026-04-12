@@ -50,6 +50,7 @@ export default function PlacedPieces() {
               type={piece.type}
               color={color}
               opacity={isSelectMode ? 0.8 : 1}
+              rotation={piece.rotation}
             />
           </group>
         )
