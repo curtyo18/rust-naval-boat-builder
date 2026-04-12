@@ -18,12 +18,20 @@ export default function App() {
   const selectPieceType = useStore((s) => s.selectPieceType)
   const undo = useStore((s) => s.undo)
   const redo = useStore((s) => s.redo)
+  const deleteSelectedPiece = useStore((s) => s.deleteSelectedPiece)
+  const selectPiece = useStore((s) => s.selectPiece)
   const [shareLabel, setShareLabel] = useState('Share')
 
   // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') selectPieceType(null)
+      if (e.key === 'Escape') {
+        selectPieceType(null)
+        selectPiece(null)
+      }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        deleteSelectedPiece()
+      }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault()
         undo()
@@ -35,7 +43,7 @@ export default function App() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectPieceType, undo, redo])
+  }, [selectPieceType, undo, redo, deleteSelectedPiece, selectPiece])
 
   function handleShare() {
     const encoded = encodePieces(pieces)

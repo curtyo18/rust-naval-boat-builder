@@ -6,20 +6,23 @@ export default function PlacedPieces() {
   const pieces = useStore((s) => s.pieces)
   const visibleLevels = useStore((s) => s.visibleLevels)
   const selectedPieceType = useStore((s) => s.selectedPieceType)
-  const removePiece = useStore((s) => s.removePiece)
+  const selectedPieceId = useStore((s) => s.selectedPieceId)
+  const selectPiece = useStore((s) => s.selectPiece)
 
   return (
     <>
       {pieces.map((piece) => {
         if (!visibleLevels.has(piece.position.y as 0 | 1 | 2)) return null
-        const color = PIECE_COLORS[piece.type] ?? DEFAULT_COLOR
+        const isSelected = piece.id === selectedPieceId
+        const baseColor = PIECE_COLORS[piece.type] ?? DEFAULT_COLOR
+        const color = isSelected ? '#ff6666' : baseColor
         const position = getPiecePosition(piece.position, piece.type, piece.side)
-        const isDeleteMode = selectedPieceType === null
+        const isSelectMode = selectedPieceType === null
 
         const handleClick = (e: { stopPropagation: () => void }) => {
-          if (isDeleteMode) {
+          if (isSelectMode) {
             e.stopPropagation()
-            removePiece(piece.id)
+            selectPiece(isSelected ? null : piece.id)
           }
         }
 
@@ -36,7 +39,7 @@ export default function PlacedPieces() {
                 type={piece.type}
                 side={piece.side}
                 color={color}
-                opacity={isDeleteMode ? 0.8 : 1}
+                opacity={isSelectMode ? 0.8 : 1}
               />
             </group>
           )
@@ -50,8 +53,8 @@ export default function PlacedPieces() {
             <meshStandardMaterial
               color={color}
               roughness={0.85}
-              opacity={isDeleteMode ? 0.8 : 1}
-              transparent={isDeleteMode}
+              opacity={isSelectMode ? 0.8 : 1}
+              transparent={isSelectMode}
             />
           </mesh>
         )
