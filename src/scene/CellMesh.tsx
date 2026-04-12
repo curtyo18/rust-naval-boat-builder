@@ -9,15 +9,16 @@ interface CellMeshProps {
   opacity?: number
   roughness?: number
   rotation?: PieceRotation
+  angleDeg?: number  // for triangle slot rotation (0, 60, 120, 180, 240, 300)
 }
 
-export default function CellMesh({ type, color, opacity = 1, roughness = 0.85, rotation = 0 }: CellMeshProps) {
+export default function CellMesh({ type, color, opacity = 1, roughness = 0.85, rotation = 0, angleDeg }: CellMeshProps) {
   const transparent = opacity < 1
   const mat = { color, opacity, transparent, roughness }
 
   if (type === 'triangle_hull' || type === 'floor_triangle' || type === 'floor_frame_triangle') {
     const h = type === 'triangle_hull' ? 0.15 : 0.1
-    return <TrianglePrism height={h} mat={mat} rotation={rotation} />
+    return <TrianglePrism height={h} mat={mat} angleDeg={angleDeg ?? rotation * 1} />
   }
 
   const shape = getCellPieceShape(type)
@@ -36,37 +37,46 @@ interface MatProps {
   roughness: number
 }
 
+const HEX_SIZE = 1 / Math.sqrt(3)
+
 /**
- * Triangle vertices per rotation (top-down view, flat edge faces the foundation):
- *
- * rot 0:   flat edge NORTH    rot 180: flat edge SOUTH
- *  ____                         \/
- *  \  /                        /  \
- *   \/                        /____\
- *
- * rot 90:  flat edge WEST     rot 270: flat edge EAST
- *  |\                            /|
- *  | \                          / |
- *  | /                          \ |
- *  |/                            \|
+ * Equilateral triangle vertices for a given angle (degrees).
+ * The tip vertex points in the angleDeg direction from centroid.
+ * Edge length = HEX_SIZE (matching hex grid triangle size).
  */
-function getTriangleVertices(s: number, rotation: PieceRotation): [number, number][] {
-  switch (rotation) {
-    case 0:   return [[-s, -s], [s, -s], [0, s]]       // flat north, point south
-    case 90:  return [[-s, -s], [-s, s], [s, 0]]        // flat west, point east
-    case 180: return [[-s, s], [s, s], [0, -s]]         // flat south, point north
-    case 270: return [[s, -s], [s, s], [-s, 0]]         // flat east, point west
-  }
+function getEquilateralVertices(angleDeg: number): [number, number][] {
+  const angleRad = (Math.PI / 180) * angleDeg
+  const circumR = HEX_SIZE / Math.sqrt(3)
+  const inR = HEX_SIZE / (2 * Math.sqrt(3))
+  const halfEdge = HEX_SIZE / 2
+
+  // Tip vertex
+  const tx = circumR * Math.cos(angleRad)
+  const tz = circumR * Math.sin(angleRad)
+
+  // Base center (opposite side from tip)
+  const bx = -inR * Math.cos(angleRad)
+  const bz = -inR * Math.sin(angleRad)
+
+  // Base vertices: perpendicular to tip direction
+  const perpRad = angleRad + Math.PI / 2
+  const px = halfEdge * Math.cos(perpRad)
+  const pz = halfEdge * Math.sin(perpRad)
+
+  return [
+    [tx, tz],
+    [bx + px, bz + pz],
+    [bx - px, bz - pz],
+  ]
 }
 
-function TrianglePrism({ height, mat, rotation }: { height: number; mat: MatProps; rotation: PieceRotation }) {
-  const s = 0.5
+function TrianglePrism({ height, mat, angleDeg }: { height: number; mat: MatProps; angleDeg: number }) {
   const hh = height / 2
 
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry()
-    const verts = getTriangleVertices(s, rotation)
-    const [a, b, c] = verts // [x, z] pairs for the 3 triangle corners
+    const verts = getEquilateralVertices(angleDeg)
+    const [a, b, c] = verts
 
     const positions: number[] = []
 
@@ -78,32 +88,23 @@ function TrianglePrism({ height, mat, rotation }: { height: number; mat: MatProp
       positions.push(...p1, ...p2, ...p3, ...p1, ...p3, ...p4)
     }
 
-    // Top face (y = +hh)
     const at = [a[0], hh, a[1]]
     const bt = [b[0], hh, b[1]]
     const ct = [c[0], hh, c[1]]
-
-    // Bottom face (y = -hh)
     const ab = [a[0], -hh, a[1]]
     const bb = [b[0], -hh, b[1]]
     const cb = [c[0], -hh, c[1]]
 
-    // Top
     pushTri(at, bt, ct)
-    // Bottom (reversed winding)
     pushTri(ab, cb, bb)
-    // Side a→b
     pushQuad(at, ab, bb, bt)
-    // Side b→c
     pushQuad(bt, bb, cb, ct)
-    // Side c→a
     pushQuad(ct, cb, ab, at)
 
     geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
     geo.computeVertexNormals()
-
     return geo
-  }, [s, hh, rotation])
+  }, [hh, angleDeg])
 
   return (
     <mesh geometry={geometry}>
