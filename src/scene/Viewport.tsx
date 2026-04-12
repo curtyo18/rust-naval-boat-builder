@@ -6,6 +6,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import HullMesh from './HullMesh'
 import SceneGrid from './SceneGrid'
 import PlacedPieces from './PlacedPieces'
+import HitPlane from './HitPlane'
 import { useStore } from '../store/useStore'
 
 const SCENE_CENTER: [number, number, number] = [2.5, 0, 5.5]
@@ -46,6 +47,9 @@ export default function Viewport() {
       <HullMesh />
       <SceneGrid />
       <PlacedPieces />
+      <HitPlane floorY={0} />
+      <HitPlane floorY={1} />
+      <HitPlane floorY={2} />
       <SceneSetup />
     </Canvas>
   )
