@@ -1,4 +1,4 @@
-import type { PieceSide, XYZ } from '../types'
+import type { PieceSide, XYZ, PlacedPiece } from '../types'
 
 // Visual colors per piece type
 export const PIECE_COLORS: Record<string, string> = {
@@ -90,28 +90,109 @@ function getEdgeOffset(side: PieceSide, height: number): [number, number, number
   }
 }
 
+// Check if a piece type is a triangle variant
+export function isTriangleType(type: string): boolean {
+  return type.includes('triangle')
+}
+
 // Detect which direction a triangle should face based on adjacent foundations.
-// Returns the rotation so the flat edge faces the nearest neighbor.
+// When neighbor is a square/hull: flat edge faces it (current behavior).
+// When neighbor is a triangle: slope (point) faces it so slopes can meet.
 // 0 = flat north, 90 = flat west, 180 = flat south, 270 = flat east.
 export function detectTriangleRotation(
   pos: XYZ,
   coordinateIndex: Map<string, string>,
+  pieces?: PlacedPiece[],
 ): 0 | 90 | 180 | 270 {
-  const neighbors: { dx: number; dz: number; rot: 0 | 90 | 180 | 270 }[] = [
-    { dx: 0, dz: -1, rot: 0 },    // north neighbor → flat edge north
-    { dx: 1, dz: 0, rot: 270 },   // east neighbor → flat edge east
-    { dx: 0, dz: 1, rot: 180 },   // south neighbor → flat edge south
-    { dx: -1, dz: 0, rot: 90 },   // west neighbor → flat edge west
+  const flatRotation: Record<string, 0 | 90 | 180 | 270> = {
+    north: 0,
+    east: 270,
+    south: 180,
+    west: 90,
+  }
+  const slopeRotation: Record<string, 0 | 90 | 180 | 270> = {
+    north: 180,
+    east: 90,
+    south: 0,
+    west: 270,
+  }
+
+  const directions = [
+    { dx: 0, dz: -1, dir: 'north' },
+    { dx: 1, dz: 0, dir: 'east' },
+    { dx: 0, dz: 1, dir: 'south' },
+    { dx: -1, dz: 0, dir: 'west' },
   ]
 
-  for (const { dx, dz, rot } of neighbors) {
+  // First pass: prefer square/hull neighbors (flat edge toward them)
+  for (const { dx, dz, dir } of directions) {
     const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
-    if (coordinateIndex.has(key)) {
-      return rot
+    const neighborId = coordinateIndex.get(key)
+    if (neighborId && pieces) {
+      const neighbor = pieces.find((p) => p.id === neighborId)
+      if (neighbor && !isTriangleType(neighbor.type)) {
+        return flatRotation[dir]
+      }
+    } else if (neighborId && !pieces) {
+      return flatRotation[dir]
     }
   }
 
-  return 0 // default: flat edge north
+  // Second pass: triangle neighbors (slope faces toward them)
+  for (const { dx, dz, dir } of directions) {
+    const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
+    const neighborId = coordinateIndex.get(key)
+    if (neighborId && pieces) {
+      const neighbor = pieces.find((p) => p.id === neighborId)
+      if (neighbor && isTriangleType(neighbor.type)) {
+        return slopeRotation[dir]
+      }
+    }
+  }
+
+  return 0
+}
+
+// Detect visual offset for a triangle when it has a neighboring triangle.
+// Returns {x, z} shift to close the gap between adjacent triangle slopes.
+// Priority: if any square/hull neighbor exists, no offset (triangle stays centered).
+export function detectTriangleOffset(
+  pos: XYZ,
+  coordinateIndex: Map<string, string>,
+  pieces: PlacedPiece[],
+): { x: number; z: number } {
+  const directions = [
+    { dx: 0, dz: -1 },
+    { dx: 1, dz: 0 },
+    { dx: 0, dz: 1 },
+    { dx: -1, dz: 0 },
+  ]
+
+  // If any non-triangle neighbor exists, don't offset (square takes priority)
+  for (const { dx, dz } of directions) {
+    const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
+    const neighborId = coordinateIndex.get(key)
+    if (neighborId) {
+      const neighbor = pieces.find((p) => p.id === neighborId)
+      if (neighbor && !isTriangleType(neighbor.type)) {
+        return { x: 0, z: 0 }
+      }
+    }
+  }
+
+  // Find first triangle neighbor and offset toward it
+  for (const { dx, dz } of directions) {
+    const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
+    const neighborId = coordinateIndex.get(key)
+    if (neighborId) {
+      const neighbor = pieces.find((p) => p.id === neighborId)
+      if (neighbor && isTriangleType(neighbor.type)) {
+        return { x: dx * 0.5, z: dz * 0.5 }
+      }
+    }
+  }
+
+  return { x: 0, z: 0 }
 }
 
 // Detect which edge of a cell the cursor is closest to
