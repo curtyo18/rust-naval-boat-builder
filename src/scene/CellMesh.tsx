@@ -13,8 +13,7 @@ interface CellMeshProps {
  * Renders cell pieces with type-appropriate geometry.
  * Positioned at local origin — parent <group> handles world placement.
  *
- * - triangle_hull / triangle_floor: triangular prism (right triangle)
- * - boat_stairs: stepped shape (3 steps)
+ * - triangle_hull / floor_triangle / floor_frame_triangle: triangular prism
  * - everything else: box using getCellPieceShape dimensions
  */
 export default function CellMesh({ type, color, opacity = 1, roughness = 0.85 }: CellMeshProps) {
@@ -43,53 +42,77 @@ interface MatProps {
 }
 
 /**
- * Right-triangle prism: flat slab occupying half a cell diagonally.
- * Triangle runs from (0,0) to (w,0) to (0,d) when viewed from above.
+ * Triangular prism occupying half a cell.
+ * Flat edge along the north side (z = -0.48), point at south center (z = +0.48).
+ * Looks like:
+ *   ____
+ *   \  /
+ *    \/
+ * Place south of a square hull so the flat edge connects to it.
  */
 function TrianglePrism({ height, mat }: { height: number; mat: MatProps }) {
-  const w = 0.96
-  const d = 0.96
-  const hw = w / 2
-  const hd = d / 2
+  const s = 0.96 / 2 // half-size
   const hh = height / 2
 
   const geometry = useMemo(() => {
     const geo = new THREE.BufferGeometry()
 
-    // Right triangle prism: hypotenuse along the north edge (flat side
-    // that connects to adjacent foundations), point facing south/outward.
-    // Top-down: (-hw, -hd) -- (hw, -hd) is the flat north edge,
-    // (0, hd) is the point facing outward.
-    const vertices = new Float32Array([
-      // Top face (y = +hh)
-      -hw, hh, -hd,   // 0: north-west
-       hw, hh, -hd,   // 1: north-east
-         0, hh,  hd,  // 2: south point
-      // Bottom face (y = -hh)
-      -hw, -hh, -hd,  // 3: north-west
-       hw, -hh, -hd,  // 4: north-east
-         0, -hh,  hd, // 5: south point
-    ])
+    // Use non-indexed geometry with explicit normals for reliable rendering
+    const positions: number[] = []
+    const normals: number[] = []
 
-    const indices = [
-      // Top face
-      0, 1, 2,
-      // Bottom face
-      3, 5, 4,
-      // North side (flat edge: v0-v1 top, v3-v4 bottom)
-      0, 3, 4, 0, 4, 1,
-      // West side (v0-v2 top, v3-v5 bottom)
-      0, 2, 5, 0, 5, 3,
-      // East side (v1-v2 top, v4-v5 bottom)
-      1, 4, 5, 1, 5, 2,
-    ]
+    function addQuad(
+      a: number[], b: number[], c: number[], d: number[], n: number[]
+    ) {
+      // Two triangles: a-b-c, a-c-d
+      positions.push(...a, ...b, ...c, ...a, ...c, ...d)
+      for (let i = 0; i < 6; i++) normals.push(...n)
+    }
 
-    geo.setIndex(indices)
-    geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3))
-    geo.computeVertexNormals()
+    function addTri(a: number[], b: number[], c: number[], n: number[]) {
+      positions.push(...a, ...b, ...c)
+      for (let i = 0; i < 3; i++) normals.push(...n)
+    }
+
+    // Vertices (top-down view):
+    // NW(-s, -s) ---- NE(+s, -s)   ← flat north edge
+    //       \          /
+    //        \        /
+    //         \      /
+    //          \    /
+    //           \  /
+    //          S(0, +s)             ← south point
+
+    const nw_t = [-s, hh, -s]
+    const ne_t = [ s, hh, -s]
+    const sp_t = [ 0, hh,  s]
+    const nw_b = [-s,-hh, -s]
+    const ne_b = [ s,-hh, -s]
+    const sp_b = [ 0,-hh,  s]
+
+    // Top face (y = +hh)
+    addTri(nw_t, ne_t, sp_t, [0, 1, 0])
+
+    // Bottom face (y = -hh)
+    addTri(nw_b, sp_b, ne_b, [0, -1, 0])
+
+    // North face (flat edge, z = -s)
+    addQuad(nw_t, nw_b, ne_b, ne_t, [0, 0, -1])
+
+    // West face (nw to south point)
+    const westN = [-s, 0, -1]  // approximate normal
+    addQuad(sp_t, sp_b, nw_b, nw_t, westN)
+
+    // East face (ne to south point)
+    const eastN = [s, 0, -1]  // approximate normal
+    addQuad(ne_t, ne_b, sp_b, sp_t, eastN)
+
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3))
+    geo.computeVertexNormals() // recompute for correct shading
 
     return geo
-  }, [hw, hd, hh])
+  }, [s, hh])
 
   return (
     <mesh geometry={geometry}>
