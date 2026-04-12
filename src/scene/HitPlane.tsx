@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useStore } from '../store/useStore'
 import { canPlace } from '../utils/validation'
-import { detectSide, detectTriangleRotation } from './pieceGeometry'
+import { detectSide, detectTriangleRotation, isTriangleType, detectTriangleOffset } from './pieceGeometry'
 import piecesConfig from '../data/pieces-config.json'
 import type { PiecesConfig, XYZ, PieceSide, PieceRotation } from '../types'
 import GhostPiece from './GhostPiece'
@@ -19,6 +19,7 @@ interface GhostState {
   pos: XYZ
   side?: PieceSide
   rotation: PieceRotation
+  offset?: { x: number; z: number }
 }
 
 export default function HitPlane({ floorY }: HitPlaneProps) {
@@ -48,10 +49,14 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
     }
 
     const rotation = isTriangle
-      ? detectTriangleRotation(pos, coordinateIndex)
+      ? detectTriangleRotation(pos, coordinateIndex, pieces)
       : 0
 
-    return { pos, rotation }
+    const offset = isTriangle
+      ? detectTriangleOffset(pos, coordinateIndex, pieces)
+      : undefined
+
+    return { pos, rotation, offset }
   }
 
   function handlePointerMove(e: ThreeEvent<PointerEvent>) {
@@ -94,6 +99,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
           valid={isValid}
           side={ghost.side}
           rotation={ghost.rotation}
+          offset={ghost.offset}
         />
       )}
     </>
