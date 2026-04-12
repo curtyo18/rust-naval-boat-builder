@@ -57,7 +57,7 @@ const DEG_TO_RAD: Record<PieceRotation, number> = {
  *   0 = flat north, 90 = flat east, 180 = flat south, 270 = flat west
  */
 function TrianglePrism({ height, mat, rotation }: { height: number; mat: MatProps; rotation: PieceRotation }) {
-  const s = 0.96 / 2 // half-size
+  const s = 0.5 // half-size — full cell width so triangles snap together
   const hh = height / 2
 
   const geometry = useMemo(() => {
