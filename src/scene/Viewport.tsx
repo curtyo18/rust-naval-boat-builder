@@ -67,6 +67,7 @@ export default function Viewport() {
     <Canvas
       camera={{ position: [2.5, 14, 14], fov: 50 }}
       style={{ width: '100%', height: '100%', background: '#1a1a2e' }}
+      onContextMenu={(e) => e.preventDefault()}
     >
       <ambientLight intensity={0.6} />
       <directionalLight position={[5, 10, 5]} intensity={0.8} />

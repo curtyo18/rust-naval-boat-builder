@@ -23,10 +23,15 @@ export default function PlacedPieces() {
           }
         }
 
+        const handleContextMenu = (e: { stopPropagation: () => void }) => {
+          e.stopPropagation()
+          removePiece(piece.id)
+        }
+
         // Edge pieces use EdgeMesh for distinct window/doorway shapes
         if (piece.side) {
           return (
-            <group key={piece.id} position={position} onClick={handleClick}>
+            <group key={piece.id} position={position} onClick={handleClick} onContextMenu={handleContextMenu}>
               <EdgeMesh
                 type={piece.type}
                 side={piece.side}
@@ -40,7 +45,7 @@ export default function PlacedPieces() {
         // Cell pieces use simple box geometry
         const size = getPieceSize(piece.type)
         return (
-          <mesh key={piece.id} position={position} onClick={handleClick}>
+          <mesh key={piece.id} position={position} onClick={handleClick} onContextMenu={handleContextMenu}>
             <boxGeometry args={size} />
             <meshStandardMaterial
               color={color}
