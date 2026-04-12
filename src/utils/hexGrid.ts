@@ -146,3 +146,75 @@ export function worldToTriCoord(wx: number, wz: number): { hq: number; hr: numbe
 
   return { hq: rq || 0, hr: rr || 0, slot }
 }
+
+/**
+ * Triangle edge indices:
+ *   Edge 0: between vertex 0 (center) and vertex 1 (boundary v[slot])
+ *   Edge 1: between vertex 1 (boundary v[slot]) and vertex 2 (boundary v[slot+1])
+ *   Edge 2: between vertex 2 (boundary v[slot+1]) and vertex 0 (center)
+ *
+ * Edge 1 is the "outer" edge (on the hex boundary).
+ * Edges 0 and 2 are "inner" edges (radiate from hex center).
+ */
+
+/** World position (midpoint) of a triangle edge. */
+export function triEdgeWorldPosition(
+  hq: number,
+  y: number,
+  hr: number,
+  slot: number,
+  edge: number,
+): { x: number; y: number; z: number } {
+  const verts = triSlotVertices(hq, hr, slot)
+  const i0 = edge
+  const i1 = (edge + 1) % 3
+  return {
+    x: (verts[i0].x + verts[i1].x) / 2,
+    y,
+    z: (verts[i0].z + verts[i1].z) / 2,
+  }
+}
+
+/** Rotation angle (degrees) for an edge piece on a triangle edge. */
+export function triEdgeRotationDeg(slot: number, edge: number): number {
+  // Edge direction is determined by which vertices it connects.
+  // We compute the angle of the edge vector.
+  // For simplicity, use slot base angle + offset per edge.
+  const baseAngle = slot * 60
+  switch (edge) {
+    case 0: return baseAngle           // center → boundary[slot]: radial direction
+    case 1: return baseAngle + 150     // boundary[slot] → boundary[slot+1]: outer edge
+    case 2: return baseAngle + 60 + 180 // boundary[slot+1] → center: other radial
+    default: return 0
+  }
+}
+
+/**
+ * Detect which triangle edge (0, 1, 2) a world point is closest to.
+ */
+export function detectTriEdge(
+  hq: number,
+  hr: number,
+  slot: number,
+  wx: number,
+  wz: number,
+): 0 | 1 | 2 {
+  const verts = triSlotVertices(hq, hr, slot)
+
+  let minDist = Infinity
+  let closest: 0 | 1 | 2 = 0
+
+  for (let e = 0; e < 3; e++) {
+    const i0 = e
+    const i1 = (e + 1) % 3
+    const mx = (verts[i0].x + verts[i1].x) / 2
+    const mz = (verts[i0].z + verts[i1].z) / 2
+    const dist = (wx - mx) ** 2 + (wz - mz) ** 2
+    if (dist < minDist) {
+      minDist = dist
+      closest = e as 0 | 1 | 2
+    }
+  }
+
+  return closest
+}

@@ -1,5 +1,5 @@
 import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord } from '../types'
-import { toKey, toEdgeKey, toTriKey } from './coordinateKey'
+import { toKey, toEdgeKey, toTriKey, toTriEdgeKey } from './coordinateKey'
 
 const GRID_X = 5
 const GRID_Z = 11
@@ -54,6 +54,7 @@ export function canPlace(
   config: PiecesConfig,
   side?: PieceSide,
   triCoord?: TriCoord,
+  triEdge?: 0 | 1 | 2,
 ): boolean {
   // Triangle placement path
   if (triCoord) {
@@ -61,6 +62,18 @@ export function canPlace(
     const pieceConfig = config[type]
     if (!pieceConfig) return false
     if (!isFloorAllowed(position, pieceConfig.floorConstraint)) return false
+
+    if (pieceConfig.placementType === 'edge') {
+      // Edge piece on a triangle edge
+      if (triEdge === undefined) return false
+      const foundationKey = toTriKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot)
+      if (!coordinateIndex.has(foundationKey)) return false
+      const edgeKey = toTriEdgeKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot, triEdge)
+      if (coordinateIndex.has(edgeKey)) return false
+      return true
+    }
+
+    // Cell piece (triangle foundation)
     const key = toTriKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot)
     if (coordinateIndex.has(key)) return false
     return true

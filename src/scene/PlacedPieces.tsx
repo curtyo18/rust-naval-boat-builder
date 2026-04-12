@@ -2,7 +2,7 @@ import { useStore } from '../store/useStore'
 import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition, isTriangleType } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
-import { triSlotWorldPosition, triSlotRotationDeg } from '../utils/hexGrid'
+import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg } from '../utils/hexGrid'
 
 export default function PlacedPieces() {
   const pieces = useStore((s) => s.pieces)
@@ -30,6 +30,29 @@ export default function PlacedPieces() {
             e.stopPropagation()
             selectPiece(isSelected ? null : piece.id)
           }
+        }
+
+        // Triangle edge pieces (walls/doors/windows on triangle edges)
+        if (piece.triCoord && piece.triEdge !== undefined) {
+          const { hq, hr, slot } = piece.triCoord
+          const wp = triEdgeWorldPosition(hq, piece.position.y, hr, slot, piece.triEdge)
+          const rotDeg = triEdgeRotationDeg(slot, piece.triEdge)
+          const rotRad = (rotDeg * Math.PI) / 180
+          return (
+            <group
+              key={piece.id}
+              position={[wp.x, wp.y, wp.z]}
+              rotation={[0, rotRad, 0]}
+              onClick={handleClick}
+            >
+              <EdgeMesh
+                type={piece.type}
+                side="north"
+                color={color}
+                opacity={isSelectMode ? 0.8 : 1}
+              />
+            </group>
+          )
         }
 
         // Triangle pieces — position from hex grid

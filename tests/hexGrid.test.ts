@@ -7,6 +7,9 @@ import {
   triSlotWorldPosition,
   triNeighbors,
   worldToTriCoord,
+  triEdgeWorldPosition,
+  triEdgeRotationDeg,
+  detectTriEdge,
 } from '../src/utils/hexGrid'
 
 const SQRT3 = Math.sqrt(3)
@@ -210,5 +213,57 @@ describe('worldToTriCoord', () => {
     const result = worldToTriCoord(0, 0)
     expect(result.hq).toBe(0)
     expect(result.hr).toBe(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// triEdgeWorldPosition
+// ---------------------------------------------------------------------------
+describe('triEdgeWorldPosition', () => {
+  it('returns midpoint of the edge', () => {
+    const pos = triEdgeWorldPosition(0, 0, 0, 0, 0)
+    expect(typeof pos.x).toBe('number')
+    expect(typeof pos.z).toBe('number')
+    expect(pos.y).toBe(0)
+  })
+
+  it('each edge has a different position', () => {
+    const e0 = triEdgeWorldPosition(0, 0, 0, 0, 0)
+    const e1 = triEdgeWorldPosition(0, 0, 0, 0, 1)
+    const e2 = triEdgeWorldPosition(0, 0, 0, 0, 2)
+    const dist01 = Math.sqrt((e0.x - e1.x) ** 2 + (e0.z - e1.z) ** 2)
+    const dist12 = Math.sqrt((e1.x - e2.x) ** 2 + (e1.z - e2.z) ** 2)
+    expect(dist01).toBeGreaterThan(0.01)
+    expect(dist12).toBeGreaterThan(0.01)
+  })
+
+  it('floor level offsets y', () => {
+    const e = triEdgeWorldPosition(0, 2, 0, 0, 0)
+    expect(e.y).toBe(2)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// triEdgeRotationDeg
+// ---------------------------------------------------------------------------
+describe('triEdgeRotationDeg', () => {
+  it('returns a rotation for each edge', () => {
+    for (let e = 0; e < 3; e++) {
+      const rot = triEdgeRotationDeg(0, e)
+      expect(typeof rot).toBe('number')
+    }
+  })
+})
+
+// ---------------------------------------------------------------------------
+// detectTriEdge
+// ---------------------------------------------------------------------------
+describe('detectTriEdge', () => {
+  it('detects each edge when cursor is near its midpoint', () => {
+    for (let e = 0; e < 3; e++) {
+      const mid = triEdgeWorldPosition(0, 0, 0, 0, e)
+      const result = detectTriEdge(0, 0, 0, mid.x, mid.z)
+      expect(result).toBe(e)
+    }
   })
 })

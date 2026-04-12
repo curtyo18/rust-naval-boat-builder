@@ -18,6 +18,7 @@ interface AppStore {
 
   placePiece(type: string, position: XYZ, rotation: PieceRotation, side?: PieceSide): void
   placeTrianglePiece(type: string, y: number, triCoord: TriCoord): void
+  placeTriangleEdgePiece(type: string, y: number, triCoord: TriCoord, triEdge: 0 | 1 | 2): void
   removePiece(id: string): void
   setVisibleLevels(levels: Set<0 | 1 | 2>): void
   selectPieceType(type: string | null): void
@@ -92,6 +93,27 @@ export const useStore = create<AppStore>((set) => ({
       position: { x: 0, y, z: 0 },
       rotation: 0,
       triCoord,
+    }
+    set((state) => {
+      const pieces = [...state.pieces, piece]
+      return {
+        pieces,
+        coordinateIndex: buildIndex(pieces),
+        _history: pushHistory(state._history, state.pieces),
+        _future: [],
+      }
+    })
+  },
+
+  placeTriangleEdgePiece(type, y, triCoord, triEdge) {
+    const id = crypto.randomUUID()
+    const piece: PlacedPiece = {
+      id,
+      type,
+      position: { x: 0, y, z: 0 },
+      rotation: 0,
+      triCoord,
+      triEdge,
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
