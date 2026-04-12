@@ -99,9 +99,9 @@ export function detectTriangleRotation(
 ): 0 | 90 | 180 | 270 {
   const neighbors: { dx: number; dz: number; rot: 0 | 90 | 180 | 270 }[] = [
     { dx: 0, dz: -1, rot: 0 },    // north neighbor → flat edge north
-    { dx: 1, dz: 0, rot: 90 },    // east neighbor → flat edge east
+    { dx: 1, dz: 0, rot: 270 },   // east neighbor → flat edge east
     { dx: 0, dz: 1, rot: 180 },   // south neighbor → flat edge south
-    { dx: -1, dz: 0, rot: 270 },  // west neighbor → flat edge west
+    { dx: -1, dz: 0, rot: 90 },   // west neighbor → flat edge west
   ]
 
   for (const { dx, dz, rot } of neighbors) {
