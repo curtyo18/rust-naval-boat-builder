@@ -8,6 +8,10 @@ import SceneGrid from './SceneGrid'
 import PlacedPieces from './PlacedPieces'
 import HitPlane from './HitPlane'
 import { useStore } from '../store/useStore'
+import piecesConfig from '../data/pieces-config.json'
+import type { PiecesConfig } from '../types'
+
+const config = piecesConfig as PiecesConfig
 
 const SCENE_CENTER: [number, number, number] = [2.5, 0, 5.5]
 
@@ -36,6 +40,28 @@ function SceneSetup() {
   )
 }
 
+function ActiveHitPlane() {
+  const selectedPieceType = useStore((s) => s.selectedPieceType)
+  const visibleLevels = useStore((s) => s.visibleLevels)
+
+  if (!selectedPieceType) return null
+
+  const constraint = config[selectedPieceType]?.floorConstraint
+  let activeFloor: 0 | 1 | 2 | null = null
+
+  if (constraint === 'ground_only') {
+    activeFloor = 0
+  } else if (constraint === 'upper_only') {
+    activeFloor = ([1, 2] as const).find((f) => visibleLevels.has(f)) ?? null
+  } else {
+    // No constraint — use lowest visible floor
+    activeFloor = ([0, 1, 2] as const).find((f) => visibleLevels.has(f)) ?? null
+  }
+
+  if (activeFloor === null) return null
+  return <HitPlane floorY={activeFloor} />
+}
+
 export default function Viewport() {
   return (
     <Canvas
@@ -47,9 +73,7 @@ export default function Viewport() {
       <HullMesh />
       <SceneGrid />
       <PlacedPieces />
-      <HitPlane floorY={0} />
-      <HitPlane floorY={1} />
-      <HitPlane floorY={2} />
+      <ActiveHitPlane />
       <SceneSetup />
     </Canvas>
   )
