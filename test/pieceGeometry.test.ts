@@ -99,39 +99,51 @@ describe('detectTriangleOffset', () => {
     expect(detectTriangleOffset({ x: 2, y: 0, z: 5 }, new Map(), [])).toEqual({ x: 0, z: 0 })
   })
 
-  it('returns zero offset when neighbor is square', () => {
+  it('returns zero offset when neighbor is square (anchored, no move)', () => {
     const pieces = [makePiece('h1', 'square_hull', 3, 0, 5)]
     const index = buildIndex(pieces)
     expect(detectTriangleOffset({ x: 2, y: 0, z: 5 }, index, pieces)).toEqual({ x: 0, z: 0 })
   })
 
-  it('offsets east (+0.5 x) toward triangle neighbor to the east', () => {
+  it('returns zero offset when two triangles with no anchor', () => {
+    // Neither triangle has a non-triangle neighbor, so neither should offset
     const pieces = [makePiece('t1', 'triangle_hull', 3, 0, 5)]
+    const index = buildIndex(pieces)
+    expect(detectTriangleOffset({ x: 2, y: 0, z: 5 }, index, pieces)).toEqual({ x: 0, z: 0 })
+  })
+
+  it('offsets east toward anchored triangle neighbor', () => {
+    // square at (4,0,5) anchors triangle at (3,0,5), so (2,0,5) offsets toward it
+    const pieces = [
+      makePiece('h1', 'square_hull', 4, 0, 5),
+      makePiece('t1', 'triangle_hull', 3, 0, 5),
+    ]
     const index = buildIndex(pieces)
     expect(detectTriangleOffset({ x: 2, y: 0, z: 5 }, index, pieces)).toEqual({ x: 0.5, z: 0 })
   })
 
-  it('offsets north (-0.5 z) toward triangle neighbor to the north', () => {
-    const pieces = [makePiece('t1', 'triangle_hull', 2, 0, 4)]
+  it('offsets north toward anchored triangle neighbor', () => {
+    const pieces = [
+      makePiece('h1', 'square_hull', 2, 0, 3),
+      makePiece('t1', 'triangle_hull', 2, 0, 4),
+    ]
     const index = buildIndex(pieces)
     expect(detectTriangleOffset({ x: 2, y: 0, z: 5 }, index, pieces)).toEqual({ x: 0, z: -0.5 })
   })
 
-  it('offsets south (+0.5 z) toward triangle neighbor to the south', () => {
-    const pieces = [makePiece('t1', 'triangle_hull', 2, 0, 6)]
-    const index = buildIndex(pieces)
-    expect(detectTriangleOffset({ x: 2, y: 0, z: 5 }, index, pieces)).toEqual({ x: 0, z: 0.5 })
-  })
-
-  it('offsets west (-0.5 x) toward triangle neighbor to the west', () => {
-    const pieces = [makePiece('t1', 'triangle_hull', 1, 0, 5)]
+  it('offsets west toward anchored triangle neighbor', () => {
+    const pieces = [
+      makePiece('h1', 'square_hull', 0, 0, 5),
+      makePiece('t1', 'triangle_hull', 1, 0, 5),
+    ]
     const index = buildIndex(pieces)
     expect(detectTriangleOffset({ x: 2, y: 0, z: 5 }, index, pieces)).toEqual({ x: -0.5, z: 0 })
   })
 
-  it('returns zero offset when mixed neighbors (square takes priority)', () => {
+  it('anchored triangle does not offset (has square neighbor)', () => {
+    // Triangle at (2,0,5) has square at (1,0,5) — it's anchored, stays put
     const pieces = [
-      makePiece('h1', 'square_hull', 2, 0, 4),
+      makePiece('h1', 'square_hull', 1, 0, 5),
       makePiece('t1', 'triangle_hull', 3, 0, 5),
     ]
     const index = buildIndex(pieces)

@@ -154,9 +154,35 @@ export function detectTriangleRotation(
   return 0
 }
 
+// Check if a position has any non-triangle neighbor (making it "anchored" in place).
+function hasNonTriangleNeighbor(
+  pos: XYZ,
+  coordinateIndex: Map<string, string>,
+  pieces: PlacedPiece[],
+): boolean {
+  const directions = [
+    { dx: 0, dz: -1 },
+    { dx: 1, dz: 0 },
+    { dx: 0, dz: 1 },
+    { dx: -1, dz: 0 },
+  ]
+  for (const { dx, dz } of directions) {
+    const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
+    const neighborId = coordinateIndex.get(key)
+    if (neighborId) {
+      const neighbor = pieces.find((p) => p.id === neighborId)
+      if (neighbor && !isTriangleType(neighbor.type)) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
 // Detect visual offset for a triangle when it has a neighboring triangle.
 // Returns {x, z} shift to close the gap between adjacent triangle slopes.
-// Priority: if any square/hull neighbor exists, no offset (triangle stays centered).
+// Only offsets toward an "anchored" triangle neighbor (one adjacent to a square/hull
+// that won't move itself), preventing both triangles from colliding at the midpoint.
 export function detectTriangleOffset(
   pos: XYZ,
   coordinateIndex: Map<string, string>,
@@ -169,25 +195,19 @@ export function detectTriangleOffset(
     { dx: -1, dz: 0 },
   ]
 
-  // If any non-triangle neighbor exists, don't offset (square takes priority)
-  for (const { dx, dz } of directions) {
-    const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
-    const neighborId = coordinateIndex.get(key)
-    if (neighborId) {
-      const neighbor = pieces.find((p) => p.id === neighborId)
-      if (neighbor && !isTriangleType(neighbor.type)) {
-        return { x: 0, z: 0 }
-      }
-    }
+  // If this triangle has a non-triangle neighbor, it's anchored — don't offset
+  if (hasNonTriangleNeighbor(pos, coordinateIndex, pieces)) {
+    return { x: 0, z: 0 }
   }
 
-  // Find first triangle neighbor and offset toward it
+  // Only offset toward a triangle neighbor that is anchored (won't move itself)
   for (const { dx, dz } of directions) {
     const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
     const neighborId = coordinateIndex.get(key)
     if (neighborId) {
       const neighbor = pieces.find((p) => p.id === neighborId)
-      if (neighbor && isTriangleType(neighbor.type)) {
+      if (neighbor && isTriangleType(neighbor.type) &&
+          hasNonTriangleNeighbor(neighbor.position, coordinateIndex, pieces)) {
         return { x: dx * 0.5, z: dz * 0.5 }
       }
     }
