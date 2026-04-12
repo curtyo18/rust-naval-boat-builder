@@ -1,5 +1,12 @@
 import type { PieceSide } from '../types'
 
+const SIDE_ROTATIONS: Record<PieceSide, number> = {
+  north: 0,
+  east: Math.PI / 2,
+  south: Math.PI,
+  west: -Math.PI / 2,
+}
+
 interface EdgeMeshProps {
   type: string
   side: PieceSide
@@ -38,6 +45,11 @@ export default function EdgeMesh({ type, side, color, opacity = 1, roughness = 0
         <meshStandardMaterial {...mat} />
       </mesh>
     )
+  }
+
+  // Boat stairs — 3 ascending steps against the wall edge
+  if (type === 'boat_stairs') {
+    return <StairsMesh side={side} mat={mat} />
   }
 
   // Window — frame with rectangular cutout in the center
@@ -155,6 +167,36 @@ function DoorwayFrame({ isNS, mat }: FrameProps) {
           <meshStandardMaterial {...mat} />
         </mesh>
       ))}
+    </group>
+  )
+}
+
+/**
+ * Stairs: 3 steps ascending away from the wall edge.
+ * Steps ascend inward from the edge (north stairs ascend toward south).
+ */
+function StairsMesh({ side, mat }: { side: PieceSide; mat: FrameProps['mat'] }) {
+  const steps = 3
+  const stepW = 0.9
+  const stepH = 0.3
+  const stepD = 0.28
+  const totalH = stepH * steps
+
+  // Build steps ascending along +Z (away from north edge), then rotate to match side
+  const rotation = SIDE_ROTATIONS[side]
+
+  return (
+    <group rotation={[0, rotation, 0]}>
+      {Array.from({ length: steps }, (_, i) => {
+        const y = stepH * i + stepH / 2 - totalH / 2
+        const z = stepD * i + stepD / 2
+        return (
+          <mesh key={i} position={[0, y, z]}>
+            <boxGeometry args={[stepW, stepH, stepD]} />
+            <meshStandardMaterial {...mat} />
+          </mesh>
+        )
+      })}
     </group>
   )
 }
