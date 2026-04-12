@@ -1,14 +1,56 @@
 // src/App.tsx
+import { useState, useEffect } from 'react'
 import './App.css'
 import TopBar from './components/TopBar'
 import Sidebar from './components/Sidebar'
 import CostBar from './components/CostBar'
 import Viewport from './scene/Viewport'
+import { useStore } from './store/useStore'
+import { encodePieces } from './utils/serialization'
+import { usePersistence } from './hooks/usePersistence'
 
 export default function App() {
+  usePersistence()
+
+  const clearAll = useStore((s) => s.clearAll)
+  const pieces = useStore((s) => s.pieces)
+  const cameraResetFn = useStore((s) => s.cameraResetFn)
+  const selectPieceType = useStore((s) => s.selectPieceType)
+  const [shareLabel, setShareLabel] = useState('Share')
+
+  // Escape key deselects active piece type
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') selectPieceType(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectPieceType])
+
+  function handleShare() {
+    const encoded = encodePieces(pieces)
+    window.location.hash = `#data=${encoded}`
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setShareLabel('Copied!')
+      setTimeout(() => setShareLabel('Share'), 2000)
+    })
+  }
+
+  function handleClear() {
+    if (window.confirm('Remove all placed pieces?')) {
+      clearAll()
+      window.location.hash = ''
+    }
+  }
+
   return (
     <div className="app">
-      <TopBar />
+      <TopBar
+        onResetCamera={() => cameraResetFn?.()}
+        onShare={handleShare}
+        onClear={handleClear}
+        shareLabel={shareLabel}
+      />
       <div className="app__body">
         <Sidebar />
         <div className="app__viewport">
