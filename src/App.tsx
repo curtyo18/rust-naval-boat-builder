@@ -16,16 +16,26 @@ export default function App() {
   const pieces = useStore((s) => s.pieces)
   const cameraResetFn = useStore((s) => s.cameraResetFn)
   const selectPieceType = useStore((s) => s.selectPieceType)
+  const undo = useStore((s) => s.undo)
+  const redo = useStore((s) => s.redo)
   const [shareLabel, setShareLabel] = useState('Share')
 
-  // Escape key deselects active piece type
+  // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') selectPieceType(null)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault()
+        redo()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectPieceType])
+  }, [selectPieceType, undo, redo])
 
   function handleShare() {
     const encoded = encodePieces(pieces)

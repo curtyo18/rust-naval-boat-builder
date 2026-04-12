@@ -125,3 +125,66 @@ describe('setVisibleLevels', () => {
     expect(useStore.getState().visibleLevels).toEqual(new Set([0, 2]))
   })
 })
+
+describe('undo / redo', () => {
+  it('undo reverts placePiece', () => {
+    act(() => useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0))
+    expect(useStore.getState().pieces).toHaveLength(1)
+    act(() => useStore.getState().undo())
+    expect(useStore.getState().pieces).toHaveLength(0)
+  })
+
+  it('redo restores undone placePiece', () => {
+    act(() => useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0))
+    act(() => useStore.getState().undo())
+    act(() => useStore.getState().redo())
+    expect(useStore.getState().pieces).toHaveLength(1)
+  })
+
+  it('undo reverts removePiece', () => {
+    act(() => useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0))
+    const id = useStore.getState().pieces[0].id
+    act(() => useStore.getState().removePiece(id))
+    expect(useStore.getState().pieces).toHaveLength(0)
+    act(() => useStore.getState().undo())
+    expect(useStore.getState().pieces).toHaveLength(1)
+  })
+
+  it('undo reverts clearAll', () => {
+    act(() => {
+      useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0)
+      useStore.getState().placePiece('square_hull', { x: 1, y: 0, z: 0 }, 0)
+    })
+    act(() => useStore.getState().clearAll())
+    expect(useStore.getState().pieces).toHaveLength(0)
+    act(() => useStore.getState().undo())
+    expect(useStore.getState().pieces).toHaveLength(2)
+  })
+
+  it('new action clears future', () => {
+    act(() => useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0))
+    act(() => useStore.getState().undo())
+    act(() => useStore.getState().placePiece('square_hull', { x: 1, y: 0, z: 0 }, 0))
+    act(() => useStore.getState().redo())
+    // redo should be a no-op since future was cleared
+    expect(useStore.getState().pieces).toHaveLength(1)
+  })
+
+  it('undo on empty history is a no-op', () => {
+    // loadPieces resets history, so undo should do nothing
+    act(() => useStore.getState().loadPieces([]))
+    act(() => useStore.getState().undo())
+    expect(useStore.getState().pieces).toHaveLength(0)
+  })
+
+  it('redo on empty future is a no-op', () => {
+    act(() => useStore.getState().redo())
+    expect(useStore.getState().pieces).toHaveLength(0)
+  })
+
+  it('rebuilds coordinateIndex on undo', () => {
+    act(() => useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0))
+    act(() => useStore.getState().undo())
+    expect(useStore.getState().coordinateIndex.size).toBe(0)
+  })
+})
