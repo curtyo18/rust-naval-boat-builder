@@ -1,4 +1,4 @@
-import type { PieceSide, XYZ, PlacedPiece } from '../types'
+import type { PieceSide, PieceRotation, XYZ, PlacedPiece } from '../types'
 
 // Visual colors per piece type
 export const PIECE_COLORS: Record<string, string> = {
@@ -95,58 +95,80 @@ export function isTriangleType(type: string): boolean {
   return type.includes('triangle')
 }
 
+// What a triangle shows on each side for a given rotation.
+// 'flat' = the straight base edge, 'slope' = a diagonal edge, 'tip' = the point vertex.
+type TriangleEdge = 'flat' | 'slope' | 'tip'
+
+const EDGE_MAP: Record<PieceRotation, Record<string, TriangleEdge>> = {
+  0:   { north: 'flat', south: 'tip', east: 'slope', west: 'slope' },
+  90:  { north: 'slope', south: 'slope', east: 'tip', west: 'flat' },
+  180: { north: 'tip', south: 'flat', east: 'slope', west: 'slope' },
+  270: { north: 'slope', south: 'slope', east: 'flat', west: 'tip' },
+}
+
+function getTriangleEdgeType(rotation: PieceRotation, side: string): TriangleEdge {
+  return EDGE_MAP[rotation][side]
+}
+
+const FLAT_ROTATION: Record<string, 0 | 90 | 180 | 270> = {
+  north: 0, east: 270, south: 180, west: 90,
+}
+
+const OPPOSITE_ROTATION: Record<number, 0 | 90 | 180 | 270> = {
+  0: 180, 180: 0, 90: 270, 270: 90,
+}
+
+const OPPOSITE_SIDE: Record<string, string> = {
+  north: 'south', south: 'north', east: 'west', west: 'east',
+}
+
+const DIRECTIONS = [
+  { dx: 0, dz: -1, dir: 'north' },
+  { dx: 1, dz: 0, dir: 'east' },
+  { dx: 0, dz: 1, dir: 'south' },
+  { dx: -1, dz: 0, dir: 'west' },
+]
+
 // Detect which direction a triangle should face based on adjacent foundations.
-// When neighbor is a square/hull: flat edge faces it (current behavior).
-// When neighbor is a triangle: slope (point) faces it so slopes can meet.
-// 0 = flat north, 90 = flat west, 180 = flat south, 270 = flat east.
+// Behavior depends on what the neighbor presents on the shared boundary:
+//   Square/hull neighbor → flat edge toward it
+//   Triangle showing SLOPE → complement rotation (slope-to-slope)
+//   Triangle showing FLAT or TIP → flat edge toward it
 export function detectTriangleRotation(
   pos: XYZ,
   coordinateIndex: Map<string, string>,
   pieces?: PlacedPiece[],
 ): 0 | 90 | 180 | 270 {
-  const flatRotation: Record<string, 0 | 90 | 180 | 270> = {
-    north: 0,
-    east: 270,
-    south: 180,
-    west: 90,
-  }
-  // Opposite rotation: complement the neighbor's tip direction
-  const oppositeRotation: Record<number, 0 | 90 | 180 | 270> = {
-    0: 180,    // tip south → tip north
-    180: 0,    // tip north → tip south
-    90: 270,   // tip east → tip west
-    270: 90,   // tip west → tip east
-  }
-
-  const directions = [
-    { dx: 0, dz: -1, dir: 'north' },
-    { dx: 1, dz: 0, dir: 'east' },
-    { dx: 0, dz: 1, dir: 'south' },
-    { dx: -1, dz: 0, dir: 'west' },
-  ]
-
   // First pass: prefer square/hull neighbors (flat edge toward them)
-  for (const { dx, dz, dir } of directions) {
+  for (const { dx, dz, dir } of DIRECTIONS) {
     const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
     const neighborId = coordinateIndex.get(key)
     if (neighborId && pieces) {
       const neighbor = pieces.find((p) => p.id === neighborId)
       if (neighbor && !isTriangleType(neighbor.type)) {
-        return flatRotation[dir]
+        return FLAT_ROTATION[dir]
       }
     } else if (neighborId && !pieces) {
-      return flatRotation[dir]
+      return FLAT_ROTATION[dir]
     }
   }
 
-  // Second pass: triangle neighbors (complement their rotation to alternate)
-  for (const { dx, dz } of directions) {
+  // Second pass: triangle neighbors — check what edge they present toward us
+  for (const { dx, dz, dir } of DIRECTIONS) {
     const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
     const neighborId = coordinateIndex.get(key)
     if (neighborId && pieces) {
       const neighbor = pieces.find((p) => p.id === neighborId)
       if (neighbor && isTriangleType(neighbor.type)) {
-        return oppositeRotation[neighbor.rotation] ?? 0
+        const facingSide = OPPOSITE_SIDE[dir]
+        const edgeType = getTriangleEdgeType(neighbor.rotation, facingSide)
+
+        if (edgeType === 'slope') {
+          // Slope-to-slope: complement their rotation so slopes align
+          return OPPOSITE_ROTATION[neighbor.rotation] ?? 0
+        }
+        // Flat or tip: put our flat edge toward them
+        return FLAT_ROTATION[dir]
       }
     }
   }
@@ -160,13 +182,7 @@ function hasNonTriangleNeighbor(
   coordinateIndex: Map<string, string>,
   pieces: PlacedPiece[],
 ): boolean {
-  const directions = [
-    { dx: 0, dz: -1 },
-    { dx: 1, dz: 0 },
-    { dx: 0, dz: 1 },
-    { dx: -1, dz: 0 },
-  ]
-  for (const { dx, dz } of directions) {
+  for (const { dx, dz } of DIRECTIONS) {
     const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
     const neighborId = coordinateIndex.get(key)
     if (neighborId) {
@@ -179,80 +195,32 @@ function hasNonTriangleNeighbor(
   return false
 }
 
-// Compute the "direct" offset for a triangle — only considering directly anchored neighbors.
-// Used to determine which direction a neighbor would shift (to avoid collisions).
-function getDirectOffset(
-  pos: XYZ,
-  coordinateIndex: Map<string, string>,
-  pieces: PlacedPiece[],
-): { x: number; z: number } {
-  if (hasNonTriangleNeighbor(pos, coordinateIndex, pieces)) {
-    return { x: 0, z: 0 }
-  }
-  const directions = [
-    { dx: 0, dz: -1 },
-    { dx: 1, dz: 0 },
-    { dx: 0, dz: 1 },
-    { dx: -1, dz: 0 },
-  ]
-  for (const { dx, dz } of directions) {
-    const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
-    const neighborId = coordinateIndex.get(key)
-    if (neighborId) {
-      const neighbor = pieces.find((p) => p.id === neighborId)
-      if (neighbor && isTriangleType(neighbor.type) &&
-          hasNonTriangleNeighbor(neighbor.position, coordinateIndex, pieces)) {
-        return { x: dx * 0.5, z: dz * 0.5 }
-      }
-    }
-  }
-  return { x: 0, z: 0 }
-}
-
 // Detect visual offset for a triangle when it has a neighboring triangle.
-// Returns {x, z} shift to close the gap between adjacent triangle slopes.
-// A triangle offsets toward a neighbor if:
-//   1. The neighbor is directly anchored (adjacent to a square), OR
-//   2. The neighbor offsets in a different direction (won't collide with us)
+// Only offsets for slope-to-slope contact with an anchored neighbor.
+// Flat-to-flat and flat-to-tip contacts don't need offset.
 export function detectTriangleOffset(
   pos: XYZ,
   coordinateIndex: Map<string, string>,
   pieces: PlacedPiece[],
 ): { x: number; z: number } {
-  const directions = [
-    { dx: 0, dz: -1 },
-    { dx: 1, dz: 0 },
-    { dx: 0, dz: 1 },
-    { dx: -1, dz: 0 },
-  ]
-
   // If this triangle has a non-triangle neighbor, it's anchored — don't offset
   if (hasNonTriangleNeighbor(pos, coordinateIndex, pieces)) {
     return { x: 0, z: 0 }
   }
 
-  for (const { dx, dz } of directions) {
+  for (const { dx, dz, dir } of DIRECTIONS) {
     const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
     const neighborId = coordinateIndex.get(key)
     if (neighborId) {
       const neighbor = pieces.find((p) => p.id === neighborId)
       if (neighbor && isTriangleType(neighbor.type)) {
-        // Case 1: neighbor is directly anchored (won't move at all)
-        if (hasNonTriangleNeighbor(neighbor.position, coordinateIndex, pieces)) {
-          return { x: dx * 0.5, z: dz * 0.5 }
-        }
+        const facingSide = OPPOSITE_SIDE[dir]
+        const edgeType = getTriangleEdgeType(neighbor.rotation, facingSide)
 
-        // Case 2: neighbor offsets in a different direction (won't collide)
-        const neighborOffset = getDirectOffset(neighbor.position, coordinateIndex, pieces)
-        if (neighborOffset.x !== 0 || neighborOffset.z !== 0) {
-          // Check the neighbor doesn't offset back toward us
-          const backDx = Math.sign(-dx)
-          const backDz = Math.sign(-dz)
-          const offDirX = Math.sign(neighborOffset.x)
-          const offDirZ = Math.sign(neighborOffset.z)
-          if (offDirX !== backDx || offDirZ !== backDz) {
-            return { x: dx * 0.5, z: dz * 0.5 }
-          }
+        // Only offset for slope-to-slope with an anchored neighbor
+        if (edgeType === 'slope' &&
+            hasNonTriangleNeighbor(neighbor.position, coordinateIndex, pieces)) {
+          return { x: dx * 0.5, z: dz * 0.5 }
         }
       }
     }
