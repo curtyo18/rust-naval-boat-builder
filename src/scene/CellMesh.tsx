@@ -60,7 +60,7 @@ function getTriangleVertices(s: number, rotation: PieceRotation): [number, numbe
 }
 
 function TrianglePrism({ height, mat, rotation }: { height: number; mat: MatProps; rotation: PieceRotation }) {
-  const s = 0.48
+  const s = 0.5
   const hh = height / 2
 
   const geometry = useMemo(() => {

@@ -91,8 +91,8 @@ function getEdgeOffset(side: PieceSide, height: number): [number, number, number
 }
 
 // Detect which direction a triangle should face based on adjacent foundations.
-// Returns the rotation (degrees) so the flat edge faces the neighbor with a foundation.
-// 0 = flat north, 90 = flat east, 180 = flat south, 270 = flat west.
+// Returns the rotation so the flat edge faces the nearest neighbor.
+// 0 = flat north, 90 = flat west, 180 = flat south, 270 = flat east.
 export function detectTriangleRotation(
   pos: XYZ,
   coordinateIndex: Map<string, string>,
