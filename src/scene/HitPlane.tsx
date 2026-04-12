@@ -6,10 +6,11 @@ import { detectSide } from './pieceGeometry'
 import piecesConfig from '../data/pieces-config.json'
 import type { PiecesConfig, XYZ, PieceSide, PieceRotation } from '../types'
 import GhostPiece from './GhostPiece'
-import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg } from '../utils/hexGrid'
+import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, detectTriEdge } from '../utils/hexGrid'
 import { PIECE_COLORS, DEFAULT_COLOR } from './pieceGeometry'
 import CellMesh from './CellMesh'
-import type { TriCoord } from '../types'
+import EdgeMesh from './EdgeMesh'
+import type { TriCoord, TriEdgeIndex } from '../types'
 
 const config = piecesConfig as PiecesConfig
 const GRID_W = 5
@@ -105,6 +106,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
 interface TriGhostState {
   triCoord: TriCoord
   y: number
+  triEdge?: TriEdgeIndex
 }
 
 export function TriHitPlane({ floorY }: HitPlaneProps) {
@@ -112,22 +114,39 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
   const pieces = useStore((s) => s.pieces)
   const coordinateIndex = useStore((s) => s.coordinateIndex)
   const placeTrianglePiece = useStore((s) => s.placeTrianglePiece)
+  const placeTriangleEdgePiece = useStore((s) => s.placeTriangleEdgePiece)
   const [ghost, setGhost] = useState<TriGhostState | null>(null)
 
   if (!selectedPieceType) return null
-  if (!selectedPieceType.includes('triangle')) return null
 
   const pieceConfig = config[selectedPieceType]
   if (!pieceConfig) return null
-  if (pieceConfig.placementType === 'edge') return null
+
+  const isTriType = selectedPieceType.includes('triangle')
+  const isEdgeType = pieceConfig.placementType === 'edge'
+
+  // This hit plane handles: triangle cell pieces, OR edge pieces on triangle foundations
+  if (!isTriType && !isEdgeType) return null
+  // Triangle edge piece types don't exist — skip
+  if (isTriType && isEdgeType) return null
 
   function handlePointerMove(e: ThreeEvent<PointerEvent>) {
     e.stopPropagation()
     const { hq, hr, slot } = worldToTriCoord(e.point.x, e.point.z)
-    setGhost({
-      triCoord: { hq, hr, slot: slot as TriCoord['slot'] },
-      y: floorY,
-    })
+    const triCoord: TriCoord = { hq, hr, slot: slot as TriCoord['slot'] }
+
+    if (isEdgeType) {
+      // For edge pieces, only show ghost if a triangle foundation exists at this slot
+      const triKey = `t:${hq},${floorY},${hr},${slot}`
+      if (coordinateIndex.has(triKey)) {
+        const edge = detectTriEdge(hq, hr, slot, e.point.x, e.point.z)
+        setGhost({ triCoord, y: floorY, triEdge: edge })
+      } else {
+        setGhost(null)
+      }
+    } else {
+      setGhost({ triCoord, y: floorY })
+    }
   }
 
   function handlePointerLeave() {
@@ -138,16 +157,23 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     e.stopPropagation()
     const { hq, hr, slot } = worldToTriCoord(e.point.x, e.point.z)
     const triCoord: TriCoord = { hq, hr, slot: slot as TriCoord['slot'] }
-    if (canPlace(selectedPieceType!, { x: 0, y: floorY, z: 0 }, pieces, coordinateIndex, config, undefined, triCoord)) {
-      placeTrianglePiece(selectedPieceType!, floorY, triCoord)
+
+    if (isEdgeType) {
+      const edge = detectTriEdge(hq, hr, slot, e.point.x, e.point.z)
+      if (canPlace(selectedPieceType!, { x: 0, y: floorY, z: 0 }, pieces, coordinateIndex, config, undefined, triCoord, edge)) {
+        placeTriangleEdgePiece(selectedPieceType!, floorY, triCoord, edge)
+      }
+    } else {
+      if (canPlace(selectedPieceType!, { x: 0, y: floorY, z: 0 }, pieces, coordinateIndex, config, undefined, triCoord)) {
+        placeTrianglePiece(selectedPieceType!, floorY, triCoord)
+      }
     }
   }
 
   const isValid = ghost
-    ? canPlace(selectedPieceType, { x: 0, y: ghost.y, z: 0 }, pieces, coordinateIndex, config, undefined, ghost.triCoord)
+    ? canPlace(selectedPieceType, { x: 0, y: ghost.y, z: 0 }, pieces, coordinateIndex, config, undefined, ghost.triCoord, ghost.triEdge)
     : false
 
-  // Large hit plane centered near hex grid — must be big enough to cover placement area
   const planeSize = 12
 
   return (
@@ -162,10 +188,19 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
         <planeGeometry args={[planeSize, planeSize]} />
         <meshBasicMaterial visible={false} />
       </mesh>
-      {ghost && (
+      {ghost && ghost.triEdge === undefined && isTriType && (
         <TriGhostPiece
           type={selectedPieceType}
           triCoord={ghost.triCoord}
+          y={ghost.y}
+          valid={isValid}
+        />
+      )}
+      {ghost && ghost.triEdge !== undefined && (
+        <TriEdgeGhostPiece
+          type={selectedPieceType}
+          triCoord={ghost.triCoord}
+          triEdge={ghost.triEdge}
           y={ghost.y}
           valid={isValid}
         />
@@ -183,6 +218,23 @@ function TriGhostPiece({ type, triCoord, y, valid }: { type: string; triCoord: T
   return (
     <group position={[wp.x, wp.y, wp.z]}>
       <CellMesh type={type} color={color} opacity={0.45} roughness={0.85} angleDeg={angleDeg} />
+    </group>
+  )
+}
+
+function TriEdgeGhostPiece({ type, triCoord, triEdge, y, valid }: {
+  type: string; triCoord: TriCoord; triEdge: TriEdgeIndex; y: number; valid: boolean
+}) {
+  const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
+  const color = valid ? baseColor : '#ff3333'
+  const { hq, hr, slot } = triCoord
+  const wp = triEdgeWorldPosition(hq, y, hr, slot, triEdge)
+  const rotDeg = triEdgeRotationDeg(slot, triEdge)
+  const rotRad = (rotDeg * Math.PI) / 180
+
+  return (
+    <group position={[wp.x, wp.y, wp.z]} rotation={[0, rotRad, 0]}>
+      <EdgeMesh type={type} side="north" color={color} opacity={0.45} roughness={0.85} />
     </group>
   )
 }
