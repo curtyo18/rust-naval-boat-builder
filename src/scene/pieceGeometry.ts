@@ -106,7 +106,9 @@ export function detectTriangleRotation(
 
   for (const { dx, dz, rot } of neighbors) {
     const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
-    if (coordinateIndex.has(key)) return rot
+    if (coordinateIndex.has(key)) {
+      return rot
+    }
   }
 
   return 0 // default: flat edge north
