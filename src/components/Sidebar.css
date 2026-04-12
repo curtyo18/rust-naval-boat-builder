@@ -1,0 +1,75 @@
+/* src/components/Sidebar.css */
+.sidebar {
+  width: 160px;
+  flex-shrink: 0;
+  background: #141414;
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar__pieces {
+  flex: 1;
+  padding: 8px 0;
+}
+
+.sidebar__group {
+  margin-bottom: 4px;
+}
+
+.sidebar__group-label {
+  padding: 6px 12px 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #666;
+}
+
+.sidebar__piece {
+  display: block;
+  width: 100%;
+  padding: 5px 12px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 13px;
+}
+
+.sidebar__piece:hover {
+  background: #222;
+  color: #fff;
+}
+
+.sidebar__piece--active {
+  background: #2a4a2a;
+  color: #7cfc7c;
+}
+
+.sidebar__floors {
+  padding: 8px 12px 12px;
+  border-top: 1px solid #333;
+}
+
+.sidebar__floor-toggles {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.sidebar__floor-btn {
+  flex: 1;
+  padding: 4px 0;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #888;
+  font-size: 13px;
+}
+
+.sidebar__floor-btn--active {
+  background: #2a4a2a;
+  border-color: #4a8a4a;
+  color: #7cfc7c;
+}
