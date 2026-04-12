@@ -1,16 +1,5 @@
-// src/scene/PlacedPieces.tsx
 import { useStore } from '../store/useStore'
-import piecesConfig from '../data/pieces-config.json'
-import type { PiecesConfig, PieceCategory } from '../types'
-
-const config = piecesConfig as PiecesConfig
-
-const CATEGORY_COLORS: Record<PieceCategory, string> = {
-  hull: '#5c4a32',
-  structural: '#4a7a4a',
-  floor: '#4a6a8a',
-  deployable: '#8a4a4a',
-}
+import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition, getPieceSize } from './pieceGeometry'
 
 export default function PlacedPieces() {
   const pieces = useStore((s) => s.pieces)
@@ -22,14 +11,15 @@ export default function PlacedPieces() {
     <>
       {pieces.map((piece) => {
         if (!visibleLevels.has(piece.position.y as 0 | 1 | 2)) return null
-        const category = config[piece.type]?.category ?? 'structural'
-        const color = CATEGORY_COLORS[category]
+        const color = PIECE_COLORS[piece.type] ?? DEFAULT_COLOR
+        const position = getPiecePosition(piece.position, piece.type, piece.side)
+        const size = getPieceSize(piece.type, piece.side)
         const isDeleteMode = selectedPieceType === null
 
         return (
           <mesh
             key={piece.id}
-            position={[piece.position.x + 0.5, piece.position.y + 0.5, piece.position.z + 0.5]}
+            position={position}
             onClick={(e) => {
               if (isDeleteMode) {
                 e.stopPropagation()
@@ -37,9 +27,10 @@ export default function PlacedPieces() {
               }
             }}
           >
-            <boxGeometry args={[0.92, 0.92, 0.92]} />
+            <boxGeometry args={size} />
             <meshStandardMaterial
               color={color}
+              roughness={0.85}
               opacity={isDeleteMode ? 0.8 : 1}
               transparent={isDeleteMode}
             />

@@ -1,5 +1,5 @@
-import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig } from '../types'
-import { toKey } from './coordinateKey'
+import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide } from '../types'
+import { toKey, toEdgeKey } from './coordinateKey'
 
 const GRID_X = 5
 const GRID_Z = 11
@@ -18,7 +18,15 @@ export function isFloorAllowed(pos: XYZ, constraint: FloorConstraint): boolean {
   return true
 }
 
-export function isOccupied(pos: XYZ, coordinateIndex: Map<string, string>): boolean {
+export function isCellOccupied(pos: XYZ, coordinateIndex: Map<string, string>): boolean {
+  return coordinateIndex.has(toKey(pos))
+}
+
+export function isEdgeOccupied(pos: XYZ, side: PieceSide, coordinateIndex: Map<string, string>): boolean {
+  return coordinateIndex.has(toEdgeKey(pos, side))
+}
+
+export function hasFoundation(pos: XYZ, coordinateIndex: Map<string, string>): boolean {
   return coordinateIndex.has(toKey(pos))
 }
 
@@ -28,18 +36,31 @@ export function isMaxCountReached(type: string, pieces: PlacedPiece[], config: P
   return pieces.filter(p => p.type === type).length >= maxCount
 }
 
+// Keep old name as alias for backward compat in tests
+export const isOccupied = isCellOccupied
+
 export function canPlace(
   type: string,
   position: XYZ,
   pieces: PlacedPiece[],
   coordinateIndex: Map<string, string>,
   config: PiecesConfig,
+  side?: PieceSide,
 ): boolean {
   if (!isInBounds(position)) return false
   const pieceConfig = config[type]
   if (!pieceConfig) return false
   if (!isFloorAllowed(position, pieceConfig.floorConstraint)) return false
-  if (isOccupied(position, coordinateIndex)) return false
   if (isMaxCountReached(type, pieces, config)) return false
+
+  if (pieceConfig.placementType === 'edge') {
+    if (!side) return false
+    if (isEdgeOccupied(position, side, coordinateIndex)) return false
+    // Edge pieces require a foundation (hull or floor piece) in the cell they attach to
+    if (!hasFoundation(position, coordinateIndex)) return false
+  } else {
+    if (isCellOccupied(position, coordinateIndex)) return false
+  }
+
   return true
 }

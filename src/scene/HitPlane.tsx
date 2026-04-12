@@ -1,10 +1,10 @@
-// src/scene/HitPlane.tsx
 import { useState } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useStore } from '../store/useStore'
 import { canPlace } from '../utils/validation'
+import { detectSide } from './pieceGeometry'
 import piecesConfig from '../data/pieces-config.json'
-import type { PiecesConfig, XYZ } from '../types'
+import type { PiecesConfig, XYZ, PieceSide } from '../types'
 import GhostPiece from './GhostPiece'
 
 const config = piecesConfig as PiecesConfig
@@ -15,39 +15,58 @@ interface HitPlaneProps {
   floorY: 0 | 1 | 2
 }
 
+interface GhostState {
+  pos: XYZ
+  side?: PieceSide
+}
+
 export default function HitPlane({ floorY }: HitPlaneProps) {
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const pieces = useStore((s) => s.pieces)
   const coordinateIndex = useStore((s) => s.coordinateIndex)
   const placePiece = useStore((s) => s.placePiece)
-  const [ghostPos, setGhostPos] = useState<XYZ | null>(null)
+  const [ghost, setGhost] = useState<GhostState | null>(null)
 
   if (!selectedPieceType) return null
 
-  function toGridPos(point: { x: number; z: number }): XYZ {
-    const x = Math.max(0, Math.min(GRID_W - 1, Math.floor(point.x)))
-    const z = Math.max(0, Math.min(GRID_L - 1, Math.floor(point.z)))
-    return { x, y: floorY, z }
+  const pieceConfig = config[selectedPieceType]
+  if (!pieceConfig) return null
+  const isEdgePiece = pieceConfig.placementType === 'edge'
+
+  function toGhostState(point: { x: number; z: number }): GhostState {
+    const cellX = Math.max(0, Math.min(GRID_W - 1, Math.floor(point.x)))
+    const cellZ = Math.max(0, Math.min(GRID_L - 1, Math.floor(point.z)))
+    const pos: XYZ = { x: cellX, y: floorY, z: cellZ }
+
+    if (isEdgePiece) {
+      const localX = point.x - cellX
+      const localZ = point.z - cellZ
+      const side = detectSide(localX, localZ)
+      return { pos, side }
+    }
+    return { pos }
   }
 
   function handlePointerMove(e: ThreeEvent<PointerEvent>) {
     e.stopPropagation()
-    setGhostPos(toGridPos(e.point))
+    setGhost(toGhostState(e.point))
   }
 
   function handlePointerLeave() {
-    setGhostPos(null)
+    setGhost(null)
   }
 
   function handleClick(e: ThreeEvent<MouseEvent>) {
     e.stopPropagation()
-    const pos = toGridPos(e.point)
-    if (canPlace(selectedPieceType, pos, pieces, coordinateIndex, config)) {
-      placePiece(selectedPieceType, pos, 0)
+    const state = toGhostState(e.point)
+    if (canPlace(selectedPieceType!, state.pos, pieces, coordinateIndex, config, state.side)) {
+      placePiece(selectedPieceType!, state.pos, 0, state.side)
     }
   }
 
-  const isValid = ghostPos ? canPlace(selectedPieceType, ghostPos, pieces, coordinateIndex, config) : false
+  const isValid = ghost
+    ? canPlace(selectedPieceType, ghost.pos, pieces, coordinateIndex, config, ghost.side)
+    : false
 
   return (
     <>
@@ -61,7 +80,14 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
         <planeGeometry args={[GRID_W, GRID_L]} />
         <meshBasicMaterial visible={false} />
       </mesh>
-      {ghostPos && <GhostPiece position={ghostPos} type={selectedPieceType} valid={isValid} />}
+      {ghost && (
+        <GhostPiece
+          position={ghost.pos}
+          type={selectedPieceType}
+          valid={isValid}
+          side={ghost.side}
+        />
+      )}
     </>
   )
 }
