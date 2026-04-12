@@ -149,4 +149,25 @@ describe('detectTriangleOffset', () => {
     const index = buildIndex(pieces)
     expect(detectTriangleOffset({ x: 2, y: 0, z: 5 }, index, pieces)).toEqual({ x: 0, z: 0 })
   })
+
+  it('offsets toward neighbor that offsets in a different direction (chain)', () => {
+    // square(2,0,5) → A(2,0,4) → B(1,0,4) → C(1,0,3)
+    // A is anchored (south=square). B offsets east toward A.
+    // C should offset south toward B (B offsets east, not back toward C).
+    const pieces = [
+      makePiece('h1', 'square_hull', 2, 0, 5),
+      makePiece('t1', 'triangle_hull', 2, 0, 4),  // A, anchored
+      makePiece('t2', 'triangle_hull', 1, 0, 4),  // B, offsets east toward A
+    ]
+    const index = buildIndex(pieces)
+    // C at (1,0,3) offsets south toward B
+    expect(detectTriangleOffset({ x: 1, y: 0, z: 3 }, index, pieces)).toEqual({ x: 0, z: 0.5 })
+  })
+
+  it('does not offset toward neighbor that would offset back toward us', () => {
+    // Two triangles with no anchor — neither should offset
+    const pieces = [makePiece('t1', 'triangle_hull', 3, 0, 5)]
+    const index = buildIndex(pieces)
+    expect(detectTriangleOffset({ x: 2, y: 0, z: 5 }, index, pieces)).toEqual({ x: 0, z: 0 })
+  })
 })
