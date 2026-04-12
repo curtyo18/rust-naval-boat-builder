@@ -1,6 +1,7 @@
 import type { XYZ, PieceSide } from '../types'
-import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition, getPieceSize } from './pieceGeometry'
+import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
+import CellMesh from './CellMesh'
 
 interface GhostPieceProps {
   position: XYZ
@@ -23,11 +24,9 @@ export default function GhostPiece({ position, type, valid, side }: GhostPiecePr
     )
   }
 
-  const size = getPieceSize(type)
   return (
-    <mesh position={worldPos}>
-      <boxGeometry args={size} />
-      <meshStandardMaterial color={color} opacity={0.45} transparent roughness={0.85} />
-    </mesh>
+    <group position={worldPos}>
+      <CellMesh type={type} color={color} opacity={0.45} roughness={0.85} />
+    </group>
   )
 }

@@ -1,6 +1,7 @@
 import { useStore } from '../store/useStore'
-import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition, getPieceSize } from './pieceGeometry'
+import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
+import CellMesh from './CellMesh'
 
 export default function PlacedPieces() {
   const pieces = useStore((s) => s.pieces)
@@ -42,18 +43,15 @@ export default function PlacedPieces() {
           )
         }
 
-        // Cell pieces use simple box geometry
-        const size = getPieceSize(piece.type)
+        // Cell pieces
         return (
-          <mesh key={piece.id} position={position} onClick={handleClick}>
-            <boxGeometry args={size} />
-            <meshStandardMaterial
+          <group key={piece.id} position={position} onClick={handleClick}>
+            <CellMesh
+              type={piece.type}
               color={color}
-              roughness={0.85}
               opacity={isSelectMode ? 0.8 : 1}
-              transparent={isSelectMode}
             />
-          </mesh>
+          </group>
         )
       })}
     </>
