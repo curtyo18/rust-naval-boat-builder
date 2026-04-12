@@ -6,7 +6,7 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import HullMesh from './HullMesh'
 import SceneGrid from './SceneGrid'
 import PlacedPieces from './PlacedPieces'
-import HitPlane from './HitPlane'
+import HitPlane, { TriHitPlane } from './HitPlane'
 import { useStore } from '../store/useStore'
 import piecesConfig from '../data/pieces-config.json'
 import type { PiecesConfig } from '../types'
@@ -59,7 +59,13 @@ function ActiveHitPlane() {
   }
 
   if (activeFloor === null) return null
-  return <HitPlane floorY={activeFloor} />
+
+  return (
+    <>
+      <HitPlane floorY={activeFloor} />
+      <TriHitPlane floorY={activeFloor} />
+    </>
+  )
 }
 
 export default function Viewport() {
