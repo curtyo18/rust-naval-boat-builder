@@ -2,6 +2,7 @@
   "square_hull": {
     "label": "Square Hull",
     "category": "hull",
+    "placementType": "cell",
     "floorConstraint": "ground_only",
     "maxCount": null,
     "cost": { "wood": 300, "lowGrade": 15 }
@@ -9,6 +10,7 @@
   "triangle_hull": {
     "label": "Triangle Hull",
     "category": "hull",
+    "placementType": "cell",
     "floorConstraint": "ground_only",
     "maxCount": null,
     "cost": { "wood": 150, "lowGrade": 8 }
@@ -16,6 +18,7 @@
   "floor_square": {
     "label": "Square Floor",
     "category": "floor",
+    "placementType": "cell",
     "floorConstraint": "upper_only",
     "maxCount": null,
     "cost": { "wood": 150, "lowGrade": 8 }
@@ -23,6 +26,7 @@
   "floor_triangle": {
     "label": "Triangle Floor",
     "category": "floor",
+    "placementType": "cell",
     "floorConstraint": "upper_only",
     "maxCount": null,
     "cost": { "wood": 75, "lowGrade": 4 }
@@ -30,6 +34,7 @@
   "floor_frame_square": {
     "label": "Square Floor Frame",
     "category": "floor",
+    "placementType": "cell",
     "floorConstraint": "upper_only",
     "maxCount": null,
     "cost": { "wood": 150, "lowGrade": 8 }
@@ -37,6 +42,7 @@
   "floor_frame_triangle": {
     "label": "Triangle Floor Frame",
     "category": "floor",
+    "placementType": "cell",
     "floorConstraint": "upper_only",
     "maxCount": null,
     "cost": { "wood": 75, "lowGrade": 4 }
@@ -44,6 +50,7 @@
   "wall": {
     "label": "Wall",
     "category": "structural",
+    "placementType": "edge",
     "floorConstraint": null,
     "maxCount": null,
     "cost": { "wood": 300, "lowGrade": 15 }
@@ -51,6 +58,7 @@
   "doorway": {
     "label": "Doorway",
     "category": "structural",
+    "placementType": "edge",
     "floorConstraint": null,
     "maxCount": null,
     "cost": { "wood": 210, "lowGrade": 11 }
@@ -58,6 +66,7 @@
   "window": {
     "label": "Window",
     "category": "structural",
+    "placementType": "edge",
     "floorConstraint": null,
     "maxCount": null,
     "cost": { "wood": 210, "lowGrade": 11 }
@@ -65,6 +74,7 @@
   "low_wall": {
     "label": "Low Wall",
     "category": "structural",
+    "placementType": "edge",
     "floorConstraint": null,
     "maxCount": null,
     "cost": { "wood": 150, "lowGrade": 8 }
@@ -72,6 +82,7 @@
   "low_cannon_wall": {
     "label": "Cannon Wall",
     "category": "structural",
+    "placementType": "edge",
     "floorConstraint": null,
     "maxCount": null,
     "cost": { "wood": 150, "lowGrade": 8 }
@@ -79,6 +90,7 @@
   "low_wall_barrier": {
     "label": "Low Barrier",
     "category": "structural",
+    "placementType": "edge",
     "floorConstraint": null,
     "maxCount": null,
     "cost": { "wood": 150, "lowGrade": 8 }
@@ -86,6 +98,7 @@
   "boat_stairs": {
     "label": "Boat Stairs",
     "category": "structural",
+    "placementType": "edge",
     "floorConstraint": null,
     "maxCount": null,
     "cost": { "wood": 300, "lowGrade": 15 }
@@ -93,6 +106,7 @@
   "anchor": {
     "label": "Anchor",
     "category": "deployable",
+    "placementType": "cell",
     "floorConstraint": "ground_only",
     "maxCount": null,
     "cost": { "wood": 250 }
@@ -100,6 +114,7 @@
   "steering_wheel": {
     "label": "Steering Wheel",
     "category": "deployable",
+    "placementType": "cell",
     "floorConstraint": null,
     "maxCount": null,
     "cost": { "wood": 100 }
@@ -107,6 +122,7 @@
   "cannon": {
     "label": "Cannon",
     "category": "deployable",
+    "placementType": "cell",
     "floorConstraint": null,
     "maxCount": null,
     "cost": { "wood": 100, "metalFragments": 200 }
@@ -114,6 +130,7 @@
   "sail": {
     "label": "Sail",
     "category": "deployable",
+    "placementType": "cell",
     "floorConstraint": null,
     "maxCount": 10,
     "cost": { "wood": 150, "tarp": 1 }
@@ -121,6 +138,7 @@
   "boat_engine": {
     "label": "Boat Engine",
     "category": "deployable",
+    "placementType": "cell",
     "floorConstraint": "ground_only",
     "maxCount": null,
     "cost": { "highQualityMetal": 5, "gears": 2, "lowGrade": 50 }

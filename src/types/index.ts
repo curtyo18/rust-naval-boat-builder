@@ -1,5 +1,3 @@
-// src/types/index.ts
-
 export interface XYZ {
   x: number
   y: number
@@ -8,11 +6,16 @@ export interface XYZ {
 
 export type PieceRotation = 0 | 90 | 180 | 270
 
+export type PieceSide = 'north' | 'south' | 'east' | 'west'
+
+export type PlacementType = 'cell' | 'edge'
+
 export interface PlacedPiece {
   id: string
   type: string
   position: XYZ
   rotation: PieceRotation
+  side?: PieceSide // only set for edge pieces (walls, doorways, etc.)
 }
 
 export type FloorConstraint = 'ground_only' | 'upper_only' | null
@@ -31,6 +34,7 @@ export type PieceCategory = 'hull' | 'structural' | 'floor' | 'deployable'
 export interface PieceConfig {
   label: string
   category: PieceCategory
+  placementType: PlacementType
   floorConstraint: FloorConstraint
   maxCount: number | null
   cost: MaterialCosts
