@@ -5,6 +5,7 @@ import { useRef, useCallback, useEffect } from 'react'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import HullMesh from './HullMesh'
 import SceneGrid from './SceneGrid'
+import PlacedPieces from './PlacedPieces'
 import { useStore } from '../store/useStore'
 
 const SCENE_CENTER: [number, number, number] = [2.5, 0, 5.5]
@@ -44,6 +45,7 @@ export default function Viewport() {
       <directionalLight position={[5, 10, 5]} intensity={0.8} />
       <HullMesh />
       <SceneGrid />
+      <PlacedPieces />
       <SceneSetup />
     </Canvas>
   )
