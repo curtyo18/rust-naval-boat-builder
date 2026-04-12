@@ -1,9 +1,16 @@
-import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide } from '../types'
-import { toKey, toEdgeKey } from './coordinateKey'
+import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord } from '../types'
+import { toKey, toEdgeKey, toTriKey } from './coordinateKey'
 
 const GRID_X = 5
 const GRID_Z = 11
 const GRID_Y = 3
+const TRI_HEX_RADIUS = 3
+
+export function isTriInBounds(hq: number, hr: number, y: number): boolean {
+  if (y < 0 || y >= GRID_Y) return false
+  const dist = (Math.abs(hq) + Math.abs(hr) + Math.abs(-hq - hr)) / 2
+  return dist <= TRI_HEX_RADIUS
+}
 
 export function isInBounds(pos: XYZ): boolean {
   return pos.x >= 0 && pos.x < GRID_X
@@ -46,7 +53,19 @@ export function canPlace(
   coordinateIndex: Map<string, string>,
   config: PiecesConfig,
   side?: PieceSide,
+  triCoord?: TriCoord,
 ): boolean {
+  // Triangle placement path
+  if (triCoord) {
+    if (!isTriInBounds(triCoord.hq, triCoord.hr, position.y)) return false
+    const pieceConfig = config[type]
+    if (!pieceConfig) return false
+    if (!isFloorAllowed(position, pieceConfig.floorConstraint)) return false
+    const key = toTriKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot)
+    if (coordinateIndex.has(key)) return false
+    return true
+  }
+
   if (!isInBounds(position)) return false
   const pieceConfig = config[type]
   if (!pieceConfig) return false
