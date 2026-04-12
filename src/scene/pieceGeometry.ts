@@ -110,11 +110,12 @@ export function detectTriangleRotation(
     south: 180,
     west: 90,
   }
-  const slopeRotation: Record<string, 0 | 90 | 180 | 270> = {
-    north: 180,
-    east: 90,
-    south: 0,
-    west: 270,
+  // Opposite rotation: complement the neighbor's tip direction
+  const oppositeRotation: Record<number, 0 | 90 | 180 | 270> = {
+    0: 180,    // tip south → tip north
+    180: 0,    // tip north → tip south
+    90: 270,   // tip east → tip west
+    270: 90,   // tip west → tip east
   }
 
   const directions = [
@@ -138,14 +139,14 @@ export function detectTriangleRotation(
     }
   }
 
-  // Second pass: triangle neighbors (slope faces toward them)
-  for (const { dx, dz, dir } of directions) {
+  // Second pass: triangle neighbors (complement their rotation to alternate)
+  for (const { dx, dz } of directions) {
     const key = `${pos.x + dx},${pos.y},${pos.z + dz}`
     const neighborId = coordinateIndex.get(key)
     if (neighborId && pieces) {
       const neighbor = pieces.find((p) => p.id === neighborId)
       if (neighbor && isTriangleType(neighbor.type)) {
-        return slopeRotation[dir]
+        return oppositeRotation[neighbor.rotation] ?? 0
       }
     }
   }

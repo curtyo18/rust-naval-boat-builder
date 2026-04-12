@@ -57,16 +57,22 @@ describe('detectTriangleRotation', () => {
     expect(detectTriangleRotation({ x: 2, y: 0, z: 5 }, index, pieces)).toBe(90)
   })
 
-  it('returns slope north (180) when triangle neighbor is north', () => {
-    const pieces = [makePiece('t1', 'triangle_hull', 2, 0, 4)]
+  it('complements triangle neighbor rotation (neighbor tip south → tip north)', () => {
+    const pieces = [makePiece('t1', 'triangle_hull', 2, 0, 4)] // rotation 0 = tip south
     const index = buildIndex(pieces)
-    expect(detectTriangleRotation({ x: 2, y: 0, z: 5 }, index, pieces)).toBe(180)
+    expect(detectTriangleRotation({ x: 2, y: 0, z: 5 }, index, pieces)).toBe(180) // tip north
   })
 
-  it('returns slope east (90) when triangle neighbor is east', () => {
-    const pieces = [makePiece('t1', 'triangle_hull', 3, 0, 5)]
-    const index = buildIndex(pieces)
-    expect(detectTriangleRotation({ x: 2, y: 0, z: 5 }, index, pieces)).toBe(90)
+  it('complements triangle neighbor rotation (neighbor tip north → tip south)', () => {
+    const neighbor: PlacedPiece = { id: 't1', type: 'triangle_hull', position: { x: 3, y: 0, z: 5 }, rotation: 180 }
+    const index = buildIndex([neighbor])
+    expect(detectTriangleRotation({ x: 2, y: 0, z: 5 }, index, [neighbor])).toBe(0) // tip south
+  })
+
+  it('complements triangle neighbor rotation (neighbor tip east → tip west)', () => {
+    const neighbor: PlacedPiece = { id: 't1', type: 'triangle_hull', position: { x: 3, y: 0, z: 5 }, rotation: 90 }
+    const index = buildIndex([neighbor])
+    expect(detectTriangleRotation({ x: 2, y: 0, z: 5 }, index, [neighbor])).toBe(270) // tip west
   })
 
   it('prefers square over triangle neighbor', () => {
