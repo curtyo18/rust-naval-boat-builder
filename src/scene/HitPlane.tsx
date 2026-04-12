@@ -2,9 +2,9 @@ import { useState } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useStore } from '../store/useStore'
 import { canPlace } from '../utils/validation'
-import { detectSide } from './pieceGeometry'
+import { detectSide, detectTriangleRotation } from './pieceGeometry'
 import piecesConfig from '../data/pieces-config.json'
-import type { PiecesConfig, XYZ, PieceSide } from '../types'
+import type { PiecesConfig, XYZ, PieceSide, PieceRotation } from '../types'
 import GhostPiece from './GhostPiece'
 
 const config = piecesConfig as PiecesConfig
@@ -18,6 +18,7 @@ interface HitPlaneProps {
 interface GhostState {
   pos: XYZ
   side?: PieceSide
+  rotation: PieceRotation
 }
 
 export default function HitPlane({ floorY }: HitPlaneProps) {
@@ -32,6 +33,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
   const pieceConfig = config[selectedPieceType]
   if (!pieceConfig) return null
   const isEdgePiece = pieceConfig.placementType === 'edge'
+  const isTriangle = selectedPieceType!.includes('triangle')
 
   function toGhostState(point: { x: number; z: number }): GhostState {
     const cellX = Math.max(0, Math.min(GRID_W - 1, Math.floor(point.x)))
@@ -42,9 +44,14 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
       const localX = point.x - cellX
       const localZ = point.z - cellZ
       const side = detectSide(localX, localZ)
-      return { pos, side }
+      return { pos, side, rotation: 0 }
     }
-    return { pos }
+
+    const rotation = isTriangle
+      ? detectTriangleRotation(pos, coordinateIndex)
+      : 0
+
+    return { pos, rotation }
   }
 
   function handlePointerMove(e: ThreeEvent<PointerEvent>) {
@@ -60,7 +67,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
     e.stopPropagation()
     const state = toGhostState(e.point)
     if (canPlace(selectedPieceType!, state.pos, pieces, coordinateIndex, config, state.side)) {
-      placePiece(selectedPieceType!, state.pos, 0, state.side)
+      placePiece(selectedPieceType!, state.pos, state.rotation, state.side)
     }
   }
 
@@ -86,6 +93,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
           type={selectedPieceType}
           valid={isValid}
           side={ghost.side}
+          rotation={ghost.rotation}
         />
       )}
     </>
