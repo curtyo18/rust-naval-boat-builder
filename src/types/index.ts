@@ -8,6 +8,16 @@ export type PieceRotation = 0 | 90 | 180 | 270
 
 export type PieceSide = 'north' | 'south' | 'east' | 'west'
 
+export type TriSlot = 0 | 1 | 2 | 3 | 4 | 5
+
+export type TriEdgeIndex = 0 | 1 | 2
+
+export interface TriCoord {
+  hq: number
+  hr: number
+  slot: TriSlot
+}
+
 export type PlacementType = 'cell' | 'edge'
 
 export interface PlacedPiece {
@@ -16,6 +26,8 @@ export interface PlacedPiece {
   position: XYZ
   rotation: PieceRotation
   side?: PieceSide // only set for edge pieces (walls, doorways, etc.)
+  triCoord?: TriCoord
+  triEdge?: TriEdgeIndex
 }
 
 export type FloorConstraint = 'ground_only' | 'upper_only' | null
