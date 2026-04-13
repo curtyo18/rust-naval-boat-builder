@@ -14,3 +14,28 @@
   flex: 1;
   position: relative;
 }
+
+.app .topbar {
+  transform: scale(var(--ui-scale, 1));
+  transform-origin: top left;
+}
+
+.app .sidebar {
+  transform: scale(var(--ui-scale, 1));
+  transform-origin: top left;
+}
+
+.app .cost-widget {
+  transform: scale(var(--ui-scale, 1));
+  transform-origin: top right;
+}
+
+.app .camera-hints {
+  transform: scale(var(--ui-scale, 1));
+  transform-origin: bottom left;
+}
+
+.app .ui-scale-slider {
+  transform: scale(var(--ui-scale, 1));
+  transform-origin: bottom right;
+}

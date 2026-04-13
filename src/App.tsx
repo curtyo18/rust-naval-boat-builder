@@ -5,6 +5,7 @@ import TopBar from './components/TopBar'
 import Sidebar from './components/Sidebar'
 import CostWidget from './components/CostWidget'
 import CameraHints from './components/CameraHints'
+import UIScaleSlider from './components/UIScaleSlider'
 import Viewport from './scene/Viewport'
 import { useStore } from './store/useStore'
 import { encodeState } from './utils/serialization'
@@ -22,6 +23,7 @@ export default function App() {
   const deleteSelectedPiece = useStore((s) => s.deleteSelectedPiece)
   const selectPiece = useStore((s) => s.selectPiece)
   const [shareLabel, setShareLabel] = useState('Share')
+  const uiScale = useStore((s) => s.uiScale)
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -63,7 +65,7 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app" style={{ '--ui-scale': uiScale / 100 } as React.CSSProperties}>
       <TopBar
         onResetCamera={() => cameraResetFn?.()}
         onShare={handleShare}
@@ -76,6 +78,7 @@ export default function App() {
           <Viewport />
           <CostWidget />
           <CameraHints />
+          <UIScaleSlider />
         </div>
       </div>
     </div>
