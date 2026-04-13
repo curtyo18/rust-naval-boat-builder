@@ -1,5 +1,6 @@
 import type { PlacedPiece, PiecesConfig, MaterialCosts, MaterialKey } from '../types'
-import { SAIL_POWER, ENGINE_POWER, MAX_SPEED_RATIO, MAX_SAILS, MAX_ENGINES } from '../data/boat-constants'
+import { SAIL_POWER, ENGINE_POWER, MAX_SPEED_RATIO, MAX_SAILS, MAX_ENGINES, EXPLOSIVES } from '../data/boat-constants'
+import type { ExplosiveKey } from '../data/boat-constants'
 
 export interface BoatStats {
   totalHp: number
@@ -43,6 +44,21 @@ export function computeSpeedInfo(totalMass: number): SpeedInfo {
   const canAchieveMaxSpeed = requiredPower <= maxPower
 
   return { requiredPower, sailsNeeded, canAchieveWithSails, enginesNeeded, canAchieveMaxSpeed }
+}
+
+export interface RaidCostEntry {
+  key: string
+  label: string
+  count: number
+  sulfur: number
+}
+
+export function computeRaidCost(totalHp: number): RaidCostEntry[] {
+  return (Object.keys(EXPLOSIVES) as ExplosiveKey[]).map((key) => {
+    const { label, damage, sulfur } = EXPLOSIVES[key]
+    const count = totalHp === 0 ? 0 : Math.ceil(totalHp / damage)
+    return { key, label, count, sulfur: count * sulfur }
+  })
 }
 
 export function computeTotalCosts(pieces: PlacedPiece[], config: PiecesConfig): MaterialCosts {

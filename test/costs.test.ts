@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeTotalCosts, computeBoatStats, computeSpeedInfo } from '../src/utils/costs'
+import { computeTotalCosts, computeBoatStats, computeSpeedInfo, computeRaidCost } from '../src/utils/costs'
 import type { PlacedPiece, PiecesConfig } from '../src/types'
 
 const config: PiecesConfig = {
@@ -114,5 +114,35 @@ describe('computeSpeedInfo', () => {
     // 5883 * 12.75 = 75008.25 > 75000
     const result = computeSpeedInfo(5883)
     expect(result.canAchieveMaxSpeed).toBe(false)
+  })
+})
+
+describe('computeRaidCost', () => {
+  it('calculates correct counts and sulfur for each explosive', () => {
+    // 1000 hp
+    // C4: ceil(1000/495) = 3 -> 3 * 2200 = 6600
+    // Cannonball: ceil(1000/51) = 20 -> 20 * 15 = 300
+    // Torpedo: ceil(1000/36) = 28 -> 28 * 12 = 336
+    const result = computeRaidCost(1000)
+    expect(result).toEqual([
+      { key: 'c4', label: 'C4', count: 3, sulfur: 6600 },
+      { key: 'cannonball', label: 'Cannonball', count: 20, sulfur: 300 },
+      { key: 'torpedo', label: 'Torpedo', count: 28, sulfur: 336 },
+    ])
+  })
+
+  it('returns zeros for zero hp', () => {
+    const result = computeRaidCost(0)
+    expect(result).toEqual([
+      { key: 'c4', label: 'C4', count: 0, sulfur: 0 },
+      { key: 'cannonball', label: 'Cannonball', count: 0, sulfur: 0 },
+      { key: 'torpedo', label: 'Torpedo', count: 0, sulfur: 0 },
+    ])
+  })
+
+  it('rounds up partial explosive counts', () => {
+    // 496 hp -> C4: ceil(496/495) = 2
+    const result = computeRaidCost(496)
+    expect(result[0]).toEqual({ key: 'c4', label: 'C4', count: 2, sulfur: 4400 })
   })
 })
