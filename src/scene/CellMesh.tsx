@@ -19,9 +19,17 @@ export default function CellMesh({ type, color, opacity = 1, roughness = 0.7, an
   const woodTex = getWoodTexture()
   const mat = { color, opacity, transparent, roughness, metalness: 0.05, map: woodTex }
 
-  if (type === 'triangle_hull' || type === 'floor_triangle' || type === 'floor_frame_triangle') {
+  if (type === 'triangle_hull' || type === 'floor_triangle') {
     const h = type === 'triangle_hull' ? 0.15 : 0.1
     return <TrianglePrism height={h} mat={mat} angleDeg={angleDeg ?? 210} />
+  }
+
+  if (type === 'floor_frame_triangle') {
+    return <TriangleFramePrism height={0.1} mat={mat} angleDeg={angleDeg ?? 210} />
+  }
+
+  if (type === 'floor_frame_square') {
+    return <SquareFloorFrame mat={mat} />
   }
 
   const shape = getCellPieceShape(type)
@@ -122,6 +130,72 @@ function TrianglePrism({ height, mat, angleDeg }: { height: number; mat: MatProp
     geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
     geo.computeVertexNormals()
+    return geo
+  }, [height, angleDeg])
+
+  return (
+    <mesh geometry={geometry}>
+      <meshStandardMaterial {...mat} side={THREE.DoubleSide} />
+    </mesh>
+  )
+}
+
+/**
+ * Square floor frame — 4 border strips forming a rectangular cutout.
+ */
+function SquareFloorFrame({ mat }: { mat: MatProps }) {
+  const FRAME_T = 0.12
+  const H = 0.1
+  const inner = 1 - 2 * FRAME_T
+
+  const strips: { size: [number, number, number]; pos: [number, number, number] }[] = [
+    { size: [1, H, FRAME_T], pos: [0, 0, -(0.5 - FRAME_T / 2)] },
+    { size: [1, H, FRAME_T], pos: [0, 0, 0.5 - FRAME_T / 2] },
+    { size: [FRAME_T, H, inner], pos: [-(0.5 - FRAME_T / 2), 0, 0] },
+    { size: [FRAME_T, H, inner], pos: [0.5 - FRAME_T / 2, 0, 0] },
+  ]
+
+  return (
+    <group>
+      {strips.map((s, i) => (
+        <mesh key={i} position={s.pos}>
+          <boxGeometry args={s.size} />
+          <meshStandardMaterial {...mat} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/**
+ * Triangle floor frame — outer triangle with inner cutout using ExtrudeGeometry.
+ */
+function TriangleFramePrism({ height, mat, angleDeg }: { height: number; mat: MatProps; angleDeg: number }) {
+  const geometry = useMemo(() => {
+    const verts = getEquilateralVertices(angleDeg)
+    const [a, b, c] = verts
+
+    // Outer triangle shape (XY plane, Y maps to world Z)
+    const shape = new THREE.Shape()
+    shape.moveTo(a[0], a[1])
+    shape.lineTo(b[0], b[1])
+    shape.lineTo(c[0], c[1])
+    shape.closePath()
+
+    // Inner triangle scaled toward centroid
+    const cx = (a[0] + b[0] + c[0]) / 3
+    const cy = (a[1] + b[1] + c[1]) / 3
+    const s = 0.55
+    const hole = new THREE.Path()
+    hole.moveTo(cx + (a[0] - cx) * s, cy + (a[1] - cy) * s)
+    hole.lineTo(cx + (b[0] - cx) * s, cy + (b[1] - cy) * s)
+    hole.lineTo(cx + (c[0] - cx) * s, cy + (c[1] - cy) * s)
+    hole.closePath()
+    shape.holes.push(hole)
+
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false })
+    // Rotate so extrusion goes along Y (up) instead of Z
+    geo.rotateX(-Math.PI / 2)
     return geo
   }, [height, angleDeg])
 

@@ -68,6 +68,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
   }
 
   function handleClick(e: ThreeEvent<MouseEvent>) {
+    if (e.delta > 5) return
     e.stopPropagation()
     const state = toGhostState(e.point)
     if (canPlace(selectedPieceType!, state.pos, pieces, coordinateIndex, config, state.side)) {
@@ -421,6 +422,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
   }
 
   function handleClick(e: ThreeEvent<MouseEvent>) {
+    if (e.delta > 5) return
     // Square cell snapping to triangle edges
     if (isSquareSnapType) {
       const sqSnap = findTriEdgeForSquareSnap(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
