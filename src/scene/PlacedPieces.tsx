@@ -1,8 +1,8 @@
 import { useStore } from '../store/useStore'
-import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition, isTriangleType } from './pieceGeometry'
+import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition, isTriangleType, getCellPieceShape } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
-import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg } from '../utils/hexGrid'
+import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg } from '../utils/hexGrid'
 
 export default function PlacedPieces() {
   const pieces = useStore((s) => s.pieces)
@@ -30,6 +30,51 @@ export default function PlacedPieces() {
             e.stopPropagation()
             selectPiece(isSelected ? null : piece.id)
           }
+        }
+
+        // Edge pieces on snap-placed squares
+        if (piece.squareSnap && piece.side) {
+          const { worldX, worldZ, rotDeg } = piece.squareSnap
+          const wp = squareSnapEdgeWorldPosition(worldX, worldZ, rotDeg, piece.position.y, piece.side)
+          const edgeRotDeg = squareSnapEdgeRotationDeg(rotDeg, piece.side)
+          const rotRad = (edgeRotDeg * Math.PI) / 180
+          const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 0.95
+          return (
+            <group
+              key={piece.id}
+              position={[wp.x, wp.y + wallH / 2, wp.z]}
+              rotation={[0, rotRad, 0]}
+              onClick={handleClick}
+            >
+              <EdgeMesh
+                type={piece.type}
+                side="north"
+                color={color}
+                opacity={isSelectMode ? 0.8 : 1}
+              />
+            </group>
+          )
+        }
+
+        // Squares snapped to a triangle edge
+        if (piece.squareSnap) {
+          const { worldX, worldZ, rotDeg } = piece.squareSnap
+          const shape = getCellPieceShape(piece.type)
+          const rotRad = (rotDeg * Math.PI) / 180
+          return (
+            <group
+              key={piece.id}
+              position={[worldX, piece.position.y + shape.offset[1], worldZ]}
+              rotation={[0, rotRad, 0]}
+              onClick={handleClick}
+            >
+              <CellMesh
+                type={piece.type}
+                color={color}
+                opacity={isSelectMode ? 0.8 : 1}
+              />
+            </group>
+          )
         }
 
         // Edge pieces on snap-placed triangles

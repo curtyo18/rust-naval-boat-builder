@@ -1,5 +1,5 @@
-import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget } from '../types'
-import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey } from './coordinateKey'
+import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget } from '../types'
+import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from './coordinateKey'
 
 const GRID_X = 5
 const GRID_Z = 11
@@ -133,6 +133,44 @@ export function canPlaceTriSnapEdge(
   if (!coordinateIndex.has(foundKey)) return false
   // Must not already have an edge piece here
   const edgeKey = toTriSnapEdgeKey(snap.worldX, y, snap.worldZ, edge)
+  if (coordinateIndex.has(edgeKey)) return false
+  return true
+}
+
+export function canPlaceSquareSnap(
+  type: string,
+  snap: SquareSnapTarget & { y: number },
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+  config: PiecesConfig,
+): boolean {
+  const pieceConfig = config[type]
+  if (!pieceConfig) return false
+  if (!isFloorAllowed({ x: 0, y: snap.y, z: 0 }, pieceConfig.floorConstraint)) return false
+  if (isMaxCountReached(type, pieces, config)) return false
+  const snapKey = toSquareSnapKey(snap.worldX, snap.y, snap.worldZ)
+  if (coordinateIndex.has(snapKey)) return false
+  return true
+}
+
+export function canPlaceSquareSnapEdge(
+  type: string,
+  snap: SquareSnapTarget,
+  y: number,
+  side: PieceSide,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+  config: PiecesConfig,
+): boolean {
+  const pieceConfig = config[type]
+  if (!pieceConfig) return false
+  if (!isFloorAllowed({ x: 0, y, z: 0 }, pieceConfig.floorConstraint)) return false
+  if (isMaxCountReached(type, pieces, config)) return false
+  // Must have a snap-placed square foundation at this position
+  const foundKey = toSquareSnapKey(snap.worldX, y, snap.worldZ)
+  if (!coordinateIndex.has(foundKey)) return false
+  // Must not already have an edge piece here
+  const edgeKey = toSquareSnapEdgeKey(snap.worldX, y, snap.worldZ, side)
   if (coordinateIndex.has(edgeKey)) return false
   return true
 }
