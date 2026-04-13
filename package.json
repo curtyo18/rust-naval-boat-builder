@@ -1,7 +1,7 @@
 {
-  "name": "rust-temp",
+  "name": "rust-naval-boat-builder",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "kill-port 5173 2>nul & vite",
