@@ -4,23 +4,23 @@
   right: 12px;
   display: flex;
   flex-direction: column;
-  padding: 14px 16px;
+  padding: 10px 12px;
   background: rgba(0, 0, 0, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
   pointer-events: none;
-  min-width: 200px;
+  min-width: 170px;
   gap: 0;
 }
 
 /* Section headers */
 .stats-widget__section-header {
   color: #888;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 10px 0 6px;
+  padding: 8px 0 4px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -40,8 +40,8 @@
 }
 
 .stats-widget__info-icon {
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   color: #666;
   flex-shrink: 0;
 }
@@ -55,14 +55,14 @@
   background: rgba(0, 0, 0, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 4px;
-  padding: 8px 10px;
+  padding: 6px 8px;
   color: #ccc;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
   text-transform: none;
   letter-spacing: normal;
   line-height: 1.4;
-  width: 220px;
+  width: 190px;
   z-index: 10;
 }
 
@@ -75,17 +75,17 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 3px 0;
+  padding: 2px 0;
 }
 
 .stats-widget__row-label {
   color: #aaa;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .stats-widget__row-value {
   color: #fff;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -100,12 +100,12 @@
 
 .stats-widget__speed-ok {
   color: #4caf50;
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .stats-widget__speed-fail {
   color: #f44336;
-  font-size: 16px;
+  font-size: 13px;
 }
 
 /* Raid cost rows */
@@ -118,12 +118,12 @@
 
 .stats-widget__raid-count {
   color: #aaa;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .stats-widget__raid-sulfur {
   color: #e8d44d;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -132,25 +132,25 @@
 .stats-widget__material {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 3px 0;
+  gap: 8px;
+  padding: 2px 0;
 }
 
 .stats-widget__material-icon {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
 }
 
 .stats-widget__material-amount {
   color: #fff;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  min-width: 48px;
+  min-width: 40px;
 }
 
 .stats-widget__material-label {
   color: #aaa;
-  font-size: 13px;
+  font-size: 11px;
 }

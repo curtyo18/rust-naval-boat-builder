@@ -1,6 +1,6 @@
 /* src/components/Sidebar.css */
 .sidebar {
-  width: 260px;
+  width: 215px;
   flex-shrink: 0;
   background: #141414;
   border-right: 1px solid #333;
@@ -11,16 +11,16 @@
 
 .sidebar__pieces {
   flex: 1;
-  padding: 12px 0;
+  padding: 10px 0;
 }
 
 .sidebar__group {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .sidebar__group-label {
-  padding: 10px 20px 4px;
-  font-size: 13px;
+  padding: 8px 16px 3px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #666;
@@ -29,12 +29,12 @@
 .sidebar__piece {
   display: block;
   width: 100%;
-  padding: 10px 20px;
+  padding: 8px 16px;
   text-align: left;
   background: none;
   border: none;
   color: #ccc;
-  font-size: 16px;
+  font-size: 13px;
 }
 
 .sidebar__piece:hover {
@@ -48,16 +48,16 @@
 }
 
 .sidebar__display {
-  padding: 12px 20px 16px;
+  padding: 10px 16px 12px;
   border-top: 1px solid #333;
 }
 
 .sidebar__toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  font-size: 14px;
+  gap: 6px;
+  padding: 5px 0;
+  font-size: 12px;
   color: #aaa;
   cursor: pointer;
 }
@@ -67,24 +67,24 @@
 }
 
 .sidebar__floors {
-  padding: 12px 20px 16px;
+  padding: 10px 16px 12px;
   border-top: 1px solid #333;
 }
 
 .sidebar__floor-toggles {
   display: flex;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .sidebar__floor-btn {
   flex: 1;
-  padding: 10px 0;
+  padding: 8px 0;
   background: #333;
   border: 1px solid #555;
   border-radius: 4px;
   color: #888;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .sidebar__floor-btn--active {
@@ -94,8 +94,8 @@
 }
 
 .sidebar__floor-hint {
-  margin-top: 8px;
-  font-size: 11px;
+  margin-top: 6px;
+  font-size: 10px;
   color: #888;
   line-height: 1.3;
 }

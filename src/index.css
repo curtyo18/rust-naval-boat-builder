@@ -8,7 +8,7 @@ html, body, #root {
   height: 100%;
   overflow: hidden;
   font-family: system-ui, -apple-system, sans-serif;
-  font-size: 14px;
+  font-size: 12px;
   background: #1a1a1a;
   color: #e0e0e0;
 }

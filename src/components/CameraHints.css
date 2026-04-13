@@ -4,25 +4,25 @@
   left: 10px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 8px 12px;
+  gap: 2px;
+  padding: 6px 10px;
   background: rgba(0, 0, 0, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
   pointer-events: none;
-  font-size: 12px;
+  font-size: 10px;
   color: #999;
   line-height: 1.4;
 }
 
 .camera-hints__row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .camera-hints__key {
   color: #ccc;
-  min-width: 110px;
+  min-width: 90px;
   text-align: right;
 }
 
