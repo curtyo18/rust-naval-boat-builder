@@ -6,7 +6,7 @@ import { useStore } from '../store/useStore'
 
 const config = piecesConfig as PiecesConfig
 
-const CATEGORY_ORDER: PieceCategory[] = ['hull', 'structural', 'floor', 'deployable']
+const CATEGORY_ORDER: PieceCategory[] = ['hull', 'structural', 'floor']
 const CATEGORY_LABELS: Record<PieceCategory, string> = {
   hull: 'Hull',
   structural: 'Structural',

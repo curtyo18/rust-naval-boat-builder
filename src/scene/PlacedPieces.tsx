@@ -132,7 +132,7 @@ export default function PlacedPieces() {
           const wp = squareSnapEdgeWorldPosition(worldX, worldZ, rotDeg, piece.position.y, piece.side)
           const edgeRotDeg = squareSnapEdgeRotationDeg(rotDeg, piece.side)
           const rotRad = (edgeRotDeg * Math.PI) / 180
-          const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 0.95
+          const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 1.0
           const canStack = isEdgePlacement && piece.position.y < 1
           const canFloor = isSquareFloor && piece.position.y < 2
           const canInteract = canStack || canFloor
@@ -152,7 +152,7 @@ export default function PlacedPieces() {
           const edgeGhostWp = canStack && isTarget
             ? squareSnapEdgeWorldPosition(worldX, worldZ, rotDeg, piece.position.y + 1, piece.side)
             : null
-          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 0.95
+          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 1.0
           // Floor ghost
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
@@ -213,7 +213,7 @@ export default function PlacedPieces() {
           const wp = triSnapEdgeWorldPosition(worldX, worldZ, angleDeg, piece.position.y, piece.triEdge)
           const rotDeg = triSnapEdgeRotationDeg(worldX, worldZ, angleDeg, piece.triEdge)
           const rotRad = (rotDeg * Math.PI) / 180
-          const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 0.95
+          const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 1.0
           const canStack = isEdgePlacement && piece.position.y < 1
           const canFloor = isTriFloor && piece.position.y < 2
           const canInteract = canStack || canFloor
@@ -232,7 +232,7 @@ export default function PlacedPieces() {
           const edgeGhostWp = canStack && isTarget
             ? triSnapEdgeWorldPosition(worldX, worldZ, angleDeg, piece.position.y + 1, piece.triEdge)
             : null
-          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 0.95
+          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 1.0
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
             ? (PIECE_COLORS[selectedPieceType!] ?? DEFAULT_COLOR) : '#ff3333'
@@ -284,7 +284,7 @@ export default function PlacedPieces() {
           const wp = triEdgeWorldPosition(hq, piece.position.y, hr, slot, piece.triEdge)
           const rotDeg = triEdgeRotationDeg(slot, piece.triEdge)
           const rotRad = (rotDeg * Math.PI) / 180
-          const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 0.95
+          const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 1.0
           const canStack = isEdgePlacement && piece.position.y < 1
           const canFloor = isTriFloor && piece.position.y < 2
           const canInteract = canStack || canFloor
@@ -303,7 +303,7 @@ export default function PlacedPieces() {
           const edgeGhostWp = canStack && isTarget
             ? triEdgeWorldPosition(hq, piece.position.y + 1, hr, slot, piece.triEdge)
             : null
-          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 0.95
+          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 1.0
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
             ? (PIECE_COLORS[selectedPieceType!] ?? DEFAULT_COLOR) : '#ff3333'

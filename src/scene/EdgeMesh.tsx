@@ -18,7 +18,7 @@ interface EdgeMeshProps {
 
 const THICKNESS = 0.08
 const WALL_W = 1
-const WALL_H = 0.95
+const WALL_H = 1.0
 
 /**
  * Renders edge pieces with distinct geometry per type.
@@ -96,9 +96,9 @@ interface FrameProps {
  * Opening is ~40% wide × ~35% tall, centered vertically.
  */
 function WindowFrame({ isNS, mat }: FrameProps) {
-  const openW = 0.38   // opening width
-  const openH = 0.33   // opening height
-  const sillH = 0.35   // height of bottom sill from wall base
+  const openW = 0.55   // opening width
+  const openH = 0.45   // opening height
+  const sillH = 0.28   // height of bottom sill from wall base
   const topH = WALL_H - sillH - openH  // lintel height
   const sideW = (WALL_W - openW) / 2   // each side pillar width
 

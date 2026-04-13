@@ -3,9 +3,9 @@ import './CameraHints.css'
 const CONTROLS = [
   { key: 'Left-click drag', action: 'Rotate' },
   { key: 'Scroll', action: 'Zoom' },
-  { key: 'Middle-click drag', action: 'Zoom' },
-  { key: 'Ctrl + Left drag', action: 'Pan' },
   { key: 'Right-click drag', action: 'Pan' },
+  { key: 'Ctrl + Z', action: 'Undo' },
+  { key: 'Ctrl + Y', action: 'Redo' },
 ]
 
 export default function CameraHints() {

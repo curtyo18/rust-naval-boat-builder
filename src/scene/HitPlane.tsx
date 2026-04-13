@@ -815,7 +815,7 @@ function TriEdgeGhostPiece({ type, triCoord, triEdge, y, valid }: {
   const wp = triEdgeWorldPosition(hq, y, hr, slot, triEdge)
   const rotDeg = triEdgeRotationDeg(slot, triEdge)
   const rotRad = (rotDeg * Math.PI) / 180
-  const wallH = type.includes('low') || type.includes('barrier') ? 0.33 : 0.95
+  const wallH = type.includes('low') || type.includes('barrier') ? 0.33 : 1.0
 
   return (
     <group position={[wp.x, wp.y + wallH / 2, wp.z]} rotation={[0, rotRad, 0]}>
@@ -833,7 +833,7 @@ function TriSnapEdgeGhostPiece({ type, snapEdge, valid }: {
   const wp = triSnapEdgeWorldPosition(worldX, worldZ, angleDeg, snapEdge.y, snapEdge.edge)
   const rotDeg = triSnapEdgeRotationDeg(worldX, worldZ, angleDeg, snapEdge.edge)
   const rotRad = (rotDeg * Math.PI) / 180
-  const wallH = type.includes('low') || type.includes('barrier') ? 0.33 : 0.95
+  const wallH = type.includes('low') || type.includes('barrier') ? 0.33 : 1.0
 
   return (
     <group position={[wp.x, wp.y + wallH / 2, wp.z]} rotation={[0, rotRad, 0]}>
@@ -869,7 +869,7 @@ function SquareSnapEdgeGhostPiece({ type, squareSnapEdge, valid }: {
   const wp = squareSnapEdgeWorldPosition(worldX, worldZ, rotDeg, squareSnapEdge.y, squareSnapEdge.side)
   const edgeRotDeg = squareSnapEdgeRotationDeg(rotDeg, squareSnapEdge.side)
   const rotRad = (edgeRotDeg * Math.PI) / 180
-  const wallH = type.includes('low') || type.includes('barrier') ? 0.33 : 0.95
+  const wallH = type.includes('low') || type.includes('barrier') ? 0.33 : 1.0
 
   return (
     <group position={[wp.x, wp.y + wallH / 2, wp.z]} rotation={[0, rotRad, 0]}>
