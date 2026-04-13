@@ -259,7 +259,6 @@ function FenceBarrier({ isNS, mat }: FrameProps) {
   const H = 0.33
   const postW = 0.06
   const plankH = 0.055
-  const gap = 0.035
   const plankW = WALL_W - postW * 2
   // 3 planks + 2 gaps + top/bottom margins
   const plankYs = [
