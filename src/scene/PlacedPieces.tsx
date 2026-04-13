@@ -15,8 +15,8 @@ export default function PlacedPieces() {
   const visibleLevels = useStore((s) => s.visibleLevels)
   const transparentPieces = useStore((s) => s.transparentPieces)
   const selectedPieceType = useStore((s) => s.selectedPieceType)
-  const selectedPieceId = useStore((s) => s.selectedPieceId)
-  const selectPiece = useStore((s) => s.selectPiece)
+  const selectedPieceIds = useStore((s) => s.selectedPieceIds)
+  const toggleSelectPiece = useStore((s) => s.toggleSelectPiece)
   const coordinateIndex = useStore((s) => s.coordinateIndex)
   const placePiece = useStore((s) => s.placePiece)
   const placeTriangleEdgePiece = useStore((s) => s.placeTriangleEdgePiece)
@@ -112,7 +112,7 @@ export default function PlacedPieces() {
     <>
       {pieces.map((piece) => {
         if (!visibleLevels.has(piece.position.y as 0 | 1 | 2)) return null
-        const isSelected = piece.id === selectedPieceId
+        const isSelected = selectedPieceIds.has(piece.id)
         const baseColor = PIECE_COLORS[piece.type] ?? DEFAULT_COLOR
         const color = isSelected ? '#ff6666' : baseColor
         const worldPos = getPiecePosition(piece.position, piece.type, piece.side)
@@ -121,7 +121,7 @@ export default function PlacedPieces() {
         const handleClick = (e: { stopPropagation: () => void; shiftKey?: boolean }) => {
           if (e.shiftKey) {
             e.stopPropagation()
-            selectPiece(isSelected ? null : piece.id)
+            toggleSelectPiece(piece.id)
           }
         }
 

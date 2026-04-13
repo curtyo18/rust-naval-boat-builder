@@ -17,7 +17,7 @@ interface AppStore {
   transparentPieces: boolean
   showGrid: boolean
   selectedPieceType: string | null
-  selectedPieceId: string | null
+  selectedPieceIds: Set<string>
   cameraResetFn: (() => void) | null
 
   // History for undo/redo
@@ -36,7 +36,8 @@ interface AppStore {
   setTransparentPieces(on: boolean): void
   setShowGrid(on: boolean): void
   selectPieceType(type: string | null): void
-  selectPiece(id: string | null): void
+  toggleSelectPiece(id: string): void
+  clearSelection(): void
   deleteSelectedPiece(): void
   clearAll(): void
   loadPieces(pieces: PlacedPiece[]): void
@@ -106,7 +107,7 @@ export const useStore = create<AppStore>((set) => ({
   transparentPieces: true,
   showGrid: true,
   selectedPieceType: null,
-  selectedPieceId: null,
+  selectedPieceIds: new Set<string>(),
   cameraResetFn: null,
   _history: [],
   _future: [],
@@ -265,10 +266,12 @@ export const useStore = create<AppStore>((set) => ({
   removePiece(id) {
     set((state) => {
       const pieces = state.pieces.filter((p) => p.id !== id)
+      const selectedPieceIds = new Set(state.selectedPieceIds)
+      selectedPieceIds.delete(id)
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
-        selectedPieceId: null,
+        selectedPieceIds,
         _history: pushHistory(state._history, state.pieces),
         _future: [],
       }
@@ -288,21 +291,33 @@ export const useStore = create<AppStore>((set) => ({
   },
 
   selectPieceType(type) {
-    set({ selectedPieceType: type, selectedPieceId: null })
+    set({ selectedPieceType: type, selectedPieceIds: new Set() })
   },
 
-  selectPiece(id) {
-    set({ selectedPieceId: id })
+  toggleSelectPiece(id) {
+    set((state) => {
+      const next = new Set(state.selectedPieceIds)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return { selectedPieceIds: next }
+    })
+  },
+
+  clearSelection() {
+    set({ selectedPieceIds: new Set() })
   },
 
   deleteSelectedPiece() {
     set((state) => {
-      if (!state.selectedPieceId) return state
-      const pieces = state.pieces.filter((p) => p.id !== state.selectedPieceId)
+      if (state.selectedPieceIds.size === 0) return state
+      const pieces = state.pieces.filter((p) => !state.selectedPieceIds.has(p.id))
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
-        selectedPieceId: null,
+        selectedPieceIds: new Set<string>(),
         _history: pushHistory(state._history, state.pieces),
         _future: [],
       }
