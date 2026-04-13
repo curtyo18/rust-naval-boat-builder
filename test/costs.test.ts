@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeTotalCosts } from '../src/utils/costs'
+import { computeTotalCosts, computeBoatStats } from '../src/utils/costs'
 import type { PlacedPiece, PiecesConfig } from '../src/types'
 
 const config: PiecesConfig = {
@@ -41,5 +41,26 @@ describe('computeTotalCosts', () => {
   it('ignores pieces with unknown type', () => {
     const pieces = [makePiece('unknown_piece', '1')]
     expect(computeTotalCosts(pieces, config)).toEqual({})
+  })
+})
+
+describe('computeBoatStats', () => {
+  it('returns zeros for no pieces', () => {
+    expect(computeBoatStats([], config)).toEqual({ totalHp: 0, totalMass: 0 })
+  })
+
+  it('sums hp and mass for structural pieces', () => {
+    const pieces = [makePiece('wall', '1'), makePiece('wall', '2')]
+    expect(computeBoatStats(pieces, config)).toEqual({ totalHp: 100, totalMass: 200 })
+  })
+
+  it('deployables contribute zero hp and mass', () => {
+    const pieces = [makePiece('wall', '1'), makePiece('sail', '2')]
+    expect(computeBoatStats(pieces, config)).toEqual({ totalHp: 50, totalMass: 100 })
+  })
+
+  it('ignores unknown piece types', () => {
+    const pieces = [makePiece('unknown', '1')]
+    expect(computeBoatStats(pieces, config)).toEqual({ totalHp: 0, totalMass: 0 })
   })
 })
