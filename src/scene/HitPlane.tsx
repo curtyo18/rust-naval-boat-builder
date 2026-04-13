@@ -446,14 +446,14 @@ function findSquareSnapForEdge(
   return best
 }
 
-/** Given multiple snap candidates, return the one closest to the cursor. */
+/** Given multiple snap candidates, return the one closest to the cursor (prefer higher y on tie). */
 function pickClosestSnap(candidates: (SnapResult | null)[], wx: number, wz: number): SnapResult | null {
   let best: SnapResult | null = null
   let bestDist = Infinity
   for (const c of candidates) {
     if (!c) continue
     const dist = (wx - c.worldX) ** 2 + (wz - c.worldZ) ** 2
-    if (dist < bestDist) {
+    if (dist < bestDist || (dist === bestDist && best && c.y > best.y)) {
       bestDist = dist
       best = c
     }
@@ -467,7 +467,7 @@ function pickClosestSquareSnap(candidates: (SquareSnapResult | null)[], wx: numb
   for (const c of candidates) {
     if (!c) continue
     const dist = (wx - c.worldX) ** 2 + (wz - c.worldZ) ** 2
-    if (dist < bestDist) {
+    if (dist < bestDist || (dist === bestDist && best && c.y > best.y)) {
       bestDist = dist
       best = c
     }
@@ -475,47 +475,47 @@ function pickClosestSquareSnap(candidates: (SquareSnapResult | null)[], wx: numb
   return best
 }
 
-/** Collect snap results from both the target floor and the floor below, overriding y to targetY. */
+/** Collect snap results across all target floors (same-level + floor-below support). */
 function collectFloorSnaps(
-  wx: number, wz: number, targetY: number,
+  wx: number, wz: number, floors: number[],
   pieces: PlacedPiece[], coordinateIndex: Map<string, string>,
 ): SnapResult[] {
-  const results: (SnapResult | null)[] = [
-    findSquareEdgeSnap(wx, wz, targetY, coordinateIndex),
-    findSnappedSquareEdgeSnap(wx, wz, targetY, pieces, coordinateIndex),
-    findTriEdgeSnap(wx, wz, targetY, pieces, coordinateIndex),
-  ]
-  if (targetY > 0) {
-    const below = [
-      findSquareEdgeSnap(wx, wz, targetY - 1, coordinateIndex),
-      findSnappedSquareEdgeSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
-      findTriEdgeSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
-    ]
-    for (const s of below) {
-      if (s) results.push({ ...s, y: targetY })
+  const results: SnapResult[] = []
+  for (const targetY of floors) {
+    for (const s of [
+      findSquareEdgeSnap(wx, wz, targetY, coordinateIndex),
+      findSnappedSquareEdgeSnap(wx, wz, targetY, pieces, coordinateIndex),
+      findTriEdgeSnap(wx, wz, targetY, pieces, coordinateIndex),
+    ]) { if (s) results.push(s) }
+    if (targetY > 0) {
+      for (const s of [
+        findSquareEdgeSnap(wx, wz, targetY - 1, coordinateIndex),
+        findSnappedSquareEdgeSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
+        findTriEdgeSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
+      ]) { if (s) results.push({ ...s, y: targetY }) }
     }
   }
-  return results.filter((s): s is SnapResult => s !== null)
+  return results
 }
 
 function collectSquareFloorSnaps(
-  wx: number, wz: number, targetY: number,
+  wx: number, wz: number, floors: number[],
   pieces: PlacedPiece[], coordinateIndex: Map<string, string>,
 ): SquareSnapResult[] {
-  const results: (SquareSnapResult | null)[] = [
-    findTriEdgeForSquareSnap(wx, wz, targetY, pieces, coordinateIndex),
-    findSquareSnapNeighbor(wx, wz, targetY, pieces, coordinateIndex),
-  ]
-  if (targetY > 0) {
-    const below = [
-      findTriEdgeForSquareSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
-      findSquareSnapNeighbor(wx, wz, targetY - 1, pieces, coordinateIndex),
-    ]
-    for (const s of below) {
-      if (s) results.push({ ...s, y: targetY })
+  const results: SquareSnapResult[] = []
+  for (const targetY of floors) {
+    for (const s of [
+      findTriEdgeForSquareSnap(wx, wz, targetY, pieces, coordinateIndex),
+      findSquareSnapNeighbor(wx, wz, targetY, pieces, coordinateIndex),
+    ]) { if (s) results.push(s) }
+    if (targetY > 0) {
+      for (const s of [
+        findTriEdgeForSquareSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
+        findSquareSnapNeighbor(wx, wz, targetY - 1, pieces, coordinateIndex),
+      ]) { if (s) results.push({ ...s, y: targetY }) }
     }
   }
-  return results.filter((s): s is SquareSnapResult => s !== null)
+  return results
 }
 
 export function TriHitPlane({ floorY }: HitPlaneProps) {
@@ -547,10 +547,15 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
   // Triangle edge piece types don't exist — skip
   if (isTriType && isEdgeType) return null
 
+  // All visible upper floors to scan for snap targets
+  const upperFloors = ([1, 2] as const).filter((f) => visibleLevels.has(f)) as number[]
+  // For ground-only pieces, just use floorY; for upper/null, scan upper floors
+  const snapFloors = pieceConfig.floorConstraint === 'ground_only' ? [floorY] : (upperFloors.length > 0 ? upperFloors : [floorY])
+
   function handlePointerMove(e: ThreeEvent<PointerEvent>) {
     // Square cell snapping to triangle edges or adjacent snapped squares
     if (isSquareSnapType) {
-      const sqCandidates = collectSquareFloorSnaps(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
+      const sqCandidates = collectSquareFloorSnaps(e.point.x, e.point.z, snapFloors, pieces, coordinateIndex)
       const sqSnap = pickClosestSquareSnap(sqCandidates, e.point.x, e.point.z)
       if (sqSnap) {
         e.stopPropagation()
@@ -603,7 +608,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
 
     // Triangle cell piece: always claim the event
     e.stopPropagation()
-    const snapCandidates = collectFloorSnaps(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
+    const snapCandidates = collectFloorSnaps(e.point.x, e.point.z, snapFloors, pieces, coordinateIndex)
     const snap = pickClosestSnap(snapCandidates, e.point.x, e.point.z)
     if (snap) {
       const triCoord: TriCoord = { hq: 0, hr: 0, slot: 0 }
@@ -625,7 +630,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     if (e.delta > 5) return
     // Square cell snapping to triangle edges or adjacent snapped squares
     if (isSquareSnapType) {
-      const sqCandidates = collectSquareFloorSnaps(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
+      const sqCandidates = collectSquareFloorSnaps(e.point.x, e.point.z, snapFloors, pieces, coordinateIndex)
       const sqSnap = pickClosestSquareSnap(sqCandidates, e.point.x, e.point.z)
       if (sqSnap) {
         e.stopPropagation()
@@ -681,7 +686,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     e.stopPropagation()
 
     // Check for snap — pick whichever candidate centroid is closest to cursor
-    const snapCandidates = collectFloorSnaps(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
+    const snapCandidates = collectFloorSnaps(e.point.x, e.point.z, snapFloors, pieces, coordinateIndex)
     const snap = pickClosestSnap(snapCandidates, e.point.x, e.point.z)
     if (snap) {
       if (canPlaceTriSnap(selectedPieceType!, snap, pieces, coordinateIndex, config)) {

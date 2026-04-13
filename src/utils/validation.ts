@@ -39,18 +39,36 @@ export function hasFoundation(pos: XYZ, coordinateIndex: Map<string, string>): b
   return coordinateIndex.has(toKey(pos))
 }
 
-/** Upper-floor cell pieces need at least one wall/edge piece at the same cell on the floor below. */
+/** Upper-floor cell pieces need wall support below OR an adjacent cell at the same level. */
 export function hasWallSupport(pos: XYZ, coordinateIndex: Map<string, string>): boolean {
   if (pos.y <= 0) return true
   const below: XYZ = { x: pos.x, y: pos.y - 1, z: pos.z }
-  return ALL_SIDES.some(side => coordinateIndex.has(toEdgeKey(below, side)))
+  if (ALL_SIDES.some(side => coordinateIndex.has(toEdgeKey(below, side)))) return true
+  // Adjacent floor at same level allows extension (balcony)
+  return (
+    coordinateIndex.has(toKey({ x: pos.x - 1, y: pos.y, z: pos.z }))
+    || coordinateIndex.has(toKey({ x: pos.x + 1, y: pos.y, z: pos.z }))
+    || coordinateIndex.has(toKey({ x: pos.x, y: pos.y, z: pos.z - 1 }))
+    || coordinateIndex.has(toKey({ x: pos.x, y: pos.y, z: pos.z + 1 }))
+  )
 }
 
-/** Triangle cell pieces at y>0 need at least one edge piece on the same triangle below. */
+/** Triangle cell pieces at y>0 need wall support below OR an adjacent triangle at the same level. */
 export function hasTriWallSupport(hq: number, y: number, hr: number, slot: number, coordinateIndex: Map<string, string>): boolean {
   if (y <= 0) return true
   for (let edge = 0; edge < 3; edge++) {
     if (coordinateIndex.has(toTriEdgeKey(hq, y - 1, hr, slot, edge))) return true
+  }
+  // Adjacent triangle at same level allows extension (balcony)
+  // Check neighboring slots in the same hex (consecutive slots share an edge)
+  if (coordinateIndex.has(toTriKey(hq, y, hr, (slot + 1) % 6))) return true
+  if (coordinateIndex.has(toTriKey(hq, y, hr, (slot + 5) % 6))) return true
+  // Check neighboring hexes (all 6 directions, all 6 slots)
+  const hexNeighbors = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, -1], [-1, 1]]
+  for (const [dq, dr] of hexNeighbors) {
+    for (let s = 0; s < 6; s++) {
+      if (coordinateIndex.has(toTriKey(hq + dq, y, hr + dr, s))) return true
+    }
   }
   return false
 }
