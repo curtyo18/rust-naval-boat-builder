@@ -64,6 +64,8 @@ export interface PieceConfig {
   floorConstraint: FloorConstraint
   maxCount: number | null
   cost: MaterialCosts
+  hp: number
+  mass: number
 }
 
 export type PiecesConfig = Record<string, PieceConfig>

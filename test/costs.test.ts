@@ -3,10 +3,10 @@ import { computeTotalCosts } from '../src/utils/costs'
 import type { PlacedPiece, PiecesConfig } from '../src/types'
 
 const config: PiecesConfig = {
-  wall: { label: 'Wall', category: 'structural', placementType: 'edge', floorConstraint: null, maxCount: null, cost: { wood: 300, lowGrade: 15 } },
-  cannon: { label: 'Cannon', category: 'deployable', placementType: 'cell', floorConstraint: null, maxCount: null, cost: { wood: 100, metalFragments: 200 } },
-  sail: { label: 'Sail', category: 'deployable', placementType: 'cell', floorConstraint: null, maxCount: 10, cost: { wood: 150, tarp: 1 } },
-  boat_engine: { label: 'Boat Engine', category: 'deployable', placementType: 'cell', floorConstraint: 'ground_only', maxCount: null, cost: { highQualityMetal: 5, gears: 2, lowGrade: 50 } },
+  wall: { label: 'Wall', category: 'structural', placementType: 'edge', floorConstraint: null, maxCount: null, cost: { wood: 300, lowGrade: 15 }, hp: 50, mass: 100 },
+  cannon: { label: 'Cannon', category: 'deployable', placementType: 'cell', floorConstraint: null, maxCount: null, cost: { wood: 100, metalFragments: 200 }, hp: 0, mass: 0 },
+  sail: { label: 'Sail', category: 'deployable', placementType: 'cell', floorConstraint: null, maxCount: 10, cost: { wood: 150, tarp: 1 }, hp: 0, mass: 0 },
+  boat_engine: { label: 'Boat Engine', category: 'deployable', placementType: 'cell', floorConstraint: 'ground_only', maxCount: null, cost: { highQualityMetal: 5, gears: 2, lowGrade: 50 }, hp: 0, mass: 0 },
 }
 
 const makePiece = (type: string, id: string): PlacedPiece => ({
