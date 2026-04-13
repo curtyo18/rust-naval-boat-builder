@@ -23,7 +23,7 @@ function SceneSetup() {
     const controls = controlsRef.current
     if (!controls) return
     controls.target.set(...SCENE_CENTER)
-    controls.object.position.set(2.5, 14, 14)
+    controls.object.position.set(2.5, 10, 10)
     controls.update()
   }, [])
 
@@ -71,7 +71,7 @@ function ActiveHitPlane() {
 export default function Viewport() {
   return (
     <Canvas
-      camera={{ position: [2.5, 14, 14], fov: 50 }}
+      camera={{ position: [2.5, 10, 10], fov: 50 }}
       style={{ width: '100%', height: '100%', background: '#2a4a68' }}
       onContextMenu={(e) => e.preventDefault()}
     >

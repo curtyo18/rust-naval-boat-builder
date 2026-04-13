@@ -12,8 +12,8 @@ export const PIECE_COLORS: Record<string, string> = {
   floor_frame_triangle: '#b08850',
   // Structural — medium wood
   wall: '#b59164',
-  doorway: '#a07a4f',
-  window: '#a07a4f',
+  doorway: '#b59164',
+  window: '#b59164',
   low_wall: '#b59164',
   low_cannon_wall: '#b59164',
   low_wall_barrier: '#c0996a',
@@ -67,7 +67,7 @@ export function getEdgePieceShape(type: string, side: PieceSide): PieceShape {
   const isNS = side === 'north' || side === 'south'
   const isLow = type.includes('low') || type.includes('barrier')
 
-  const wallHeight = isLow ? 0.33 : 0.95
+  const wallHeight = isLow ? 0.33 : 1.0
   const wallThickness = 0.08
 
   // Wall-like pieces
