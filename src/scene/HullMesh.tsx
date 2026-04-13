@@ -4,7 +4,7 @@ export default function HullMesh() {
   return (
     <mesh position={[2.5, -0.11, 5.5]} receiveShadow>
       <boxGeometry args={[5, 0.2, 11]} />
-      <meshStandardMaterial color="#6b4e14" roughness={0.9} />
+      <meshStandardMaterial color="#8cb8d0" roughness={0.6} metalness={0.1} />
     </mesh>
   )
 }

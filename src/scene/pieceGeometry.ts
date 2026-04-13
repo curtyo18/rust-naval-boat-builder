@@ -1,32 +1,32 @@
 import type { PieceSide, XYZ } from '../types'
 
-// Visual colors per piece type
+// Visual colors per piece type — warm wood palette
 export const PIECE_COLORS: Record<string, string> = {
-  // Hull — warm timber
-  square_hull: '#8b6914',
-  triangle_hull: '#8b6914',
-  // Floors — lighter planks
-  floor_square: '#b8944a',
-  floor_triangle: '#b8944a',
-  floor_frame_square: '#a07830',
-  floor_frame_triangle: '#a07830',
-  // Structural — weathered wood
-  wall: '#9c7a3c',
-  doorway: '#8a6b30',
-  window: '#8a6b30',
-  low_wall: '#9c7a3c',
-  low_cannon_wall: '#9c7a3c',
-  low_wall_barrier: '#a8883e',
-  boat_stairs: '#9c7a3c',
+  // Hull — rich warm timber
+  square_hull: '#a67c52',
+  triangle_hull: '#a67c52',
+  // Floors — lighter planking
+  floor_square: '#c9a96e',
+  floor_triangle: '#c9a96e',
+  floor_frame_square: '#b08850',
+  floor_frame_triangle: '#b08850',
+  // Structural — medium wood
+  wall: '#b59164',
+  doorway: '#a07a4f',
+  window: '#a07a4f',
+  low_wall: '#b59164',
+  low_cannon_wall: '#b59164',
+  low_wall_barrier: '#c0996a',
+  boat_stairs: '#b59164',
   // Deployables — distinct accents
-  anchor: '#7a7a7a',
-  steering_wheel: '#b09060',
-  cannon: '#5a5a5a',
-  sail: '#e8dcc8',
-  boat_engine: '#8a8a8a',
+  anchor: '#8a8a8a',
+  steering_wheel: '#c4a070',
+  cannon: '#6a6a6a',
+  sail: '#f0e6d4',
+  boat_engine: '#909090',
 }
 
-export const DEFAULT_COLOR = '#9c7a3c'
+export const DEFAULT_COLOR = '#b59164'
 
 // Geometry dimensions for each piece category/type
 export interface PieceShape {
@@ -38,10 +38,10 @@ export interface PieceShape {
 export function getCellPieceShape(type: string): PieceShape {
   // Hull and floor pieces are flat slabs
   if (type.includes('hull')) {
-    return { size: [0.96, 0.15, 0.96], offset: [0.5, 0.075, 0.5], rotationY: 0 }
+    return { size: [1, 0.15, 1], offset: [0.5, 0.075, 0.5], rotationY: 0 }
   }
   if (type.includes('floor')) {
-    return { size: [0.96, 0.1, 0.96], offset: [0.5, 0.05, 0.5], rotationY: 0 }
+    return { size: [1, 0.1, 1], offset: [0.5, 0.05, 0.5], rotationY: 0 }
   }
   // Deployables — small items sitting on top of foundation
   if (type === 'anchor') {
@@ -60,7 +60,7 @@ export function getCellPieceShape(type: string): PieceShape {
     return { size: [0.5, 0.4, 0.5], offset: [0.5, 0.2, 0.5], rotationY: 0 }
   }
   // Default cell piece
-  return { size: [0.92, 0.15, 0.92], offset: [0.5, 0.075, 0.5], rotationY: 0 }
+  return { size: [1, 0.15, 1], offset: [0.5, 0.075, 0.5], rotationY: 0 }
 }
 
 export function getEdgePieceShape(type: string, side: PieceSide): PieceShape {
@@ -72,8 +72,8 @@ export function getEdgePieceShape(type: string, side: PieceSide): PieceShape {
 
   // Wall-like pieces
   const size: [number, number, number] = isNS
-    ? [0.96, wallHeight, wallThickness]
-    : [wallThickness, wallHeight, 0.96]
+    ? [1, wallHeight, wallThickness]
+    : [wallThickness, wallHeight, 1]
 
   const offset = getEdgeOffset(side, wallHeight)
 

@@ -1,4 +1,5 @@
 import type { PieceSide } from '../types'
+import { getWoodTexture } from './woodTexture'
 
 const SIDE_ROTATIONS: Record<PieceSide, number> = {
   north: 0,
@@ -16,7 +17,7 @@ interface EdgeMeshProps {
 }
 
 const THICKNESS = 0.08
-const WALL_W = 0.96
+const WALL_W = 1
 const WALL_H = 0.95
 
 /**
@@ -28,10 +29,11 @@ const WALL_H = 0.95
  * - doorway: frame with a door-shaped cutout (3 boxes: top + two sides)
  * - low_wall / low_cannon_wall / low_wall_barrier: short solid box
  */
-export default function EdgeMesh({ type, side, color, opacity = 1, roughness = 0.85 }: EdgeMeshProps) {
+export default function EdgeMesh({ type, side, color, opacity = 1, roughness = 0.7 }: EdgeMeshProps) {
   const isNS = side === 'north' || side === 'south'
   const transparent = opacity < 1
-  const mat = { color, opacity, transparent, roughness }
+  const woodTex = getWoodTexture()
+  const mat = { color, opacity, transparent, roughness, metalness: 0.05, map: woodTex }
 
   // Low walls — simple short box
   if (type.includes('low') || type.includes('barrier')) {
@@ -76,7 +78,7 @@ export default function EdgeMesh({ type, side, color, opacity = 1, roughness = 0
 
 interface FrameProps {
   isNS: boolean
-  mat: { color: string; opacity: number; transparent: boolean; roughness: number }
+  mat: Record<string, unknown>
 }
 
 /**
