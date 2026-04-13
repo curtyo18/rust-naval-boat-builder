@@ -27,6 +27,7 @@ export const PIECE_COLORS: Record<string, string> = {
 }
 
 export const DEFAULT_COLOR = '#b59164'
+export const GHOST_VALID_COLOR = '#4a9eff'
 
 // Geometry dimensions for each piece category/type
 export interface PieceShape {

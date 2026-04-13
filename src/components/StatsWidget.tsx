@@ -131,6 +131,7 @@ export default function StatsWidget() {
         </div>
       )}
       <div className="stats-widget__speed-status">
+        <span className="stats-widget__row-label">Max Speed?</span>
         {speedInfo.canAchieveMaxSpeed ? (
           <span className="stats-widget__speed-ok">&#x2714;</span>
         ) : (

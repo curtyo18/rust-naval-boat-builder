@@ -94,8 +94,8 @@
 .stats-widget__speed-status {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding: 4px 0 0;
+  justify-content: space-between;
+  padding: 3px 0;
 }
 
 .stats-widget__speed-ok {

@@ -47,6 +47,25 @@
   color: #7cfc7c;
 }
 
+.sidebar__display {
+  padding: 12px 20px 16px;
+  border-top: 1px solid #333;
+}
+
+.sidebar__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  font-size: 14px;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.sidebar__toggle input {
+  accent-color: #4a8a4a;
+}
+
 .sidebar__floors {
   padding: 12px 20px 16px;
   border-top: 1px solid #333;
@@ -72,4 +91,11 @@
   background: #2a4a2a;
   border-color: #4a8a4a;
   color: #7cfc7c;
+}
+
+.sidebar__floor-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #888;
+  line-height: 1.3;
 }

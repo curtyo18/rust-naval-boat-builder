@@ -6,6 +6,8 @@ const CONTROLS = [
   { key: 'Right-click drag', action: 'Pan' },
   { key: 'Ctrl + Z', action: 'Undo' },
   { key: 'Ctrl + Y', action: 'Redo' },
+  { key: 'Shift + Click', action: 'Select piece' },
+  { key: 'Del', action: 'Delete selected' },
 ]
 
 export default function CameraHints() {

@@ -4,10 +4,18 @@ import type { PlacedPiece, XYZ, PieceRotation, PieceSide, TriCoord, TriSnapTarge
 
 const MAX_HISTORY = 50
 
+function autoShowLevel(y: number, current: Set<0 | 1 | 2>): Set<0 | 1 | 2> | undefined {
+  const level = y as 0 | 1 | 2
+  if (current.has(level)) return undefined
+  return new Set([...current, level])
+}
+
 interface AppStore {
   pieces: PlacedPiece[]
   coordinateIndex: Map<string, string>
   visibleLevels: Set<0 | 1 | 2>
+  transparentPieces: boolean
+  showGrid: boolean
   selectedPieceType: string | null
   selectedPieceId: string | null
   cameraResetFn: (() => void) | null
@@ -25,6 +33,8 @@ interface AppStore {
   placeSquareSnapEdgePiece(type: string, snap: SquareSnapTarget, y: number, side: PieceSide): void
   removePiece(id: string): void
   setVisibleLevels(levels: Set<0 | 1 | 2>): void
+  setTransparentPieces(on: boolean): void
+  setShowGrid(on: boolean): void
   selectPieceType(type: string | null): void
   selectPiece(id: string | null): void
   deleteSelectedPiece(): void
@@ -92,7 +102,9 @@ function pushHistory(history: PlacedPiece[][], current: PlacedPiece[]): PlacedPi
 export const useStore = create<AppStore>((set) => ({
   pieces: [],
   coordinateIndex: new Map(),
-  visibleLevels: new Set([0, 1, 2]),
+  visibleLevels: new Set<0 | 1 | 2>([0, 1]),
+  transparentPieces: true,
+  showGrid: true,
   selectedPieceType: null,
   selectedPieceId: null,
   cameraResetFn: null,
@@ -104,11 +116,13 @@ export const useStore = create<AppStore>((set) => ({
     const piece: PlacedPiece = { id, type, position, rotation, ...(side ? { side } : {}) }
     set((state) => {
       const pieces = [...state.pieces, piece]
+      const showLevel = autoShowLevel(position.y, state.visibleLevels)
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
         _history: pushHistory(state._history, state.pieces),
         _future: [],
+        ...(showLevel ? { visibleLevels: showLevel } : {}),
       }
     })
   },
@@ -124,11 +138,13 @@ export const useStore = create<AppStore>((set) => ({
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
+      const showLevel = autoShowLevel(y, state.visibleLevels)
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
         _history: pushHistory(state._history, state.pieces),
         _future: [],
+        ...(showLevel ? { visibleLevels: showLevel } : {}),
       }
     })
   },
@@ -145,11 +161,13 @@ export const useStore = create<AppStore>((set) => ({
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
+      const showLevel = autoShowLevel(y, state.visibleLevels)
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
         _history: pushHistory(state._history, state.pieces),
         _future: [],
+        ...(showLevel ? { visibleLevels: showLevel } : {}),
       }
     })
   },
@@ -165,11 +183,13 @@ export const useStore = create<AppStore>((set) => ({
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
+      const showLevel = autoShowLevel(snap.y, state.visibleLevels)
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
         _history: pushHistory(state._history, state.pieces),
         _future: [],
+        ...(showLevel ? { visibleLevels: showLevel } : {}),
       }
     })
   },
@@ -186,11 +206,13 @@ export const useStore = create<AppStore>((set) => ({
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
+      const showLevel = autoShowLevel(y, state.visibleLevels)
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
         _history: pushHistory(state._history, state.pieces),
         _future: [],
+        ...(showLevel ? { visibleLevels: showLevel } : {}),
       }
     })
   },
@@ -206,11 +228,13 @@ export const useStore = create<AppStore>((set) => ({
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
+      const showLevel = autoShowLevel(snap.y, state.visibleLevels)
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
         _history: pushHistory(state._history, state.pieces),
         _future: [],
+        ...(showLevel ? { visibleLevels: showLevel } : {}),
       }
     })
   },
@@ -227,11 +251,13 @@ export const useStore = create<AppStore>((set) => ({
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
+      const showLevel = autoShowLevel(y, state.visibleLevels)
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
         _history: pushHistory(state._history, state.pieces),
         _future: [],
+        ...(showLevel ? { visibleLevels: showLevel } : {}),
       }
     })
   },
@@ -251,6 +277,14 @@ export const useStore = create<AppStore>((set) => ({
 
   setVisibleLevels(levels) {
     set({ visibleLevels: levels })
+  },
+
+  setTransparentPieces(on) {
+    set({ transparentPieces: on })
+  },
+
+  setShowGrid(on) {
+    set({ showGrid: on })
   },
 
   selectPieceType(type) {
@@ -285,7 +319,9 @@ export const useStore = create<AppStore>((set) => ({
   },
 
   loadPieces(pieces) {
-    set({ pieces, coordinateIndex: buildIndex(pieces), _history: [], _future: [] })
+    const hasFloor2 = pieces.some((p) => p.position.y === 2)
+    const visibleLevels = new Set<0 | 1 | 2>(hasFloor2 ? [0, 1, 2] : [0, 1])
+    set({ pieces, coordinateIndex: buildIndex(pieces), visibleLevels, _history: [], _future: [] })
   },
 
   setCameraResetFn(fn) {
@@ -297,9 +333,14 @@ export const useStore = create<AppStore>((set) => ({
       if (state._history.length === 0) return state
       const history = [...state._history]
       const previous = history.pop()!
+      const needsFloor2 = previous.some((p) => p.position.y === 2)
+      const visibleLevels = needsFloor2 && !state.visibleLevels.has(2)
+        ? new Set<0 | 1 | 2>([...state.visibleLevels, 2])
+        : state.visibleLevels
       return {
         pieces: previous,
         coordinateIndex: buildIndex(previous),
+        visibleLevels,
         _history: history,
         _future: [state.pieces, ...state._future],
       }
@@ -311,9 +352,14 @@ export const useStore = create<AppStore>((set) => ({
       if (state._future.length === 0) return state
       const future = [...state._future]
       const next = future.shift()!
+      const needsFloor2 = next.some((p) => p.position.y === 2)
+      const visibleLevels = needsFloor2 && !state.visibleLevels.has(2)
+        ? new Set<0 | 1 | 2>([...state.visibleLevels, 2])
+        : state.visibleLevels
       return {
         pieces: next,
         coordinateIndex: buildIndex(next),
+        visibleLevels,
         _history: [...state._history, state.pieces],
         _future: future,
       }

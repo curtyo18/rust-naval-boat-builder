@@ -8,14 +8,14 @@ import type { PiecesConfig, XYZ, PieceSide, PieceRotation, PlacedPiece } from '.
 import GhostPiece from './GhostPiece'
 import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, detectTriEdge, squareEdgeSnapPosition, triSnapNeighbors, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, detectTriSnapEdge, triEdgeSquareSnapPosition, triSnapEdgeSquareSnapPosition, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg, detectSquareSnapSide, HEX_ORIGIN } from '../utils/hexGrid'
 import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toSquareSnapKey } from '../utils/coordinateKey'
-import { PIECE_COLORS, DEFAULT_COLOR } from './pieceGeometry'
+import { GHOST_VALID_COLOR } from './pieceGeometry'
 import CellMesh from './CellMesh'
 import EdgeMesh from './EdgeMesh'
 import type { TriCoord, TriEdgeIndex, TriSnapTarget, SquareSnapTarget } from '../types'
 
 const config = piecesConfig as PiecesConfig
 const GRID_W = 5
-const GRID_L = 11
+const GRID_L = 10
 
 interface HitPlaneProps {
   floorY: 0 | 1 | 2
@@ -783,8 +783,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
 }
 
 function TriSnapGhostPiece({ type, snap, valid }: { type: string; snap: SnapResult; valid: boolean }) {
-  const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
-  const color = valid ? baseColor : '#ff3333'
+  const color = valid ? GHOST_VALID_COLOR : '#ff3333'
 
   return (
     <group position={[snap.worldX, snap.y, snap.worldZ]}>
@@ -794,8 +793,7 @@ function TriSnapGhostPiece({ type, snap, valid }: { type: string; snap: SnapResu
 }
 
 function TriGhostPiece({ type, triCoord, y, valid }: { type: string; triCoord: TriCoord; y: number; valid: boolean }) {
-  const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
-  const color = valid ? baseColor : '#ff3333'
+  const color = valid ? GHOST_VALID_COLOR : '#ff3333'
   const wp = triSlotWorldPosition(triCoord.hq, y, triCoord.hr, triCoord.slot)
   const angleDeg = triSlotRotationDeg(triCoord.slot)
 
@@ -809,8 +807,7 @@ function TriGhostPiece({ type, triCoord, y, valid }: { type: string; triCoord: T
 function TriEdgeGhostPiece({ type, triCoord, triEdge, y, valid }: {
   type: string; triCoord: TriCoord; triEdge: TriEdgeIndex; y: number; valid: boolean
 }) {
-  const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
-  const color = valid ? baseColor : '#ff3333'
+  const color = valid ? GHOST_VALID_COLOR : '#ff3333'
   const { hq, hr, slot } = triCoord
   const wp = triEdgeWorldPosition(hq, y, hr, slot, triEdge)
   const rotDeg = triEdgeRotationDeg(slot, triEdge)
@@ -827,8 +824,7 @@ function TriEdgeGhostPiece({ type, triCoord, triEdge, y, valid }: {
 function TriSnapEdgeGhostPiece({ type, snapEdge, valid }: {
   type: string; snapEdge: SnapEdgeResult; valid: boolean
 }) {
-  const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
-  const color = valid ? baseColor : '#ff3333'
+  const color = valid ? GHOST_VALID_COLOR : '#ff3333'
   const { worldX, worldZ, angleDeg } = snapEdge.parentSnap
   const wp = triSnapEdgeWorldPosition(worldX, worldZ, angleDeg, snapEdge.y, snapEdge.edge)
   const rotDeg = triSnapEdgeRotationDeg(worldX, worldZ, angleDeg, snapEdge.edge)
@@ -845,8 +841,7 @@ function TriSnapEdgeGhostPiece({ type, snapEdge, valid }: {
 function SquareSnapGhostPiece({ type, squareSnap, valid }: {
   type: string; squareSnap: SquareSnapResult; valid: boolean
 }) {
-  const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
-  const color = valid ? baseColor : '#ff3333'
+  const color = valid ? GHOST_VALID_COLOR : '#ff3333'
   const shape = getCellPieceShape(type)
   const rotRad = (squareSnap.rotDeg * Math.PI) / 180
 
@@ -863,8 +858,7 @@ function SquareSnapGhostPiece({ type, squareSnap, valid }: {
 function SquareSnapEdgeGhostPiece({ type, squareSnapEdge, valid }: {
   type: string; squareSnapEdge: SquareSnapEdgeResult; valid: boolean
 }) {
-  const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
-  const color = valid ? baseColor : '#ff3333'
+  const color = valid ? GHOST_VALID_COLOR : '#ff3333'
   const { worldX, worldZ, rotDeg } = squareSnapEdge.parentSnap
   const wp = squareSnapEdgeWorldPosition(worldX, worldZ, rotDeg, squareSnapEdge.y, squareSnapEdge.side)
   const edgeRotDeg = squareSnapEdgeRotationDeg(rotDeg, squareSnapEdge.side)

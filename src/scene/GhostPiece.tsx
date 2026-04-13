@@ -1,5 +1,5 @@
 import type { XYZ, PieceSide, PieceRotation } from '../types'
-import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition } from './pieceGeometry'
+import { GHOST_VALID_COLOR, getPiecePosition } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
 
@@ -12,8 +12,7 @@ interface GhostPieceProps {
 }
 
 export default function GhostPiece({ position, type, valid, side, rotation = 0 }: GhostPieceProps) {
-  const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
-  const color = valid ? baseColor : '#ff3333'
+  const color = valid ? GHOST_VALID_COLOR : '#ff3333'
   const worldPos = getPiecePosition(position, type, side)
 
   // Edge pieces use EdgeMesh for distinct window/doorway ghost shapes
