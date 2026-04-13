@@ -54,7 +54,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
       const side = detectSide(localX, localZ)
       // Scan visible floors top-to-bottom: target highest floor with support
       // (foundation cell piece, or edge piece below on same side for stacking)
-      for (const f of [1, 0] as const) {
+      for (const f of [2, 1, 0] as const) {
         if (!visibleLevels.has(f)) continue
         const hasFoundation = coordinateIndex.has(toKey({ x: cellX, y: f, z: cellZ }))
         const hasEdgeBelow = f > 0
@@ -571,7 +571,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
       // Scan visible floors top-to-bottom for a foundation or edge-below to attach to
       const { hq, hr, slot } = worldToTriCoord(e.point.x, e.point.z)
       const detectedEdge = detectTriEdge(hq, hr, slot, e.point.x, e.point.z)
-      for (const f of [1, 0] as const) {
+      for (const f of [2, 1, 0] as const) {
         if (!visibleLevels.has(f)) continue
         // Check hex-grid triangles (foundation or edge stacking)
         const triKey = toTriKey(hq, f, hr, slot)
@@ -645,7 +645,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
       // Scan visible floors top-to-bottom for a foundation or edge-below to attach to
       const { hq, hr, slot } = worldToTriCoord(e.point.x, e.point.z)
       const detectedEdge = detectTriEdge(hq, hr, slot, e.point.x, e.point.z)
-      for (const f of [1, 0] as const) {
+      for (const f of [2, 1, 0] as const) {
         if (!visibleLevels.has(f)) continue
         // Check hex-grid triangles (foundation or edge stacking)
         const triKey = toTriKey(hq, f, hr, slot)
