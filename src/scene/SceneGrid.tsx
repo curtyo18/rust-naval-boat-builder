@@ -6,6 +6,9 @@ const FLOOR_Y = [0, 1, 2] as const
 
 export default function SceneGrid() {
   const visibleLevels = useStore((s) => s.visibleLevels)
+  const showGrid = useStore((s) => s.showGrid)
+
+  if (!showGrid) return null
 
   return (
     <>
@@ -13,8 +16,8 @@ export default function SceneGrid() {
         visibleLevels.has(y) ? (
           <Grid
             key={y}
-            position={[2.5, y, 5.5]}
-            args={[5, 11]}
+            position={[2.5, y, 5]}
+            args={[5, 10]}
             cellSize={1}
             cellThickness={0.4}
             cellColor="#6a9ab0"

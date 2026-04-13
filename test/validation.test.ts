@@ -25,14 +25,14 @@ describe('toKey / fromKey / toEdgeKey', () => {
 describe('isInBounds', () => {
   it('accepts valid position', () => {
     expect(isInBounds({ x: 0, y: 0, z: 0 })).toBe(true)
-    expect(isInBounds({ x: 4, y: 2, z: 10 })).toBe(true)
+    expect(isInBounds({ x: 4, y: 2, z: 9 })).toBe(true)
   })
   it('rejects x out of range', () => {
     expect(isInBounds({ x: 5, y: 0, z: 0 })).toBe(false)
     expect(isInBounds({ x: -1, y: 0, z: 0 })).toBe(false)
   })
   it('rejects z out of range', () => {
-    expect(isInBounds({ x: 0, y: 0, z: 11 })).toBe(false)
+    expect(isInBounds({ x: 0, y: 0, z: 10 })).toBe(false)
   })
   it('rejects y out of range', () => {
     expect(isInBounds({ x: 0, y: 3, z: 0 })).toBe(false)

@@ -21,6 +21,10 @@ export default function Sidebar() {
   const selectPieceType = useStore((s) => s.selectPieceType)
   const visibleLevels = useStore((s) => s.visibleLevels)
   const setVisibleLevels = useStore((s) => s.setVisibleLevels)
+  const transparentPieces = useStore((s) => s.transparentPieces)
+  const setTransparentPieces = useStore((s) => s.setTransparentPieces)
+  const showGrid = useStore((s) => s.showGrid)
+  const setShowGrid = useStore((s) => s.setShowGrid)
 
   const piecesByCategory = CATEGORY_ORDER.map((cat) => ({
     category: cat,
@@ -62,6 +66,26 @@ export default function Sidebar() {
         )}
       </div>
 
+      <div className="sidebar__display">
+        <div className="sidebar__group-label">Display</div>
+        <label className="sidebar__toggle">
+          <input
+            type="checkbox"
+            checked={transparentPieces}
+            onChange={(e) => setTransparentPieces(e.target.checked)}
+          />
+          Transparency
+        </label>
+        <label className="sidebar__toggle">
+          <input
+            type="checkbox"
+            checked={showGrid}
+            onChange={(e) => setShowGrid(e.target.checked)}
+          />
+          Grid Lines
+        </label>
+      </div>
+
       <div className="sidebar__floors">
         <div className="sidebar__group-label">Floors</div>
         <div className="sidebar__floor-toggles">
@@ -75,6 +99,11 @@ export default function Sidebar() {
             </button>
           ))}
         </div>
+        {visibleLevels.has(2) && (
+          <div className="sidebar__floor-hint">
+            Trouble placing? Try hiding floor 2.
+          </div>
+        )}
       </div>
     </aside>
   )

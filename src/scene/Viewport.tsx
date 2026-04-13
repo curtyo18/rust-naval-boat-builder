@@ -13,7 +13,7 @@ import type { PiecesConfig } from '../types'
 
 const config = piecesConfig as PiecesConfig
 
-const SCENE_CENTER: [number, number, number] = [2.5, 0, 5.5]
+const SCENE_CENTER: [number, number, number] = [2.5, 0, 5]
 
 function SceneSetup() {
   const controlsRef = useRef<OrbitControlsImpl>(null)

@@ -1,4 +1,65 @@
 import type { PlacedPiece, PiecesConfig, MaterialCosts, MaterialKey } from '../types'
+import { SAIL_POWER, ENGINE_POWER, MAX_SPEED_RATIO, MAX_SAILS, MAX_ENGINES, EXPLOSIVES } from '../data/boat-constants'
+import type { ExplosiveKey } from '../data/boat-constants'
+
+export interface BoatStats {
+  totalHp: number
+  totalMass: number
+}
+
+export function computeBoatStats(pieces: PlacedPiece[], config: PiecesConfig): BoatStats {
+  let totalHp = 0
+  let totalMass = 0
+
+  for (const piece of pieces) {
+    const pieceConfig = config[piece.type]
+    if (!pieceConfig) continue
+    totalHp += pieceConfig.hp
+    totalMass += pieceConfig.mass
+  }
+
+  return { totalHp, totalMass }
+}
+
+export interface SpeedInfo {
+  requiredPower: number
+  sailsNeeded: number
+  canAchieveWithSails: boolean
+  enginesNeeded: number | null
+  canAchieveMaxSpeed: boolean
+}
+
+export function computeSpeedInfo(totalMass: number): SpeedInfo {
+  const requiredPower = totalMass * MAX_SPEED_RATIO
+  const sailsNeeded = Math.ceil(requiredPower / SAIL_POWER)
+  const canAchieveWithSails = sailsNeeded <= MAX_SAILS
+
+  let enginesNeeded: number | null = null
+  if (!canAchieveWithSails) {
+    const deficit = requiredPower - MAX_SAILS * SAIL_POWER
+    enginesNeeded = Math.ceil(deficit / ENGINE_POWER)
+  }
+
+  const maxPower = MAX_SAILS * SAIL_POWER + MAX_ENGINES * ENGINE_POWER
+  const canAchieveMaxSpeed = requiredPower <= maxPower
+
+  return { requiredPower, sailsNeeded, canAchieveWithSails, enginesNeeded, canAchieveMaxSpeed }
+}
+
+export interface RaidCostEntry {
+  key: string
+  label: string
+  count: number
+  sulfur: number
+}
+
+export function computeRaidCost(totalHp: number): RaidCostEntry[] {
+  return (Object.keys(EXPLOSIVES) as ExplosiveKey[]).map((key) => {
+    const { label, damage, sulfur } = EXPLOSIVES[key]
+    const count = totalHp === 0 ? 0 : Math.ceil(totalHp / damage)
+    return { key, label, count, sulfur: count * sulfur }
+  })
+}
 
 export function computeTotalCosts(pieces: PlacedPiece[], config: PiecesConfig): MaterialCosts {
   const totals: Partial<Record<MaterialKey, number>> = {}

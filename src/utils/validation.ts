@@ -4,7 +4,7 @@ import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKe
 const ALL_SIDES: PieceSide[] = ['north', 'south', 'east', 'west']
 
 const GRID_X = 5
-const GRID_Z = 11
+const GRID_Z = 10
 const GRID_Y = 3
 const TRI_HEX_RADIUS = 8
 

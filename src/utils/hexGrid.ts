@@ -17,10 +17,10 @@ export const HEX_SIZE = 1.0
 
 /**
  * Offset so that hex (0,0) center sits at the right edge of the square grid.
- * Square grid runs x:[0,5] z:[0,11]. We place hex origin at x=5, z=5.5
+ * Square grid runs x:[0,5] z:[0,10]. We place hex origin at x=5, z=5
  * so triangles attach naturally to the east wall of the building.
  */
-export const HEX_ORIGIN = { x: 5, z: 5.5 }
+export const HEX_ORIGIN = { x: 5, z: 5 }
 
 /**
  * World-space center of a hex cell at axial coordinates (hq, hr).

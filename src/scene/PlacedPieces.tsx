@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store/useStore'
-import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition, isTriangleType, getCellPieceShape } from './pieceGeometry'
+import { PIECE_COLORS, DEFAULT_COLOR, GHOST_VALID_COLOR, getPiecePosition, isTriangleType, getCellPieceShape } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
 import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg } from '../utils/hexGrid'
@@ -13,9 +13,10 @@ const edgeConfig = piecesConfig as PiecesConfig
 export default function PlacedPieces() {
   const pieces = useStore((s) => s.pieces)
   const visibleLevels = useStore((s) => s.visibleLevels)
+  const transparentPieces = useStore((s) => s.transparentPieces)
   const selectedPieceType = useStore((s) => s.selectedPieceType)
-  const selectedPieceId = useStore((s) => s.selectedPieceId)
-  const selectPiece = useStore((s) => s.selectPiece)
+  const selectedPieceIds = useStore((s) => s.selectedPieceIds)
+  const toggleSelectPiece = useStore((s) => s.toggleSelectPiece)
   const coordinateIndex = useStore((s) => s.coordinateIndex)
   const placePiece = useStore((s) => s.placePiece)
   const placeTriangleEdgePiece = useStore((s) => s.placeTriangleEdgePiece)
@@ -111,18 +112,16 @@ export default function PlacedPieces() {
     <>
       {pieces.map((piece) => {
         if (!visibleLevels.has(piece.position.y as 0 | 1 | 2)) return null
-        const isSelected = piece.id === selectedPieceId
+        const isSelected = selectedPieceIds.has(piece.id)
         const baseColor = PIECE_COLORS[piece.type] ?? DEFAULT_COLOR
         const color = isSelected ? '#ff6666' : baseColor
         const worldPos = getPiecePosition(piece.position, piece.type, piece.side)
         const position: [number, number, number] = worldPos
         const renderRotation = piece.rotation
-        const isSelectMode = selectedPieceType === null
-
-        const handleClick = (e: { stopPropagation: () => void }) => {
-          if (isSelectMode) {
+        const handleClick = (e: { stopPropagation: () => void; shiftKey?: boolean }) => {
+          if (e.shiftKey) {
             e.stopPropagation()
-            selectPiece(isSelected ? null : piece.id)
+            toggleSelectPiece(piece.id)
           }
         }
 
@@ -156,7 +155,7 @@ export default function PlacedPieces() {
           // Floor ghost
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
-            ? (PIECE_COLORS[selectedPieceType!] ?? DEFAULT_COLOR) : '#ff3333'
+            ? GHOST_VALID_COLOR : '#ff3333'
           const cellShape = floorGhost && selectedPieceType ? getCellPieceShape(selectedPieceType) : null
           return (
             <group key={piece.id}>
@@ -169,7 +168,7 @@ export default function PlacedPieces() {
                   type={piece.type}
                   side="north"
                   color={color}
-                  opacity={isSelectMode ? 0.8 : 1}
+                  opacity={transparentPieces ? 0.8 : 1}
                 />
               </group>
               {edgeGhostWp && (
@@ -201,7 +200,7 @@ export default function PlacedPieces() {
               <CellMesh
                 type={piece.type}
                 color={color}
-                opacity={isSelectMode ? 0.8 : 1}
+                opacity={transparentPieces ? 0.8 : 1}
               />
             </group>
           )
@@ -235,7 +234,7 @@ export default function PlacedPieces() {
           const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 1.0
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
-            ? (PIECE_COLORS[selectedPieceType!] ?? DEFAULT_COLOR) : '#ff3333'
+            ? GHOST_VALID_COLOR : '#ff3333'
           return (
             <group key={piece.id}>
               <group
@@ -247,7 +246,7 @@ export default function PlacedPieces() {
                   type={piece.type}
                   side="north"
                   color={color}
-                  opacity={isSelectMode ? 0.8 : 1}
+                  opacity={transparentPieces ? 0.8 : 1}
                 />
               </group>
               {edgeGhostWp && (
@@ -271,7 +270,7 @@ export default function PlacedPieces() {
               <CellMesh
                 type={piece.type}
                 color={color}
-                opacity={isSelectMode ? 0.8 : 1}
+                opacity={transparentPieces ? 0.8 : 1}
                 angleDeg={piece.triSnap.angleDeg}
               />
             </group>
@@ -306,7 +305,7 @@ export default function PlacedPieces() {
           const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 1.0
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
-            ? (PIECE_COLORS[selectedPieceType!] ?? DEFAULT_COLOR) : '#ff3333'
+            ? GHOST_VALID_COLOR : '#ff3333'
           const floorWp = floorGhost ? triSlotWorldPosition(hq, piece.position.y + 1, hr, slot) : null
           const floorAngle = floorGhost ? triSlotRotationDeg(slot) : 0
           return (
@@ -320,7 +319,7 @@ export default function PlacedPieces() {
                   type={piece.type}
                   side="north"
                   color={color}
-                  opacity={isSelectMode ? 0.8 : 1}
+                  opacity={transparentPieces ? 0.8 : 1}
                 />
               </group>
               {edgeGhostWp && (
@@ -347,7 +346,7 @@ export default function PlacedPieces() {
               <CellMesh
                 type={piece.type}
                 color={color}
-                opacity={isSelectMode ? 0.8 : 1}
+                opacity={transparentPieces ? 0.8 : 1}
                 angleDeg={angleDeg}
               />
             </group>
@@ -376,7 +375,7 @@ export default function PlacedPieces() {
             : null
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
-            ? (PIECE_COLORS[selectedPieceType!] ?? DEFAULT_COLOR) : '#ff3333'
+            ? GHOST_VALID_COLOR : '#ff3333'
           const floorGhostPos = floorGhost && selectedPieceType
             ? getPiecePosition({ ...piece.position, y: piece.position.y + 1 }, selectedPieceType)
             : null
@@ -390,7 +389,7 @@ export default function PlacedPieces() {
                   type={piece.type}
                   side={piece.side}
                   color={color}
-                  opacity={isSelectMode ? 0.8 : 1}
+                  opacity={transparentPieces ? 0.8 : 1}
                 />
               </group>
               {edgeGhostPos && (
@@ -413,7 +412,7 @@ export default function PlacedPieces() {
             <CellMesh
               type={piece.type}
               color={color}
-              opacity={isSelectMode ? 0.8 : 1}
+              opacity={transparentPieces ? 0.8 : 1}
               rotation={renderRotation}
             />
           </group>
