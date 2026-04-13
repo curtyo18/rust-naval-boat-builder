@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useStore } from '../store/useStore'
-import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge } from '../utils/validation'
-import { detectSide } from './pieceGeometry'
+import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../utils/validation'
+import { detectSide, getCellPieceShape } from './pieceGeometry'
 import piecesConfig from '../data/pieces-config.json'
 import type { PiecesConfig, XYZ, PieceSide, PieceRotation, PlacedPiece } from '../types'
 import GhostPiece from './GhostPiece'
-import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, detectTriEdge, squareEdgeSnapPosition, triSnapNeighbors, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, detectTriSnapEdge, HEX_ORIGIN } from '../utils/hexGrid'
-import { toKey, toTriKey, toTriSnapKey, toTriSnapEdgeKey } from '../utils/coordinateKey'
+import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, detectTriEdge, squareEdgeSnapPosition, triSnapNeighbors, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, detectTriSnapEdge, triEdgeSquareSnapPosition, triSnapEdgeSquareSnapPosition, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg, detectSquareSnapSide, HEX_ORIGIN } from '../utils/hexGrid'
+import { toKey, toTriKey, toTriSnapKey, toSquareSnapKey } from '../utils/coordinateKey'
 import { PIECE_COLORS, DEFAULT_COLOR } from './pieceGeometry'
 import CellMesh from './CellMesh'
 import EdgeMesh from './EdgeMesh'
-import type { TriCoord, TriEdgeIndex, TriSnapTarget } from '../types'
+import type { TriCoord, TriEdgeIndex, TriSnapTarget, SquareSnapTarget } from '../types'
 
 const config = piecesConfig as PiecesConfig
 const GRID_W = 5
@@ -117,12 +117,27 @@ interface SnapEdgeResult {
   y: number
 }
 
+interface SquareSnapResult {
+  worldX: number
+  worldZ: number
+  rotDeg: number
+  y: number
+}
+
+interface SquareSnapEdgeResult {
+  parentSnap: SquareSnapTarget
+  side: PieceSide
+  y: number
+}
+
 interface TriGhostState {
   triCoord: TriCoord
   y: number
   triEdge?: TriEdgeIndex
   snap?: SnapResult
   snapEdge?: SnapEdgeResult
+  squareSnap?: SquareSnapResult
+  squareSnapEdge?: SquareSnapEdgeResult
 }
 
 const SNAP_THRESHOLD = 0.5
@@ -232,6 +247,85 @@ function findSnapTriForEdge(
   return best
 }
 
+/** Find the nearest triangle edge to snap a square to. Scans both hex-grid and snap-placed triangles. */
+function findTriEdgeForSquareSnap(
+  wx: number, wz: number, y: number,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+): SquareSnapResult | null {
+  let bestDist = SNAP_THRESHOLD
+  let best: SquareSnapResult | null = null
+
+  for (const piece of pieces) {
+    if (piece.position.y !== y) continue
+
+    // Hex-grid triangles
+    if (piece.triCoord && piece.triEdge === undefined && !piece.triSnap) {
+      const { hq, hr, slot } = piece.triCoord
+      for (let e = 0; e < 3; e++) {
+        const mid = triEdgeWorldPosition(hq, 0, hr, slot, e)
+        const dist = Math.sqrt((wx - mid.x) ** 2 + (wz - mid.z) ** 2)
+        if (dist < bestDist) {
+          const snap = triEdgeSquareSnapPosition(hq, hr, slot, e)
+          const snapKey = toSquareSnapKey(snap.worldX, y, snap.worldZ)
+          if (!coordinateIndex.has(snapKey)) {
+            bestDist = dist
+            best = { ...snap, y }
+          }
+        }
+      }
+    }
+
+    // Snap-placed triangles
+    if (piece.triSnap && piece.triEdge === undefined) {
+      const { worldX, worldZ, angleDeg } = piece.triSnap
+      const dx = wx - worldX
+      const dz = wz - worldZ
+      if (dx * dx + dz * dz > 4) continue
+      for (let e = 0; e < 3; e++) {
+        const mid = triSnapEdgeWorldPosition(worldX, worldZ, angleDeg, 0, e)
+        const dist = Math.sqrt((wx - mid.x) ** 2 + (wz - mid.z) ** 2)
+        if (dist < bestDist) {
+          const snap = triSnapEdgeSquareSnapPosition(worldX, worldZ, angleDeg, e)
+          const snapKey = toSquareSnapKey(snap.worldX, y, snap.worldZ)
+          if (!coordinateIndex.has(snapKey)) {
+            bestDist = dist
+            best = { ...snap, y }
+          }
+        }
+      }
+    }
+  }
+
+  return best
+}
+
+/** Find the nearest snap-placed square whose edge the cursor is near (for edge piece placement). */
+function findSquareSnapForEdge(
+  wx: number, wz: number, y: number,
+  pieces: PlacedPiece[],
+): SquareSnapEdgeResult | null {
+  let bestDist = SNAP_THRESHOLD
+  let best: SquareSnapEdgeResult | null = null
+
+  for (const piece of pieces) {
+    if (!piece.squareSnap || piece.side || piece.position.y !== y) continue
+    const { worldX, worldZ, rotDeg } = piece.squareSnap
+    const dx = wx - worldX
+    const dz = wz - worldZ
+    if (dx * dx + dz * dz > 4) continue
+    const side = detectSquareSnapSide(worldX, worldZ, rotDeg, wx, wz)
+    const ep = squareSnapEdgeWorldPosition(worldX, worldZ, rotDeg, y, side)
+    const dist = Math.sqrt((wx - ep.x) ** 2 + (wz - ep.z) ** 2)
+    if (dist < bestDist) {
+      bestDist = dist
+      best = { parentSnap: piece.squareSnap, side, y }
+    }
+  }
+
+  return best
+}
+
 export function TriHitPlane({ floorY }: HitPlaneProps) {
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const pieces = useStore((s) => s.pieces)
@@ -240,6 +334,8 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
   const placeTriangleEdgePiece = useStore((s) => s.placeTriangleEdgePiece)
   const placeTriangleSnapped = useStore((s) => s.placeTriangleSnapped)
   const placeTriSnapEdgePiece = useStore((s) => s.placeTriSnapEdgePiece)
+  const placeSquareSnapped = useStore((s) => s.placeSquareSnapped)
+  const placeSquareSnapEdgePiece = useStore((s) => s.placeSquareSnapEdgePiece)
   const [ghost, setGhost] = useState<TriGhostState | null>(null)
 
   if (!selectedPieceType) return null
@@ -249,13 +345,29 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
 
   const isTriType = selectedPieceType.includes('triangle')
   const isEdgeType = pieceConfig.placementType === 'edge'
+  // Square cell types that can snap to triangle edges (hulls, floors)
+  const isSquareSnapType = pieceConfig.placementType === 'cell' && !isTriType
+    && (pieceConfig.category === 'hull' || pieceConfig.category === 'floor')
 
-  // This hit plane handles: triangle cell pieces, OR edge pieces on triangle foundations
-  if (!isTriType && !isEdgeType) return null
+  // This hit plane handles: triangle cells, edge pieces on triangles/snapped-squares, square cells snapping to triangles
+  if (!isTriType && !isEdgeType && !isSquareSnapType) return null
   // Triangle edge piece types don't exist — skip
   if (isTriType && isEdgeType) return null
 
   function handlePointerMove(e: ThreeEvent<PointerEvent>) {
+    // Square cell snapping to triangle edges
+    if (isSquareSnapType) {
+      const sqSnap = findTriEdgeForSquareSnap(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
+      if (sqSnap) {
+        e.stopPropagation()
+        const triCoord: TriCoord = { hq: 0, hr: 0, slot: 0 }
+        setGhost({ triCoord, y: floorY, squareSnap: sqSnap })
+      } else {
+        setGhost(null)
+      }
+      return
+    }
+
     if (isEdgeType) {
       // Check hex-grid triangles
       const { hq, hr, slot } = worldToTriCoord(e.point.x, e.point.z)
@@ -275,7 +387,15 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
         setGhost({ triCoord: triCoord2, y: floorY, snapEdge: se })
         return
       }
-      // No triangle found — let event pass through to square HitPlane
+      // Check snap-placed squares
+      const sqse = findSquareSnapForEdge(e.point.x, e.point.z, floorY, pieces)
+      if (sqse) {
+        e.stopPropagation()
+        const triCoord3: TriCoord = { hq: 0, hr: 0, slot: 0 }
+        setGhost({ triCoord: triCoord3, y: floorY, squareSnapEdge: sqse })
+        return
+      }
+      // No triangle/square found — let event pass through to square HitPlane
       setGhost(null)
       return
     }
@@ -301,6 +421,18 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
   }
 
   function handleClick(e: ThreeEvent<MouseEvent>) {
+    // Square cell snapping to triangle edges
+    if (isSquareSnapType) {
+      const sqSnap = findTriEdgeForSquareSnap(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
+      if (sqSnap) {
+        e.stopPropagation()
+        if (canPlaceSquareSnap(selectedPieceType!, sqSnap, pieces, coordinateIndex, config)) {
+          placeSquareSnapped(selectedPieceType!, sqSnap)
+        }
+      }
+      return
+    }
+
     if (isEdgeType) {
       // Check hex-grid triangles
       const { hq, hr, slot } = worldToTriCoord(e.point.x, e.point.z)
@@ -320,6 +452,15 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
         e.stopPropagation()
         if (canPlaceTriSnapEdge(selectedPieceType!, se.parentSnap, floorY, se.edge, pieces, coordinateIndex, config)) {
           placeTriSnapEdgePiece(selectedPieceType!, se.parentSnap, floorY, se.edge)
+        }
+        return
+      }
+      // Check snap-placed squares
+      const sqse = findSquareSnapForEdge(e.point.x, e.point.z, floorY, pieces)
+      if (sqse) {
+        e.stopPropagation()
+        if (canPlaceSquareSnapEdge(selectedPieceType!, sqse.parentSnap, floorY, sqse.side, pieces, coordinateIndex, config)) {
+          placeSquareSnapEdgePiece(selectedPieceType!, sqse.parentSnap, floorY, sqse.side)
         }
       }
       return
@@ -349,7 +490,11 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
   // Compute ghost validity
   let isValid = false
   if (ghost) {
-    if (ghost.snapEdge) {
+    if (ghost.squareSnap) {
+      isValid = canPlaceSquareSnap(selectedPieceType, ghost.squareSnap, pieces, coordinateIndex, config)
+    } else if (ghost.squareSnapEdge) {
+      isValid = canPlaceSquareSnapEdge(selectedPieceType, ghost.squareSnapEdge.parentSnap, ghost.squareSnapEdge.y, ghost.squareSnapEdge.side, pieces, coordinateIndex, config)
+    } else if (ghost.snapEdge) {
       isValid = canPlaceTriSnapEdge(selectedPieceType, ghost.snapEdge.parentSnap, ghost.snapEdge.y, ghost.snapEdge.edge, pieces, coordinateIndex, config)
     } else if (ghost.snap) {
       isValid = canPlaceTriSnap(selectedPieceType, ghost.snap, pieces, coordinateIndex, config)
@@ -363,7 +508,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
   return (
     <>
       <mesh
-        position={[HEX_ORIGIN.x, floorY, HEX_ORIGIN.z]}
+        position={[HEX_ORIGIN.x, floorY + 0.001, HEX_ORIGIN.z]}
         rotation={[-Math.PI / 2, 0, 0]}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
@@ -372,6 +517,20 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
         <planeGeometry args={[planeSize, planeSize]} />
         <meshBasicMaterial visible={false} />
       </mesh>
+      {ghost && ghost.squareSnap && (
+        <SquareSnapGhostPiece
+          type={selectedPieceType}
+          squareSnap={ghost.squareSnap}
+          valid={isValid}
+        />
+      )}
+      {ghost && ghost.squareSnapEdge && (
+        <SquareSnapEdgeGhostPiece
+          type={selectedPieceType}
+          squareSnapEdge={ghost.squareSnapEdge}
+          valid={isValid}
+        />
+      )}
       {ghost && ghost.snap && isTriType && (
         <TriSnapGhostPiece
           type={selectedPieceType}
@@ -458,6 +617,42 @@ function TriSnapEdgeGhostPiece({ type, snapEdge, valid }: {
   const wp = triSnapEdgeWorldPosition(worldX, worldZ, angleDeg, snapEdge.y, snapEdge.edge)
   const rotDeg = triSnapEdgeRotationDeg(worldX, worldZ, angleDeg, snapEdge.edge)
   const rotRad = (rotDeg * Math.PI) / 180
+  const wallH = type.includes('low') || type.includes('barrier') ? 0.33 : 0.95
+
+  return (
+    <group position={[wp.x, wp.y + wallH / 2, wp.z]} rotation={[0, rotRad, 0]}>
+      <EdgeMesh type={type} side="north" color={color} opacity={0.45} roughness={0.85} />
+    </group>
+  )
+}
+
+function SquareSnapGhostPiece({ type, squareSnap, valid }: {
+  type: string; squareSnap: SquareSnapResult; valid: boolean
+}) {
+  const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
+  const color = valid ? baseColor : '#ff3333'
+  const shape = getCellPieceShape(type)
+  const rotRad = (squareSnap.rotDeg * Math.PI) / 180
+
+  return (
+    <group
+      position={[squareSnap.worldX, squareSnap.y + shape.offset[1], squareSnap.worldZ]}
+      rotation={[0, rotRad, 0]}
+    >
+      <CellMesh type={type} color={color} opacity={0.45} roughness={0.85} />
+    </group>
+  )
+}
+
+function SquareSnapEdgeGhostPiece({ type, squareSnapEdge, valid }: {
+  type: string; squareSnapEdge: SquareSnapEdgeResult; valid: boolean
+}) {
+  const baseColor = PIECE_COLORS[type] ?? DEFAULT_COLOR
+  const color = valid ? baseColor : '#ff3333'
+  const { worldX, worldZ, rotDeg } = squareSnapEdge.parentSnap
+  const wp = squareSnapEdgeWorldPosition(worldX, worldZ, rotDeg, squareSnapEdge.y, squareSnapEdge.side)
+  const edgeRotDeg = squareSnapEdgeRotationDeg(rotDeg, squareSnapEdge.side)
+  const rotRad = (edgeRotDeg * Math.PI) / 180
   const wallH = type.includes('low') || type.includes('barrier') ? 0.33 : 0.95
 
   return (

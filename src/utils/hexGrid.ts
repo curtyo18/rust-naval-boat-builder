@@ -326,6 +326,71 @@ export function triSnapEdgeRotationDeg(worldX: number, worldZ: number, angleDeg:
   return -Math.atan2(dz, dx) * (180 / Math.PI)
 }
 
+/**
+ * Compute the position and rotation for a square snapped to a triangle edge.
+ * The square aligns one edge with the triangle edge and extends outward.
+ *
+ * @param v0 First vertex of the triangle edge
+ * @param v1 Second vertex of the triangle edge
+ * @param centroidX Triangle centroid X (used to determine outward direction)
+ * @param centroidZ Triangle centroid Z
+ */
+function squareSnapFromEdgeVertices(
+  v0: { x: number; z: number },
+  v1: { x: number; z: number },
+  centroidX: number,
+  centroidZ: number,
+): { worldX: number; worldZ: number; rotDeg: number } {
+  const mx = (v0.x + v1.x) / 2
+  const mz = (v0.z + v1.z) / 2
+
+  const dx = v1.x - v0.x
+  const dz = v1.z - v0.z
+  const len = Math.sqrt(dx * dx + dz * dz)
+
+  // Two candidate normals (perpendicular to edge)
+  const n1x = -dz / len
+  const n1z = dx / len
+
+  // Choose outward normal (pointing away from triangle centroid)
+  const toCx = centroidX - mx
+  const toCz = centroidZ - mz
+  const dot = n1x * toCx + n1z * toCz
+  const nx = dot < 0 ? n1x : dz / len
+  const nz = dot < 0 ? n1z : -dx / len
+
+  // Square center = edge midpoint + 0.5 * outward normal
+  const worldX = mx + 0.5 * nx
+  const worldZ = mz + 0.5 * nz
+
+  // Rotate square so one pair of edges aligns with the triangle edge direction
+  const edgeAngleDeg = Math.atan2(dz, dx) * (180 / Math.PI)
+  const rotDeg = -edgeAngleDeg
+
+  return { worldX, worldZ, rotDeg }
+}
+
+/** Square snap position for a hex-grid triangle edge. */
+export function triEdgeSquareSnapPosition(
+  hq: number, hr: number, slot: number, edge: number,
+): { worldX: number; worldZ: number; rotDeg: number } {
+  const verts = triSlotVertices(hq, hr, slot)
+  const v0 = verts[edge]
+  const v1 = verts[(edge + 1) % 3]
+  const c = triSlotWorldPosition(hq, 0, hr, slot)
+  return squareSnapFromEdgeVertices(v0, v1, c.x, c.z)
+}
+
+/** Square snap position for a snap-placed triangle edge. */
+export function triSnapEdgeSquareSnapPosition(
+  parentWorldX: number, parentWorldZ: number, parentAngleDeg: number, edge: number,
+): { worldX: number; worldZ: number; rotDeg: number } {
+  const verts = triSnapVertices(parentWorldX, parentWorldZ, parentAngleDeg)
+  const v0 = verts[edge]
+  const v1 = verts[(edge + 1) % 3]
+  return squareSnapFromEdgeVertices(v0, v1, parentWorldX, parentWorldZ)
+}
+
 /** Detect which edge (0, 1, 2) a world point is closest to on a snap-placed triangle. */
 export function detectTriSnapEdge(
   worldX: number, worldZ: number, angleDeg: number,
@@ -346,4 +411,69 @@ export function detectTriSnapEdge(
     }
   }
   return closest
+}
+
+/**
+ * World position of an edge on a snap-placed square.
+ * Local offsets are rotated by the square's rotDeg.
+ *
+ * Sides in local (unrotated) frame:
+ *   north: (0, -0.5)  south: (0, +0.5)  east: (+0.5, 0)  west: (-0.5, 0)
+ */
+export function squareSnapEdgeWorldPosition(
+  worldX: number, worldZ: number, rotDeg: number, y: number,
+  side: 'north' | 'south' | 'east' | 'west',
+): { x: number; y: number; z: number } {
+  const theta = (rotDeg * Math.PI) / 180
+  let lx: number, lz: number
+  switch (side) {
+    case 'north': lx = 0; lz = -0.5; break
+    case 'east':  lx = 0.5; lz = 0; break
+    case 'south': lx = 0; lz = 0.5; break
+    case 'west':  lx = -0.5; lz = 0; break
+  }
+  return {
+    x: worldX + lx * Math.cos(theta) + lz * Math.sin(theta),
+    y,
+    z: worldZ - lx * Math.sin(theta) + lz * Math.cos(theta),
+  }
+}
+
+/**
+ * Rotation (degrees) for an edge piece on a snap-placed square side.
+ * Returns the Y-rotation so that a "north" EdgeMesh aligns with the side.
+ */
+export function squareSnapEdgeRotationDeg(
+  rotDeg: number,
+  side: 'north' | 'south' | 'east' | 'west',
+): number {
+  switch (side) {
+    case 'north': return rotDeg
+    case 'east':  return rotDeg - 90
+    case 'south': return rotDeg - 180
+    case 'west':  return rotDeg - 270
+  }
+}
+
+/**
+ * Detect which side of a snap-placed square a world point is closest to.
+ * Transforms the point into the square's local frame and picks the nearest edge.
+ */
+export function detectSquareSnapSide(
+  worldX: number, worldZ: number, rotDeg: number,
+  wx: number, wz: number,
+): 'north' | 'south' | 'east' | 'west' {
+  const theta = (rotDeg * Math.PI) / 180
+  const dx = wx - worldX
+  const dz = wz - worldZ
+  // Inverse rotation: local = R(-θ) * world_offset
+  const lx = dx * Math.cos(theta) - dz * Math.sin(theta)
+  const lz = dx * Math.sin(theta) + dz * Math.cos(theta)
+  // Distance to each edge (square spans -0.5 to +0.5 in local frame)
+  const distX = Math.min(Math.abs(lx - 0.5), Math.abs(lx + 0.5))
+  const distZ = Math.min(Math.abs(lz - 0.5), Math.abs(lz + 0.5))
+  if (distX < distZ) {
+    return lx > 0 ? 'east' : 'west'
+  }
+  return lz > 0 ? 'south' : 'north'
 }

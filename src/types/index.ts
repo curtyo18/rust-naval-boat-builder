@@ -26,6 +26,12 @@ export interface TriSnapTarget {
   angleDeg: number
 }
 
+export interface SquareSnapTarget {
+  worldX: number
+  worldZ: number
+  rotDeg: number
+}
+
 export interface PlacedPiece {
   id: string
   type: string
@@ -35,6 +41,7 @@ export interface PlacedPiece {
   triCoord?: TriCoord
   triEdge?: TriEdgeIndex
   triSnap?: TriSnapTarget // triangle snapped to a square edge
+  squareSnap?: SquareSnapTarget // square snapped to a triangle edge
 }
 
 export type FloorConstraint = 'ground_only' | 'upper_only' | null

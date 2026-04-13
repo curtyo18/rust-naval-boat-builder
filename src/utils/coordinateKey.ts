@@ -21,6 +21,12 @@ export const toTriSnapKey = (worldX: number, y: number, worldZ: number): string 
 export const toTriSnapEdgeKey = (worldX: number, y: number, worldZ: number, edge: number): string =>
   `tsnapedge:${Math.round(worldX * 1000)},${y},${Math.round(worldZ * 1000)},${edge}`
 
+export const toSquareSnapKey = (worldX: number, y: number, worldZ: number): string =>
+  `sqsnap:${Math.round(worldX * 1000)},${y},${Math.round(worldZ * 1000)}`
+
+export const toSquareSnapEdgeKey = (worldX: number, y: number, worldZ: number, side: string): string =>
+  `sqsnapedge:${Math.round(worldX * 1000)},${y},${Math.round(worldZ * 1000)},${side}`
+
 export function parseTriKey(key: string): { hq: number; y: number; hr: number; slot: number } | null {
   if (!key.startsWith('t:')) return null
   if (key.startsWith('te:')) return null
