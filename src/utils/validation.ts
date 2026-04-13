@@ -1,6 +1,8 @@
 import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget } from '../types'
 import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from './coordinateKey'
 
+const ALL_SIDES: PieceSide[] = ['north', 'south', 'east', 'west']
+
 const GRID_X = 5
 const GRID_Z = 11
 const GRID_Y = 3
@@ -37,6 +39,60 @@ export function hasFoundation(pos: XYZ, coordinateIndex: Map<string, string>): b
   return coordinateIndex.has(toKey(pos))
 }
 
+/** Upper-floor cell pieces need at least one wall/edge piece at the same cell on the floor below. */
+export function hasWallSupport(pos: XYZ, coordinateIndex: Map<string, string>): boolean {
+  if (pos.y <= 0) return true
+  const below: XYZ = { x: pos.x, y: pos.y - 1, z: pos.z }
+  return ALL_SIDES.some(side => coordinateIndex.has(toEdgeKey(below, side)))
+}
+
+/** Triangle cell pieces at y>0 need at least one edge piece on the same triangle below. */
+export function hasTriWallSupport(hq: number, y: number, hr: number, slot: number, coordinateIndex: Map<string, string>): boolean {
+  if (y <= 0) return true
+  for (let edge = 0; edge < 3; edge++) {
+    if (coordinateIndex.has(toTriEdgeKey(hq, y - 1, hr, slot, edge))) return true
+  }
+  return false
+}
+
+/** Check if a grid cell overlaps any snapped square (different coordinate space). */
+function overlapsSnappedPiece(pos: XYZ, pieces: PlacedPiece[]): boolean {
+  const cx = pos.x + 0.5
+  const cz = pos.z + 0.5
+  for (const piece of pieces) {
+    if (piece.position.y !== pos.y || piece.side) continue
+    if (piece.squareSnap) {
+      const dx = piece.squareSnap.worldX - cx
+      const dz = piece.squareSnap.worldZ - cz
+      if (dx * dx + dz * dz < 0.45 * 0.45) return true
+    }
+    if (piece.triSnap && !piece.triEdge) {
+      const dx = piece.triSnap.worldX - cx
+      const dz = piece.triSnap.worldZ - cz
+      if (dx * dx + dz * dz < 0.4 * 0.4) return true
+    }
+  }
+  return false
+}
+
+/** Check if a snap position overlaps any grid-placed cell piece. */
+function overlapsGridPiece(worldX: number, worldZ: number, y: number, coordinateIndex: Map<string, string>): boolean {
+  const gx = Math.floor(worldX)
+  const gz = Math.floor(worldZ)
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dz = -1; dz <= 1; dz++) {
+      const key = toKey({ x: gx + dx, y, z: gz + dz })
+      if (!coordinateIndex.has(key)) continue
+      const gcx = gx + dx + 0.5
+      const gcz = gz + dz + 0.5
+      const ddx = worldX - gcx
+      const ddz = worldZ - gcz
+      if (ddx * ddx + ddz * ddz < 0.7 * 0.7) return true
+    }
+  }
+  return false
+}
+
 export function isMaxCountReached(type: string, pieces: PlacedPiece[], config: PiecesConfig): boolean {
   const maxCount = config[type]?.maxCount
   if (maxCount === null || maxCount === undefined) return false
@@ -67,8 +123,12 @@ export function canPlace(
     if (pieceConfig.placementType === 'edge') {
       // Edge piece on a triangle edge
       if (triEdge === undefined) return false
+      if (position.y >= GRID_Y - 1) return false // roof level — no walls
       const foundationKey = toTriKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot)
-      if (!coordinateIndex.has(foundationKey)) return false
+      const hasTriFoundation = coordinateIndex.has(foundationKey)
+      const hasTriEdgeBelow = position.y > 0
+        && coordinateIndex.has(toTriEdgeKey(triCoord.hq, position.y - 1, triCoord.hr, triCoord.slot, triEdge))
+      if (!hasTriFoundation && !hasTriEdgeBelow) return false
       const edgeKey = toTriEdgeKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot, triEdge)
       if (coordinateIndex.has(edgeKey)) return false
       return true
@@ -77,6 +137,7 @@ export function canPlace(
     // Cell piece (triangle foundation)
     const key = toTriKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot)
     if (coordinateIndex.has(key)) return false
+    if (!hasTriWallSupport(triCoord.hq, position.y, triCoord.hr, triCoord.slot, coordinateIndex)) return false
     return true
   }
 
@@ -88,11 +149,16 @@ export function canPlace(
 
   if (pieceConfig.placementType === 'edge') {
     if (!side) return false
+    if (position.y >= GRID_Y - 1) return false // roof level — no walls
     if (isEdgeOccupied(position, side, coordinateIndex)) return false
-    // Edge pieces require a foundation (hull or floor piece) in the cell they attach to
-    if (!hasFoundation(position, coordinateIndex)) return false
+    // Foundation at same cell OR edge piece below on same side (wall stacking)
+    const hasEdgeBelowOnSide = position.y > 0
+      && coordinateIndex.has(toEdgeKey({ x: position.x, y: position.y - 1, z: position.z }, side))
+    if (!hasFoundation(position, coordinateIndex) && !hasEdgeBelowOnSide) return false
   } else {
     if (isCellOccupied(position, coordinateIndex)) return false
+    if (!hasWallSupport(position, coordinateIndex)) return false
+    if (overlapsSnappedPiece(position, pieces)) return false
   }
 
   return true
@@ -112,6 +178,7 @@ export function canPlaceTriSnap(
   // Must not already have a triangle at this snap position
   const snapKey = toTriSnapKey(snap.worldX, snap.y, snap.worldZ)
   if (coordinateIndex.has(snapKey)) return false
+  if (overlapsGridPiece(snap.worldX, snap.worldZ, snap.y, coordinateIndex)) return false
   return true
 }
 
@@ -128,9 +195,13 @@ export function canPlaceTriSnapEdge(
   if (!pieceConfig) return false
   if (!isFloorAllowed({ x: 0, y, z: 0 }, pieceConfig.floorConstraint)) return false
   if (isMaxCountReached(type, pieces, config)) return false
-  // Must have a snap-placed triangle foundation at this position
+  if (y >= GRID_Y - 1) return false // roof level — no walls
+  // Foundation at same position OR edge piece below on same edge (stacking)
   const foundKey = toTriSnapKey(snap.worldX, y, snap.worldZ)
-  if (!coordinateIndex.has(foundKey)) return false
+  const hasSnapFoundation = coordinateIndex.has(foundKey)
+  const hasSnapEdgeBelow = y > 0
+    && coordinateIndex.has(toTriSnapEdgeKey(snap.worldX, y - 1, snap.worldZ, edge))
+  if (!hasSnapFoundation && !hasSnapEdgeBelow) return false
   // Must not already have an edge piece here
   const edgeKey = toTriSnapEdgeKey(snap.worldX, y, snap.worldZ, edge)
   if (coordinateIndex.has(edgeKey)) return false
@@ -150,6 +221,7 @@ export function canPlaceSquareSnap(
   if (isMaxCountReached(type, pieces, config)) return false
   const snapKey = toSquareSnapKey(snap.worldX, snap.y, snap.worldZ)
   if (coordinateIndex.has(snapKey)) return false
+  if (overlapsGridPiece(snap.worldX, snap.worldZ, snap.y, coordinateIndex)) return false
   return true
 }
 
@@ -166,9 +238,13 @@ export function canPlaceSquareSnapEdge(
   if (!pieceConfig) return false
   if (!isFloorAllowed({ x: 0, y, z: 0 }, pieceConfig.floorConstraint)) return false
   if (isMaxCountReached(type, pieces, config)) return false
-  // Must have a snap-placed square foundation at this position
+  if (y >= GRID_Y - 1) return false // roof level — no walls
+  // Foundation at same position OR edge piece below on same side (stacking)
   const foundKey = toSquareSnapKey(snap.worldX, y, snap.worldZ)
-  if (!coordinateIndex.has(foundKey)) return false
+  const hasSnapFoundation = coordinateIndex.has(foundKey)
+  const hasSnapEdgeBelow = y > 0
+    && coordinateIndex.has(toSquareSnapEdgeKey(snap.worldX, y - 1, snap.worldZ, side))
+  if (!hasSnapFoundation && !hasSnapEdgeBelow) return false
   // Must not already have an edge piece here
   const edgeKey = toSquareSnapEdgeKey(snap.worldX, y, snap.worldZ, side)
   if (coordinateIndex.has(edgeKey)) return false

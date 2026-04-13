@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { canPlace, isTriInBounds } from '../src/utils/validation'
 import type { PlacedPiece, PiecesConfig } from '../src/types'
-import { toTriKey } from '../src/utils/coordinateKey'
+import { toTriKey, toTriEdgeKey } from '../src/utils/coordinateKey'
 import piecesConfig from '../src/data/pieces-config.json'
 
 const config = piecesConfig as PiecesConfig
@@ -63,9 +63,16 @@ describe('canPlace with triCoord', () => {
     expect(result).toBe(false)
   })
 
-  it('allows triangle floor on upper floors', () => {
-    const result = canPlace('floor_triangle', { x: 0, y: 1, z: 0 }, [], new Map(), config, undefined, { hq: 0, hr: 0, slot: 0 })
+  it('allows triangle floor on upper floors with wall support below', () => {
+    // Wall on edge 0 of the same triangle at y=0 provides support
+    const index = new Map([[toTriEdgeKey(0, 0, 0, 0, 0), 'wall-1']])
+    const result = canPlace('floor_triangle', { x: 0, y: 1, z: 0 }, [], index, config, undefined, { hq: 0, hr: 0, slot: 0 })
     expect(result).toBe(true)
+  })
+
+  it('rejects triangle floor on upper floors without wall support', () => {
+    const result = canPlace('floor_triangle', { x: 0, y: 1, z: 0 }, [], new Map(), config, undefined, { hq: 0, hr: 0, slot: 0 })
+    expect(result).toBe(false)
   })
 
   it('rejects unknown piece type', () => {

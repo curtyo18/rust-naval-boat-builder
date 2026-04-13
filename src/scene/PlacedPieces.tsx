@@ -1,8 +1,14 @@
+import { useState } from 'react'
 import { useStore } from '../store/useStore'
 import { PIECE_COLORS, DEFAULT_COLOR, getPiecePosition, isTriangleType, getCellPieceShape } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
 import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg } from '../utils/hexGrid'
+import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../utils/validation'
+import piecesConfig from '../data/pieces-config.json'
+import type { PiecesConfig, PlacedPiece } from '../types'
+
+const edgeConfig = piecesConfig as PiecesConfig
 
 export default function PlacedPieces() {
   const pieces = useStore((s) => s.pieces)
@@ -10,6 +16,96 @@ export default function PlacedPieces() {
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const selectedPieceId = useStore((s) => s.selectedPieceId)
   const selectPiece = useStore((s) => s.selectPiece)
+  const coordinateIndex = useStore((s) => s.coordinateIndex)
+  const placePiece = useStore((s) => s.placePiece)
+  const placeTriangleEdgePiece = useStore((s) => s.placeTriangleEdgePiece)
+  const placeTriSnapEdgePiece = useStore((s) => s.placeTriSnapEdgePiece)
+  const placeSquareSnapEdgePiece = useStore((s) => s.placeSquareSnapEdgePiece)
+  const placeTrianglePiece = useStore((s) => s.placeTrianglePiece)
+  const placeTriangleSnapped = useStore((s) => s.placeTriangleSnapped)
+  const placeSquareSnapped = useStore((s) => s.placeSquareSnapped)
+  const [stackTargetId, setStackTargetId] = useState<string | null>(null)
+
+  const isEdgePlacement = selectedPieceType != null
+    && edgeConfig[selectedPieceType]?.placementType === 'edge'
+  const isFloorPlacement = selectedPieceType != null
+    && edgeConfig[selectedPieceType]?.placementType === 'cell'
+    && edgeConfig[selectedPieceType]?.floorConstraint === 'upper_only'
+  const isTriFloor = isFloorPlacement && selectedPieceType!.includes('triangle')
+  const isSquareFloor = isFloorPlacement && !selectedPieceType!.includes('triangle')
+
+  function canStackOn(piece: PlacedPiece): boolean {
+    if (!selectedPieceType || !isEdgePlacement) return false
+    const sy = piece.position.y + 1
+    if (piece.squareSnap && piece.side) {
+      return canPlaceSquareSnapEdge(selectedPieceType, piece.squareSnap, sy, piece.side, pieces, coordinateIndex, edgeConfig)
+    }
+    if (piece.triSnap && piece.triEdge !== undefined) {
+      return canPlaceTriSnapEdge(selectedPieceType, piece.triSnap, sy, piece.triEdge, pieces, coordinateIndex, edgeConfig)
+    }
+    if (piece.triCoord && piece.triEdge !== undefined) {
+      return canPlace(selectedPieceType, { x: 0, y: sy, z: 0 }, pieces, coordinateIndex, edgeConfig, undefined, piece.triCoord, piece.triEdge as 0 | 1 | 2)
+    }
+    if (piece.side) {
+      return canPlace(selectedPieceType, { ...piece.position, y: sy }, pieces, coordinateIndex, edgeConfig, piece.side)
+    }
+    return false
+  }
+
+  function placeOnTop(piece: PlacedPiece) {
+    if (!selectedPieceType) return
+    const sy = piece.position.y + 1
+    if (piece.squareSnap && piece.side) {
+      placeSquareSnapEdgePiece(selectedPieceType, piece.squareSnap, sy, piece.side)
+    } else if (piece.triSnap && piece.triEdge !== undefined) {
+      placeTriSnapEdgePiece(selectedPieceType, piece.triSnap, sy, piece.triEdge as 0 | 1 | 2)
+    } else if (piece.triCoord && piece.triEdge !== undefined) {
+      placeTriangleEdgePiece(selectedPieceType, sy, piece.triCoord, piece.triEdge as 0 | 1 | 2)
+    } else if (piece.side) {
+      placePiece(selectedPieceType, { ...piece.position, y: sy }, 0, piece.side)
+    }
+  }
+
+  /** Can a floor piece be placed on the level above this edge piece? */
+  function canFloorAbove(piece: PlacedPiece): boolean {
+    if (!selectedPieceType || !isFloorPlacement) return false
+    const sy = piece.position.y + 1
+    // Grid square edge → square floor above
+    if (piece.side && !piece.squareSnap && !piece.triSnap && !piece.triCoord) {
+      if (!isSquareFloor) return false
+      return canPlace(selectedPieceType, { ...piece.position, y: sy }, pieces, coordinateIndex, edgeConfig)
+    }
+    // Snap-placed square edge → square floor above
+    if (piece.squareSnap && piece.side) {
+      if (!isSquareFloor) return false
+      return canPlaceSquareSnap(selectedPieceType, { ...piece.squareSnap, y: sy }, pieces, coordinateIndex, edgeConfig)
+    }
+    // Snap-placed triangle edge → triangle floor above
+    if (piece.triSnap && piece.triEdge !== undefined) {
+      if (!isTriFloor) return false
+      return canPlaceTriSnap(selectedPieceType, { ...piece.triSnap, y: sy }, pieces, coordinateIndex, edgeConfig)
+    }
+    // Hex-grid triangle edge → triangle floor above
+    if (piece.triCoord && piece.triEdge !== undefined) {
+      if (!isTriFloor) return false
+      return canPlace(selectedPieceType, { x: 0, y: sy, z: 0 }, pieces, coordinateIndex, edgeConfig, undefined, piece.triCoord)
+    }
+    return false
+  }
+
+  function placeFloorAbove(piece: PlacedPiece) {
+    if (!selectedPieceType) return
+    const sy = piece.position.y + 1
+    if (piece.side && !piece.squareSnap && !piece.triSnap && !piece.triCoord) {
+      placePiece(selectedPieceType, { ...piece.position, y: sy }, 0)
+    } else if (piece.squareSnap && piece.side) {
+      placeSquareSnapped(selectedPieceType, { ...piece.squareSnap, y: sy })
+    } else if (piece.triSnap && piece.triEdge !== undefined) {
+      placeTriangleSnapped(selectedPieceType, { ...piece.triSnap, y: sy })
+    } else if (piece.triCoord && piece.triEdge !== undefined) {
+      placeTrianglePiece(selectedPieceType, sy, piece.triCoord)
+    }
+  }
 
   return (
     <>
@@ -23,10 +119,8 @@ export default function PlacedPieces() {
         const renderRotation = piece.rotation
         const isSelectMode = selectedPieceType === null
 
-        const canSelect = isSelectMode || piece.type === selectedPieceType
-
         const handleClick = (e: { stopPropagation: () => void }) => {
-          if (canSelect) {
+          if (isSelectMode) {
             e.stopPropagation()
             selectPiece(isSelected ? null : piece.id)
           }
@@ -39,19 +133,55 @@ export default function PlacedPieces() {
           const edgeRotDeg = squareSnapEdgeRotationDeg(rotDeg, piece.side)
           const rotRad = (edgeRotDeg * Math.PI) / 180
           const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 0.95
+          const canStack = isEdgePlacement && piece.position.y < 1
+          const canFloor = isSquareFloor && piece.position.y < 2
+          const canInteract = canStack || canFloor
+          const isTarget = stackTargetId === piece.id
+          const interactHandlers = canInteract ? {
+            onPointerMove: (ev: { stopPropagation: () => void }) => ev.stopPropagation(),
+            onPointerOver: () => setStackTargetId(piece.id),
+            onPointerOut: () => setStackTargetId((p) => p === piece.id ? null : p),
+            onClick: (ev: { stopPropagation: () => void; delta?: number }) => {
+              if ((ev as any).delta > 5) return
+              ev.stopPropagation()
+              if (canStack && canStackOn(piece)) placeOnTop(piece)
+              else if (canFloor && canFloorAbove(piece)) placeFloorAbove(piece)
+            },
+          } : {}
+          // Edge stacking ghost
+          const edgeGhostWp = canStack && isTarget
+            ? squareSnapEdgeWorldPosition(worldX, worldZ, rotDeg, piece.position.y + 1, piece.side)
+            : null
+          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 0.95
+          // Floor ghost
+          const floorGhost = canFloor && isTarget && !canStack
+          const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
+            ? (PIECE_COLORS[selectedPieceType!] ?? DEFAULT_COLOR) : '#ff3333'
+          const cellShape = floorGhost && selectedPieceType ? getCellPieceShape(selectedPieceType) : null
           return (
-            <group
-              key={piece.id}
-              position={[wp.x, wp.y + wallH / 2, wp.z]}
-              rotation={[0, rotRad, 0]}
-              onClick={handleClick}
-            >
-              <EdgeMesh
-                type={piece.type}
-                side="north"
-                color={color}
-                opacity={isSelectMode ? 0.8 : 1}
-              />
+            <group key={piece.id}>
+              <group
+                position={[wp.x, wp.y + wallH / 2, wp.z]}
+                rotation={[0, rotRad, 0]}
+                {...canInteract ? interactHandlers : { onClick: handleClick }}
+              >
+                <EdgeMesh
+                  type={piece.type}
+                  side="north"
+                  color={color}
+                  opacity={isSelectMode ? 0.8 : 1}
+                />
+              </group>
+              {edgeGhostWp && (
+                <group position={[edgeGhostWp.x, edgeGhostWp.y + gWallH / 2, edgeGhostWp.z]} rotation={[0, rotRad, 0]}>
+                  <EdgeMesh type={selectedPieceType!} side="north" color={ghostColor} opacity={0.45} />
+                </group>
+              )}
+              {floorGhost && cellShape && (
+                <group position={[worldX, piece.position.y + 1 + cellShape.offset[1], worldZ]} rotation={[0, (rotDeg * Math.PI) / 180, 0]}>
+                  <CellMesh type={selectedPieceType!} color={ghostColor} opacity={0.45} />
+                </group>
+              )}
             </group>
           )
         }
@@ -84,19 +214,52 @@ export default function PlacedPieces() {
           const rotDeg = triSnapEdgeRotationDeg(worldX, worldZ, angleDeg, piece.triEdge)
           const rotRad = (rotDeg * Math.PI) / 180
           const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 0.95
+          const canStack = isEdgePlacement && piece.position.y < 1
+          const canFloor = isTriFloor && piece.position.y < 2
+          const canInteract = canStack || canFloor
+          const isTarget = stackTargetId === piece.id
+          const interactHandlers = canInteract ? {
+            onPointerMove: (ev: { stopPropagation: () => void }) => ev.stopPropagation(),
+            onPointerOver: () => setStackTargetId(piece.id),
+            onPointerOut: () => setStackTargetId((p) => p === piece.id ? null : p),
+            onClick: (ev: { stopPropagation: () => void; delta?: number }) => {
+              if ((ev as any).delta > 5) return
+              ev.stopPropagation()
+              if (canStack && canStackOn(piece)) placeOnTop(piece)
+              else if (canFloor && canFloorAbove(piece)) placeFloorAbove(piece)
+            },
+          } : {}
+          const edgeGhostWp = canStack && isTarget
+            ? triSnapEdgeWorldPosition(worldX, worldZ, angleDeg, piece.position.y + 1, piece.triEdge)
+            : null
+          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 0.95
+          const floorGhost = canFloor && isTarget && !canStack
+          const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
+            ? (PIECE_COLORS[selectedPieceType!] ?? DEFAULT_COLOR) : '#ff3333'
           return (
-            <group
-              key={piece.id}
-              position={[wp.x, wp.y + wallH / 2, wp.z]}
-              rotation={[0, rotRad, 0]}
-              onClick={handleClick}
-            >
-              <EdgeMesh
-                type={piece.type}
-                side="north"
-                color={color}
-                opacity={isSelectMode ? 0.8 : 1}
-              />
+            <group key={piece.id}>
+              <group
+                position={[wp.x, wp.y + wallH / 2, wp.z]}
+                rotation={[0, rotRad, 0]}
+                {...canInteract ? interactHandlers : { onClick: handleClick }}
+              >
+                <EdgeMesh
+                  type={piece.type}
+                  side="north"
+                  color={color}
+                  opacity={isSelectMode ? 0.8 : 1}
+                />
+              </group>
+              {edgeGhostWp && (
+                <group position={[edgeGhostWp.x, edgeGhostWp.y + gWallH / 2, edgeGhostWp.z]} rotation={[0, rotRad, 0]}>
+                  <EdgeMesh type={selectedPieceType!} side="north" color={ghostColor} opacity={0.45} />
+                </group>
+              )}
+              {floorGhost && (
+                <group position={[worldX, piece.position.y + 1, worldZ]}>
+                  <CellMesh type={selectedPieceType!} color={ghostColor} opacity={0.45} angleDeg={angleDeg} />
+                </group>
+              )}
             </group>
           )
         }
@@ -122,19 +285,54 @@ export default function PlacedPieces() {
           const rotDeg = triEdgeRotationDeg(slot, piece.triEdge)
           const rotRad = (rotDeg * Math.PI) / 180
           const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 0.95
+          const canStack = isEdgePlacement && piece.position.y < 1
+          const canFloor = isTriFloor && piece.position.y < 2
+          const canInteract = canStack || canFloor
+          const isTarget = stackTargetId === piece.id
+          const interactHandlers = canInteract ? {
+            onPointerMove: (ev: { stopPropagation: () => void }) => ev.stopPropagation(),
+            onPointerOver: () => setStackTargetId(piece.id),
+            onPointerOut: () => setStackTargetId((p) => p === piece.id ? null : p),
+            onClick: (ev: { stopPropagation: () => void; delta?: number }) => {
+              if ((ev as any).delta > 5) return
+              ev.stopPropagation()
+              if (canStack && canStackOn(piece)) placeOnTop(piece)
+              else if (canFloor && canFloorAbove(piece)) placeFloorAbove(piece)
+            },
+          } : {}
+          const edgeGhostWp = canStack && isTarget
+            ? triEdgeWorldPosition(hq, piece.position.y + 1, hr, slot, piece.triEdge)
+            : null
+          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 0.95
+          const floorGhost = canFloor && isTarget && !canStack
+          const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
+            ? (PIECE_COLORS[selectedPieceType!] ?? DEFAULT_COLOR) : '#ff3333'
+          const floorWp = floorGhost ? triSlotWorldPosition(hq, piece.position.y + 1, hr, slot) : null
+          const floorAngle = floorGhost ? triSlotRotationDeg(slot) : 0
           return (
-            <group
-              key={piece.id}
-              position={[wp.x, wp.y + wallH / 2, wp.z]}
-              rotation={[0, rotRad, 0]}
-              onClick={handleClick}
-            >
-              <EdgeMesh
-                type={piece.type}
-                side="north"
-                color={color}
-                opacity={isSelectMode ? 0.8 : 1}
-              />
+            <group key={piece.id}>
+              <group
+                position={[wp.x, wp.y + wallH / 2, wp.z]}
+                rotation={[0, rotRad, 0]}
+                {...canInteract ? interactHandlers : { onClick: handleClick }}
+              >
+                <EdgeMesh
+                  type={piece.type}
+                  side="north"
+                  color={color}
+                  opacity={isSelectMode ? 0.8 : 1}
+                />
+              </group>
+              {edgeGhostWp && (
+                <group position={[edgeGhostWp.x, edgeGhostWp.y + gWallH / 2, edgeGhostWp.z]} rotation={[0, rotRad, 0]}>
+                  <EdgeMesh type={selectedPieceType!} side="north" color={ghostColor} opacity={0.45} />
+                </group>
+              )}
+              {floorWp && (
+                <group position={[floorWp.x, floorWp.y, floorWp.z]}>
+                  <CellMesh type={selectedPieceType!} color={ghostColor} opacity={0.45} angleDeg={floorAngle} />
+                </group>
+              )}
             </group>
           )
         }
@@ -158,14 +356,53 @@ export default function PlacedPieces() {
 
         // Edge pieces use EdgeMesh for distinct window/doorway shapes
         if (piece.side) {
+          const canStack = isEdgePlacement && piece.position.y < 1
+          const canFloor = isSquareFloor && piece.position.y < 2
+          const canInteract = canStack || canFloor
+          const isTarget = stackTargetId === piece.id
+          const interactHandlers = canInteract ? {
+            onPointerMove: (ev: { stopPropagation: () => void }) => ev.stopPropagation(),
+            onPointerOver: () => setStackTargetId(piece.id),
+            onPointerOut: () => setStackTargetId((p) => p === piece.id ? null : p),
+            onClick: (ev: { stopPropagation: () => void; delta?: number }) => {
+              if ((ev as any).delta > 5) return
+              ev.stopPropagation()
+              if (canStack && canStackOn(piece)) placeOnTop(piece)
+              else if (canFloor && canFloorAbove(piece)) placeFloorAbove(piece)
+            },
+          } : {}
+          const edgeGhostPos = canStack && isTarget
+            ? getPiecePosition({ ...piece.position, y: piece.position.y + 1 }, selectedPieceType!, piece.side)
+            : null
+          const floorGhost = canFloor && isTarget && !canStack
+          const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
+            ? (PIECE_COLORS[selectedPieceType!] ?? DEFAULT_COLOR) : '#ff3333'
+          const floorGhostPos = floorGhost && selectedPieceType
+            ? getPiecePosition({ ...piece.position, y: piece.position.y + 1 }, selectedPieceType)
+            : null
           return (
-            <group key={piece.id} position={position} onClick={handleClick}>
-              <EdgeMesh
-                type={piece.type}
-                side={piece.side}
-                color={color}
-                opacity={isSelectMode ? 0.8 : 1}
-              />
+            <group key={piece.id}>
+              <group
+                position={position}
+                {...canInteract ? interactHandlers : { onClick: handleClick }}
+              >
+                <EdgeMesh
+                  type={piece.type}
+                  side={piece.side}
+                  color={color}
+                  opacity={isSelectMode ? 0.8 : 1}
+                />
+              </group>
+              {edgeGhostPos && (
+                <group position={edgeGhostPos}>
+                  <EdgeMesh type={selectedPieceType!} side={piece.side} color={ghostColor} opacity={0.45} />
+                </group>
+              )}
+              {floorGhostPos && (
+                <group position={floorGhostPos}>
+                  <CellMesh type={selectedPieceType!} color={ghostColor} opacity={0.45} />
+                </group>
+              )}
             </group>
           )
         }
