@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeTotalCosts, computeBoatStats } from '../src/utils/costs'
+import { computeTotalCosts, computeBoatStats, computeSpeedInfo } from '../src/utils/costs'
 import type { PlacedPiece, PiecesConfig } from '../src/types'
 
 const config: PiecesConfig = {
@@ -62,5 +62,57 @@ describe('computeBoatStats', () => {
   it('ignores unknown piece types', () => {
     const pieces = [makePiece('unknown', '1')]
     expect(computeBoatStats(pieces, config)).toEqual({ totalHp: 0, totalMass: 0 })
+  })
+})
+
+describe('computeSpeedInfo', () => {
+  it('small boat achievable with sails only', () => {
+    // 1000 mass -> 12750 power needed -> ceil(12750/2500) = 6 sails
+    const result = computeSpeedInfo(1000)
+    expect(result.requiredPower).toBe(12750)
+    expect(result.sailsNeeded).toBe(6)
+    expect(result.canAchieveWithSails).toBe(true)
+    expect(result.enginesNeeded).toBe(null)
+    expect(result.canAchieveMaxSpeed).toBe(true)
+  })
+
+  it('medium boat needs sails plus engines', () => {
+    // 3000 mass -> 38250 power needed -> 16 sails (too many)
+    // with 10 sails (25000) deficit = 13250 -> ceil(13250/10000) = 2 engines
+    const result = computeSpeedInfo(3000)
+    expect(result.sailsNeeded).toBe(16)
+    expect(result.canAchieveWithSails).toBe(false)
+    expect(result.enginesNeeded).toBe(2)
+    expect(result.canAchieveMaxSpeed).toBe(true)
+  })
+
+  it('huge boat cannot reach max speed', () => {
+    // 6000 mass -> 76500 power needed
+    // 10 sails + 5 engines = 75000 -> not enough
+    const result = computeSpeedInfo(6000)
+    expect(result.canAchieveWithSails).toBe(false)
+    expect(result.enginesNeeded).toBe(6)
+    expect(result.canAchieveMaxSpeed).toBe(false)
+  })
+
+  it('zero mass needs zero sails', () => {
+    const result = computeSpeedInfo(0)
+    expect(result.requiredPower).toBe(0)
+    expect(result.sailsNeeded).toBe(0)
+    expect(result.canAchieveWithSails).toBe(true)
+    expect(result.enginesNeeded).toBe(null)
+    expect(result.canAchieveMaxSpeed).toBe(true)
+  })
+
+  it('boundary: exactly 5800 mass is achievable', () => {
+    // 5800 * 12.75 = 73950 -> 10*2500 + 5*10000 = 75000 >= 73950
+    const result = computeSpeedInfo(5800)
+    expect(result.canAchieveMaxSpeed).toBe(true)
+  })
+
+  it('boundary: 5883 mass is not achievable', () => {
+    // 5883 * 12.75 = 75008.25 > 75000
+    const result = computeSpeedInfo(5883)
+    expect(result.canAchieveMaxSpeed).toBe(false)
   })
 })
