@@ -35,8 +35,18 @@ export default function EdgeMesh({ type, side, color, opacity = 1, roughness = 0
   const woodTex = getWoodTexture()
   const mat = { color, opacity, transparent, roughness, metalness: 0.05, map: woodTex }
 
+  // Cannon wall — short wall with center cutout for cannon barrel
+  if (type === 'low_cannon_wall') {
+    return <CannonWall isNS={isNS} mat={mat} />
+  }
+
+  // Low barrier — fence-style with horizontal planks and gaps
+  if (type === 'low_wall_barrier') {
+    return <FenceBarrier isNS={isNS} mat={mat} />
+  }
+
   // Low walls — simple short box
-  if (type.includes('low') || type.includes('barrier')) {
+  if (type.includes('low')) {
     const h = 0.33
     const size: [number, number, number] = isNS
       ? [WALL_W, h, THICKNESS]
@@ -199,6 +209,91 @@ function StairsMesh({ side, mat }: { side: PieceSide; mat: FrameProps['mat'] }) 
           </mesh>
         )
       })}
+    </group>
+  )
+}
+
+/**
+ * Cannon wall: short wall (0.33) with a rectangular cutout in the center
+ * for a cannon barrel to poke through.
+ */
+function CannonWall({ isNS, mat }: FrameProps) {
+  const H = 0.33
+  const openW = 0.22
+  const sideW = (WALL_W - openW) / 2
+
+  // 3 pieces: bottom strip + two side pillars (cutout open to the top)
+  const botH = 0.14
+  const pillarH = H - botH
+  const botY = -(H - botH) / 2
+  const pillarY = (H - pillarH) / 2
+
+  const parts: { size: [number, number, number]; pos: [number, number, number] }[] = isNS
+    ? [
+        { size: [WALL_W, botH, THICKNESS], pos: [0, botY, 0] },
+        { size: [sideW, pillarH, THICKNESS], pos: [-(openW + sideW) / 2, pillarY, 0] },
+        { size: [sideW, pillarH, THICKNESS], pos: [(openW + sideW) / 2, pillarY, 0] },
+      ]
+    : [
+        { size: [THICKNESS, botH, WALL_W], pos: [0, botY, 0] },
+        { size: [THICKNESS, pillarH, sideW], pos: [0, pillarY, -(openW + sideW) / 2] },
+        { size: [THICKNESS, pillarH, sideW], pos: [0, pillarY, (openW + sideW) / 2] },
+      ]
+
+  return (
+    <group>
+      {parts.map((p, i) => (
+        <mesh key={i} position={p.pos}>
+          <boxGeometry args={p.size} />
+          <meshStandardMaterial {...mat} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/**
+ * Fence barrier: horizontal planks with gaps between them, two end posts.
+ */
+function FenceBarrier({ isNS, mat }: FrameProps) {
+  const H = 0.33
+  const postW = 0.06
+  const plankH = 0.055
+  const gap = 0.035
+  const plankW = WALL_W - postW * 2
+  // 3 planks + 2 gaps + top/bottom margins
+  const plankYs = [
+    -(H / 2) + plankH / 2 + 0.02,
+    0,
+    (H / 2) - plankH / 2 - 0.02,
+  ]
+
+  const meshes: { size: [number, number, number]; pos: [number, number, number] }[] = []
+
+  // End posts
+  const postOffset = (WALL_W - postW) / 2
+  if (isNS) {
+    meshes.push({ size: [postW, H, THICKNESS], pos: [-postOffset, 0, 0] })
+    meshes.push({ size: [postW, H, THICKNESS], pos: [postOffset, 0, 0] })
+    for (const py of plankYs) {
+      meshes.push({ size: [plankW, plankH, THICKNESS], pos: [0, py, 0] })
+    }
+  } else {
+    meshes.push({ size: [THICKNESS, H, postW], pos: [0, 0, -postOffset] })
+    meshes.push({ size: [THICKNESS, H, postW], pos: [0, 0, postOffset] })
+    for (const py of plankYs) {
+      meshes.push({ size: [THICKNESS, plankH, plankW], pos: [0, py, 0] })
+    }
+  }
+
+  return (
+    <group>
+      {meshes.map((m, i) => (
+        <mesh key={i} position={m.pos}>
+          <boxGeometry args={m.size} />
+          <meshStandardMaterial {...mat} />
+        </mesh>
+      ))}
     </group>
   )
 }

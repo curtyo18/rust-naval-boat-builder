@@ -7,7 +7,7 @@ import piecesConfig from '../data/pieces-config.json'
 import type { PiecesConfig, XYZ, PieceSide, PieceRotation, PlacedPiece } from '../types'
 import GhostPiece from './GhostPiece'
 import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, detectTriEdge, squareEdgeSnapPosition, triSnapNeighbors, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, detectTriSnapEdge, triEdgeSquareSnapPosition, triSnapEdgeSquareSnapPosition, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg, detectSquareSnapSide, HEX_ORIGIN } from '../utils/hexGrid'
-import { toKey, toTriKey, toTriSnapKey, toSquareSnapKey } from '../utils/coordinateKey'
+import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toSquareSnapKey } from '../utils/coordinateKey'
 import { PIECE_COLORS, DEFAULT_COLOR } from './pieceGeometry'
 import CellMesh from './CellMesh'
 import EdgeMesh from './EdgeMesh'
@@ -31,6 +31,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const pieces = useStore((s) => s.pieces)
   const coordinateIndex = useStore((s) => s.coordinateIndex)
+  const visibleLevels = useStore((s) => s.visibleLevels)
   const placePiece = useStore((s) => s.placePiece)
   const [ghost, setGhost] = useState<GhostState | null>(null)
 
@@ -46,16 +47,36 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
   function toGhostState(point: { x: number; z: number }): GhostState {
     const cellX = Math.max(0, Math.min(GRID_W - 1, Math.floor(point.x)))
     const cellZ = Math.max(0, Math.min(GRID_L - 1, Math.floor(point.z)))
-    const pos: XYZ = { x: cellX, y: floorY, z: cellZ }
 
     if (isEdgePiece) {
       const localX = point.x - cellX
       const localZ = point.z - cellZ
       const side = detectSide(localX, localZ)
-      return { pos, side, rotation: 0 }
+      // Scan visible floors top-to-bottom: target highest floor with support
+      // (foundation cell piece, or edge piece below on same side for stacking)
+      for (const f of [1, 0] as const) {
+        if (!visibleLevels.has(f)) continue
+        const hasFoundation = coordinateIndex.has(toKey({ x: cellX, y: f, z: cellZ }))
+        const hasEdgeBelow = f > 0
+          && coordinateIndex.has(toEdgeKey({ x: cellX, y: f - 1, z: cellZ }, side))
+        if (hasFoundation || hasEdgeBelow) {
+          return { pos: { x: cellX, y: f, z: cellZ }, side, rotation: 0 }
+        }
+      }
+      return { pos: { x: cellX, y: floorY, z: cellZ }, side, rotation: 0 }
     }
 
-    return { pos, rotation: 0 }
+    // Cell pieces: scan visible floors bottom-to-top for first unoccupied cell
+    const constraint = pieceConfig.floorConstraint
+    for (const f of [0, 1, 2] as const) {
+      if (!visibleLevels.has(f)) continue
+      if (constraint === 'ground_only' && f !== 0) continue
+      if (constraint === 'upper_only' && f === 0) continue
+      if (!coordinateIndex.has(toKey({ x: cellX, y: f, z: cellZ }))) {
+        return { pos: { x: cellX, y: f, z: cellZ }, rotation: 0 }
+      }
+    }
+    return { pos: { x: cellX, y: floorY, z: cellZ }, rotation: 0 }
   }
 
   function handlePointerMove(e: ThreeEvent<PointerEvent>) {
@@ -193,6 +214,64 @@ function findSquareEdgeSnap(
   return { ...sp, y }
 }
 
+/** Find the nearest snapped-square edge to place a triangle against. */
+function findSnappedSquareEdgeSnap(
+  wx: number, wz: number, y: number,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+): SnapResult | null {
+  const SQRT3 = Math.sqrt(3)
+  const inR = 1 / (2 * SQRT3)
+  const sides: PieceSide[] = ['north', 'east', 'south', 'west']
+  const baseAngle: Record<PieceSide, number> = { east: 0, west: 180, south: 90, north: 270 }
+  const normals: Record<PieceSide, [number, number]> = {
+    north: [0, -1], east: [1, 0], south: [0, 1], west: [-1, 0],
+  }
+  const edgeMid: Record<PieceSide, [number, number]> = {
+    north: [0, -0.5], east: [0.5, 0], south: [0, 0.5], west: [-0.5, 0],
+  }
+
+  let bestDist = SNAP_THRESHOLD
+  let best: SnapResult | null = null
+
+  for (const piece of pieces) {
+    if (!piece.squareSnap || piece.side || piece.position.y !== y) continue
+    const { worldX, worldZ, rotDeg } = piece.squareSnap
+    const dx = wx - worldX
+    const dz = wz - worldZ
+    if (dx * dx + dz * dz > 4) continue
+
+    const theta = (rotDeg * Math.PI) / 180
+    const cosT = Math.cos(theta)
+    const sinT = Math.sin(theta)
+
+    for (const side of sides) {
+      const [lmx, lmz] = edgeMid[side]
+      const [lnx, lnz] = normals[side]
+
+      // Edge midpoint in world (for distance check)
+      const emx = worldX + lmx * cosT + lmz * sinT
+      const emz = worldZ - lmx * sinT + lmz * cosT
+      const dist = Math.sqrt((wx - emx) ** 2 + (wz - emz) ** 2)
+      if (dist >= bestDist) continue
+
+      // Triangle center in world
+      const lcx = lmx + inR * lnx
+      const lcz = lmz + inR * lnz
+      const tcx = worldX + lcx * cosT + lcz * sinT
+      const tcz = worldZ - lcx * sinT + lcz * cosT
+
+      const snapKey = toTriSnapKey(tcx, y, tcz)
+      if (coordinateIndex.has(snapKey)) continue
+
+      bestDist = dist
+      best = { worldX: tcx, worldZ: tcz, angleDeg: baseAngle[side] + rotDeg, y }
+    }
+  }
+
+  return best
+}
+
 /** Find the nearest free edge of a placed snap-triangle within threshold. */
 function findTriEdgeSnap(
   wx: number, wz: number, y: number,
@@ -301,6 +380,46 @@ function findTriEdgeForSquareSnap(
   return best
 }
 
+/** Find an adjacent position to an existing snapped square (square-to-square chaining). */
+function findSquareSnapNeighbor(
+  wx: number, wz: number, y: number,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+): SquareSnapResult | null {
+  let bestDist = SNAP_THRESHOLD
+  let best: SquareSnapResult | null = null
+
+  const offsets = [[0, -1], [1, 0], [0, 1], [-1, 0]]
+
+  for (const piece of pieces) {
+    if (!piece.squareSnap || piece.side || piece.position.y !== y) continue
+    const { worldX, worldZ, rotDeg } = piece.squareSnap
+    const dx = wx - worldX
+    const dz = wz - worldZ
+    if (dx * dx + dz * dz > 4) continue
+
+    const angle = (rotDeg * Math.PI) / 180
+    const cosA = Math.cos(angle)
+    const sinA = Math.sin(angle)
+
+    for (const [ldx, ldz] of offsets) {
+      const nx = worldX + ldx * cosA + ldz * sinA
+      const nz = worldZ - ldx * sinA + ldz * cosA
+
+      const snapKey = toSquareSnapKey(nx, y, nz)
+      if (coordinateIndex.has(snapKey)) continue
+
+      const dist = Math.sqrt((wx - nx) ** 2 + (wz - nz) ** 2)
+      if (dist < bestDist) {
+        bestDist = dist
+        best = { worldX: nx, worldZ: nz, rotDeg, y }
+      }
+    }
+  }
+
+  return best
+}
+
 /** Find the nearest snap-placed square whose edge the cursor is near (for edge piece placement). */
 function findSquareSnapForEdge(
   wx: number, wz: number, y: number,
@@ -327,10 +446,83 @@ function findSquareSnapForEdge(
   return best
 }
 
+/** Given multiple snap candidates, return the one closest to the cursor (prefer higher y on tie). */
+function pickClosestSnap(candidates: (SnapResult | null)[], wx: number, wz: number): SnapResult | null {
+  let best: SnapResult | null = null
+  let bestDist = Infinity
+  for (const c of candidates) {
+    if (!c) continue
+    const dist = (wx - c.worldX) ** 2 + (wz - c.worldZ) ** 2
+    if (dist < bestDist || (dist === bestDist && best && c.y > best.y)) {
+      bestDist = dist
+      best = c
+    }
+  }
+  return best
+}
+
+function pickClosestSquareSnap(candidates: (SquareSnapResult | null)[], wx: number, wz: number): SquareSnapResult | null {
+  let best: SquareSnapResult | null = null
+  let bestDist = Infinity
+  for (const c of candidates) {
+    if (!c) continue
+    const dist = (wx - c.worldX) ** 2 + (wz - c.worldZ) ** 2
+    if (dist < bestDist || (dist === bestDist && best && c.y > best.y)) {
+      bestDist = dist
+      best = c
+    }
+  }
+  return best
+}
+
+/** Collect snap results across all target floors (same-level + floor-below support). */
+function collectFloorSnaps(
+  wx: number, wz: number, floors: number[],
+  pieces: PlacedPiece[], coordinateIndex: Map<string, string>,
+): SnapResult[] {
+  const results: SnapResult[] = []
+  for (const targetY of floors) {
+    for (const s of [
+      findSquareEdgeSnap(wx, wz, targetY, coordinateIndex),
+      findSnappedSquareEdgeSnap(wx, wz, targetY, pieces, coordinateIndex),
+      findTriEdgeSnap(wx, wz, targetY, pieces, coordinateIndex),
+    ]) { if (s) results.push(s) }
+    if (targetY > 0) {
+      for (const s of [
+        findSquareEdgeSnap(wx, wz, targetY - 1, coordinateIndex),
+        findSnappedSquareEdgeSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
+        findTriEdgeSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
+      ]) { if (s) results.push({ ...s, y: targetY }) }
+    }
+  }
+  return results
+}
+
+function collectSquareFloorSnaps(
+  wx: number, wz: number, floors: number[],
+  pieces: PlacedPiece[], coordinateIndex: Map<string, string>,
+): SquareSnapResult[] {
+  const results: SquareSnapResult[] = []
+  for (const targetY of floors) {
+    for (const s of [
+      findTriEdgeForSquareSnap(wx, wz, targetY, pieces, coordinateIndex),
+      findSquareSnapNeighbor(wx, wz, targetY, pieces, coordinateIndex),
+    ]) { if (s) results.push(s) }
+    if (targetY > 0) {
+      for (const s of [
+        findTriEdgeForSquareSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
+        findSquareSnapNeighbor(wx, wz, targetY - 1, pieces, coordinateIndex),
+      ]) { if (s) results.push({ ...s, y: targetY }) }
+    }
+  }
+  return results
+}
+
 export function TriHitPlane({ floorY }: HitPlaneProps) {
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const pieces = useStore((s) => s.pieces)
   const coordinateIndex = useStore((s) => s.coordinateIndex)
+  const visibleLevels = useStore((s) => s.visibleLevels)
   const placeTrianglePiece = useStore((s) => s.placeTrianglePiece)
   const placeTriangleEdgePiece = useStore((s) => s.placeTriangleEdgePiece)
   const placeTriangleSnapped = useStore((s) => s.placeTriangleSnapped)
@@ -355,10 +547,16 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
   // Triangle edge piece types don't exist — skip
   if (isTriType && isEdgeType) return null
 
+  // All visible upper floors to scan for snap targets
+  const upperFloors = ([1, 2] as const).filter((f) => visibleLevels.has(f)) as number[]
+  // For ground-only pieces, just use floorY; for upper/null, scan upper floors
+  const snapFloors = pieceConfig.floorConstraint === 'ground_only' ? [floorY] : (upperFloors.length > 0 ? upperFloors : [floorY])
+
   function handlePointerMove(e: ThreeEvent<PointerEvent>) {
-    // Square cell snapping to triangle edges
+    // Square cell snapping to triangle edges or adjacent snapped squares
     if (isSquareSnapType) {
-      const sqSnap = findTriEdgeForSquareSnap(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
+      const sqCandidates = collectSquareFloorSnaps(e.point.x, e.point.z, snapFloors, pieces, coordinateIndex)
+      const sqSnap = pickClosestSquareSnap(sqCandidates, e.point.x, e.point.z)
       if (sqSnap) {
         e.stopPropagation()
         const triCoord: TriCoord = { hq: 0, hr: 0, slot: 0 }
@@ -370,31 +568,38 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     }
 
     if (isEdgeType) {
-      // Check hex-grid triangles
+      // Scan visible floors top-to-bottom for a foundation or edge-below to attach to
       const { hq, hr, slot } = worldToTriCoord(e.point.x, e.point.z)
-      const triCoord: TriCoord = { hq, hr, slot: slot as TriCoord['slot'] }
-      const triKey = toTriKey(hq, floorY, hr, slot)
-      if (coordinateIndex.has(triKey)) {
-        e.stopPropagation()
-        const edge = detectTriEdge(hq, hr, slot, e.point.x, e.point.z)
-        setGhost({ triCoord, y: floorY, triEdge: edge })
-        return
-      }
-      // Check snap-placed triangles
-      const se = findSnapTriForEdge(e.point.x, e.point.z, floorY, pieces)
-      if (se) {
-        e.stopPropagation()
-        const triCoord2: TriCoord = { hq: 0, hr: 0, slot: 0 }
-        setGhost({ triCoord: triCoord2, y: floorY, snapEdge: se })
-        return
-      }
-      // Check snap-placed squares
-      const sqse = findSquareSnapForEdge(e.point.x, e.point.z, floorY, pieces)
-      if (sqse) {
-        e.stopPropagation()
-        const triCoord3: TriCoord = { hq: 0, hr: 0, slot: 0 }
-        setGhost({ triCoord: triCoord3, y: floorY, squareSnapEdge: sqse })
-        return
+      const detectedEdge = detectTriEdge(hq, hr, slot, e.point.x, e.point.z)
+      for (const f of [1, 0] as const) {
+        if (!visibleLevels.has(f)) continue
+        // Check hex-grid triangles (foundation or edge stacking)
+        const triKey = toTriKey(hq, f, hr, slot)
+        const hasTriFound = coordinateIndex.has(triKey)
+        const hasTriEdgeBelow = f > 0
+          && coordinateIndex.has(toTriEdgeKey(hq, f - 1, hr, slot, detectedEdge))
+        if (hasTriFound || hasTriEdgeBelow) {
+          e.stopPropagation()
+          const triCoord: TriCoord = { hq, hr, slot: slot as TriCoord['slot'] }
+          setGhost({ triCoord, y: f, triEdge: detectedEdge })
+          return
+        }
+        // Check snap-placed triangles
+        const se = findSnapTriForEdge(e.point.x, e.point.z, f, pieces)
+        if (se) {
+          e.stopPropagation()
+          const triCoord2: TriCoord = { hq: 0, hr: 0, slot: 0 }
+          setGhost({ triCoord: triCoord2, y: f, snapEdge: se })
+          return
+        }
+        // Check snap-placed squares
+        const sqse = findSquareSnapForEdge(e.point.x, e.point.z, f, pieces)
+        if (sqse) {
+          e.stopPropagation()
+          const triCoord3: TriCoord = { hq: 0, hr: 0, slot: 0 }
+          setGhost({ triCoord: triCoord3, y: f, squareSnapEdge: sqse })
+          return
+        }
       }
       // No triangle/square found — let event pass through to square HitPlane
       setGhost(null)
@@ -403,8 +608,8 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
 
     // Triangle cell piece: always claim the event
     e.stopPropagation()
-    const snap = findSquareEdgeSnap(e.point.x, e.point.z, floorY, coordinateIndex)
-      ?? findTriEdgeSnap(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
+    const snapCandidates = collectFloorSnaps(e.point.x, e.point.z, snapFloors, pieces, coordinateIndex)
+    const snap = pickClosestSnap(snapCandidates, e.point.x, e.point.z)
     if (snap) {
       const triCoord: TriCoord = { hq: 0, hr: 0, slot: 0 }
       setGhost({ triCoord, y: floorY, snap })
@@ -423,9 +628,10 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
 
   function handleClick(e: ThreeEvent<MouseEvent>) {
     if (e.delta > 5) return
-    // Square cell snapping to triangle edges
+    // Square cell snapping to triangle edges or adjacent snapped squares
     if (isSquareSnapType) {
-      const sqSnap = findTriEdgeForSquareSnap(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
+      const sqCandidates = collectSquareFloorSnaps(e.point.x, e.point.z, snapFloors, pieces, coordinateIndex)
+      const sqSnap = pickClosestSquareSnap(sqCandidates, e.point.x, e.point.z)
       if (sqSnap) {
         e.stopPropagation()
         if (canPlaceSquareSnap(selectedPieceType!, sqSnap, pieces, coordinateIndex, config)) {
@@ -436,33 +642,41 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     }
 
     if (isEdgeType) {
-      // Check hex-grid triangles
+      // Scan visible floors top-to-bottom for a foundation or edge-below to attach to
       const { hq, hr, slot } = worldToTriCoord(e.point.x, e.point.z)
-      const triKey = toTriKey(hq, floorY, hr, slot)
-      if (coordinateIndex.has(triKey)) {
-        e.stopPropagation()
-        const triCoord: TriCoord = { hq, hr, slot: slot as TriCoord['slot'] }
-        const edge = detectTriEdge(hq, hr, slot, e.point.x, e.point.z)
-        if (canPlace(selectedPieceType!, { x: 0, y: floorY, z: 0 }, pieces, coordinateIndex, config, undefined, triCoord, edge)) {
-          placeTriangleEdgePiece(selectedPieceType!, floorY, triCoord, edge)
+      const detectedEdge = detectTriEdge(hq, hr, slot, e.point.x, e.point.z)
+      for (const f of [1, 0] as const) {
+        if (!visibleLevels.has(f)) continue
+        // Check hex-grid triangles (foundation or edge stacking)
+        const triKey = toTriKey(hq, f, hr, slot)
+        const hasTriFound = coordinateIndex.has(triKey)
+        const hasTriEdgeBelow = f > 0
+          && coordinateIndex.has(toTriEdgeKey(hq, f - 1, hr, slot, detectedEdge))
+        if (hasTriFound || hasTriEdgeBelow) {
+          e.stopPropagation()
+          const triCoord: TriCoord = { hq, hr, slot: slot as TriCoord['slot'] }
+          if (canPlace(selectedPieceType!, { x: 0, y: f, z: 0 }, pieces, coordinateIndex, config, undefined, triCoord, detectedEdge)) {
+            placeTriangleEdgePiece(selectedPieceType!, f, triCoord, detectedEdge)
+          }
+          return
         }
-        return
-      }
-      // Check snap-placed triangles
-      const se = findSnapTriForEdge(e.point.x, e.point.z, floorY, pieces)
-      if (se) {
-        e.stopPropagation()
-        if (canPlaceTriSnapEdge(selectedPieceType!, se.parentSnap, floorY, se.edge, pieces, coordinateIndex, config)) {
-          placeTriSnapEdgePiece(selectedPieceType!, se.parentSnap, floorY, se.edge)
+        // Check snap-placed triangles
+        const se = findSnapTriForEdge(e.point.x, e.point.z, f, pieces)
+        if (se) {
+          e.stopPropagation()
+          if (canPlaceTriSnapEdge(selectedPieceType!, se.parentSnap, f, se.edge, pieces, coordinateIndex, config)) {
+            placeTriSnapEdgePiece(selectedPieceType!, se.parentSnap, f, se.edge)
+          }
+          return
         }
-        return
-      }
-      // Check snap-placed squares
-      const sqse = findSquareSnapForEdge(e.point.x, e.point.z, floorY, pieces)
-      if (sqse) {
-        e.stopPropagation()
-        if (canPlaceSquareSnapEdge(selectedPieceType!, sqse.parentSnap, floorY, sqse.side, pieces, coordinateIndex, config)) {
-          placeSquareSnapEdgePiece(selectedPieceType!, sqse.parentSnap, floorY, sqse.side)
+        // Check snap-placed squares
+        const sqse = findSquareSnapForEdge(e.point.x, e.point.z, f, pieces)
+        if (sqse) {
+          e.stopPropagation()
+          if (canPlaceSquareSnapEdge(selectedPieceType!, sqse.parentSnap, f, sqse.side, pieces, coordinateIndex, config)) {
+            placeSquareSnapEdgePiece(selectedPieceType!, sqse.parentSnap, f, sqse.side)
+          }
+          return
         }
       }
       return
@@ -471,9 +685,9 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     // Triangle cell piece: always claim the event
     e.stopPropagation()
 
-    // Check for snap (square edge, then triangle free edge)
-    const snap = findSquareEdgeSnap(e.point.x, e.point.z, floorY, coordinateIndex)
-      ?? findTriEdgeSnap(e.point.x, e.point.z, floorY, pieces, coordinateIndex)
+    // Check for snap — pick whichever candidate centroid is closest to cursor
+    const snapCandidates = collectFloorSnaps(e.point.x, e.point.z, snapFloors, pieces, coordinateIndex)
+    const snap = pickClosestSnap(snapCandidates, e.point.x, e.point.z)
     if (snap) {
       if (canPlaceTriSnap(selectedPieceType!, snap, pieces, coordinateIndex, config)) {
         placeTriangleSnapped(selectedPieceType!, snap)
