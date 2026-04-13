@@ -8,6 +8,9 @@ const GRID_Z = 10
 const GRID_Y = 3
 const TRI_HEX_RADIUS = 8
 
+/** 1/3-height walls allowed on the topmost floor as railings */
+const LOW_WALL_TYPES = new Set(['low_wall', 'low_cannon_wall', 'low_wall_barrier'])
+
 export function isTriInBounds(hq: number, hr: number, y: number): boolean {
   if (y < 0 || y >= GRID_Y) return false
   const dist = (Math.abs(hq) + Math.abs(hr) + Math.abs(-hq - hr)) / 2
@@ -141,7 +144,7 @@ export function canPlace(
     if (pieceConfig.placementType === 'edge') {
       // Edge piece on a triangle edge
       if (triEdge === undefined) return false
-      if (position.y >= GRID_Y - 1) return false // roof level — no walls
+      if (position.y >= GRID_Y - 1 && !LOW_WALL_TYPES.has(type)) return false
       const foundationKey = toTriKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot)
       const hasTriFoundation = coordinateIndex.has(foundationKey)
       const hasTriEdgeBelow = position.y > 0
@@ -167,7 +170,7 @@ export function canPlace(
 
   if (pieceConfig.placementType === 'edge') {
     if (!side) return false
-    if (position.y >= GRID_Y - 1) return false // roof level — no walls
+    if (position.y >= GRID_Y - 1 && !LOW_WALL_TYPES.has(type)) return false
     if (isEdgeOccupied(position, side, coordinateIndex)) return false
     // Foundation at same cell OR edge piece below on same side (wall stacking)
     const hasEdgeBelowOnSide = position.y > 0
@@ -213,7 +216,7 @@ export function canPlaceTriSnapEdge(
   if (!pieceConfig) return false
   if (!isFloorAllowed({ x: 0, y, z: 0 }, pieceConfig.floorConstraint)) return false
   if (isMaxCountReached(type, pieces, config)) return false
-  if (y >= GRID_Y - 1) return false // roof level — no walls
+  if (y >= GRID_Y - 1 && !LOW_WALL_TYPES.has(type)) return false
   // Foundation at same position OR edge piece below on same edge (stacking)
   const foundKey = toTriSnapKey(snap.worldX, y, snap.worldZ)
   const hasSnapFoundation = coordinateIndex.has(foundKey)
@@ -256,7 +259,7 @@ export function canPlaceSquareSnapEdge(
   if (!pieceConfig) return false
   if (!isFloorAllowed({ x: 0, y, z: 0 }, pieceConfig.floorConstraint)) return false
   if (isMaxCountReached(type, pieces, config)) return false
-  if (y >= GRID_Y - 1) return false // roof level — no walls
+  if (y >= GRID_Y - 1 && !LOW_WALL_TYPES.has(type)) return false
   // Foundation at same position OR edge piece below on same side (stacking)
   const foundKey = toSquareSnapKey(snap.worldX, y, snap.worldZ)
   const hasSnapFoundation = coordinateIndex.has(foundKey)
