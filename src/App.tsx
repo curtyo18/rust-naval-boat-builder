@@ -4,6 +4,7 @@ import './App.css'
 import TopBar from './components/TopBar'
 import Sidebar from './components/Sidebar'
 import CostWidget from './components/CostWidget'
+import CameraHints from './components/CameraHints'
 import Viewport from './scene/Viewport'
 import { useStore } from './store/useStore'
 import { encodePieces } from './utils/serialization'
@@ -74,6 +75,7 @@ export default function App() {
         <div className="app__viewport">
           <Viewport />
           <CostWidget />
+          <CameraHints />
         </div>
       </div>
     </div>

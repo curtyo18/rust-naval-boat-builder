@@ -1,0 +1,31 @@
+.camera-hints {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  pointer-events: none;
+  font-size: 12px;
+  color: #999;
+  line-height: 1.4;
+}
+
+.camera-hints__row {
+  display: flex;
+  gap: 8px;
+}
+
+.camera-hints__key {
+  color: #ccc;
+  min-width: 110px;
+  text-align: right;
+}
+
+.camera-hints__action {
+  color: #888;
+}
