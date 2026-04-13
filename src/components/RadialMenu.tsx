@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import './RadialMenu.css'
 import { useStore } from '../store/useStore'
 import piecesConfig from '../data/pieces-config.json'
@@ -56,7 +56,14 @@ export default function RadialMenu() {
   const selectPieceType = useStore((s) => s.selectPieceType)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
 
-  const pieces = getRadialPieces()
+  // Initialize mousePos to cursor position when menu opens
+  useEffect(() => {
+    if (radialMenu.open) {
+      setMousePos({ x: radialMenu.x, y: radialMenu.y })
+    }
+  }, [radialMenu.open, radialMenu.x, radialMenu.y])
+
+  const pieces = useMemo(() => getRadialPieces(), [])
   const count = pieces.length
   const sliceSize = 360 / count
 

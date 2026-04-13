@@ -15,16 +15,16 @@
   position: relative;
 }
 
+/* Sidebar and topbar use zoom so layout flow adjusts properly */
 .app .topbar {
-  transform: scale(var(--ui-scale, 1));
-  transform-origin: top left;
+  zoom: var(--ui-scale, 1);
 }
 
 .app .sidebar {
-  transform: scale(var(--ui-scale, 1));
-  transform-origin: top left;
+  zoom: var(--ui-scale, 1);
 }
 
+/* Overlays use transform since they're position:absolute and don't affect flow */
 .app .cost-widget {
   transform: scale(var(--ui-scale, 1));
   transform-origin: top right;
