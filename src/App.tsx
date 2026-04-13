@@ -7,7 +7,7 @@ import CostWidget from './components/CostWidget'
 import CameraHints from './components/CameraHints'
 import Viewport from './scene/Viewport'
 import { useStore } from './store/useStore'
-import { encodePieces } from './utils/serialization'
+import { encodeState } from './utils/serialization'
 import { usePersistence } from './hooks/usePersistence'
 
 export default function App() {
@@ -47,7 +47,7 @@ export default function App() {
   }, [selectPieceType, undo, redo, deleteSelectedPiece, selectPiece])
 
   function handleShare() {
-    const encoded = encodePieces(pieces)
+    const encoded = encodeState(pieces, useStore.getState().uiScale)
     window.location.hash = `#data=${encoded}`
     navigator.clipboard.writeText(window.location.href).then(() => {
       setShareLabel('Copied!')

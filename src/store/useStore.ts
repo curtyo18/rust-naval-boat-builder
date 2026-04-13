@@ -11,6 +11,8 @@ interface AppStore {
   selectedPieceType: string | null
   selectedPieceId: string | null
   cameraResetFn: (() => void) | null
+  uiScale: number
+  setUiScale(scale: number): void
 
   // History for undo/redo
   _history: PlacedPiece[][]
@@ -96,6 +98,7 @@ export const useStore = create<AppStore>((set) => ({
   selectedPieceType: null,
   selectedPieceId: null,
   cameraResetFn: null,
+  uiScale: 100,
   _history: [],
   _future: [],
 
@@ -290,6 +293,10 @@ export const useStore = create<AppStore>((set) => ({
 
   setCameraResetFn(fn) {
     set({ cameraResetFn: fn })
+  },
+
+  setUiScale(scale) {
+    set({ uiScale: scale })
   },
 
   undo() {
