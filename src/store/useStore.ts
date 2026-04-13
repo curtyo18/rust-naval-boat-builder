@@ -313,6 +313,7 @@ export const useStore = create<AppStore>((set) => ({
     set((state) => ({
       pieces: [],
       coordinateIndex: new Map(),
+      visibleLevels: new Set<0 | 1 | 2>([0, 1]),
       _history: pushHistory(state._history, state.pieces),
       _future: [],
     }))
