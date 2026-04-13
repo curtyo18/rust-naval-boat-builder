@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { toKey, toEdgeKey } from '../utils/coordinateKey'
-import type { PlacedPiece, XYZ, PieceRotation, PieceSide } from '../types'
+import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey } from '../utils/coordinateKey'
+import type { PlacedPiece, XYZ, PieceRotation, PieceSide, TriCoord, TriSnapTarget } from '../types'
 
 const MAX_HISTORY = 50
 
@@ -17,6 +17,10 @@ interface AppStore {
   _future: PlacedPiece[][]
 
   placePiece(type: string, position: XYZ, rotation: PieceRotation, side?: PieceSide): void
+  placeTrianglePiece(type: string, y: number, triCoord: TriCoord): void
+  placeTriangleEdgePiece(type: string, y: number, triCoord: TriCoord, triEdge: 0 | 1 | 2): void
+  placeTriangleSnapped(type: string, snap: TriSnapTarget & { y: number }): void
+  placeTriSnapEdgePiece(type: string, snap: TriSnapTarget, y: number, edge: 0 | 1 | 2): void
   removePiece(id: string): void
   setVisibleLevels(levels: Set<0 | 1 | 2>): void
   selectPieceType(type: string | null): void
@@ -32,7 +36,31 @@ interface AppStore {
 function buildIndex(pieces: PlacedPiece[]): Map<string, string> {
   const index = new Map<string, string>()
   for (const piece of pieces) {
-    if (piece.side) {
+    if (piece.triSnap) {
+      if (piece.triEdge !== undefined) {
+        index.set(
+          toTriSnapEdgeKey(piece.triSnap.worldX, piece.position.y, piece.triSnap.worldZ, piece.triEdge),
+          piece.id,
+        )
+      } else {
+        index.set(
+          toTriSnapKey(piece.triSnap.worldX, piece.position.y, piece.triSnap.worldZ),
+          piece.id,
+        )
+      }
+    } else if (piece.triCoord) {
+      if (piece.triEdge !== undefined) {
+        index.set(
+          toTriEdgeKey(piece.triCoord.hq, piece.position.y, piece.triCoord.hr, piece.triCoord.slot, piece.triEdge),
+          piece.id,
+        )
+      } else {
+        index.set(
+          toTriKey(piece.triCoord.hq, piece.position.y, piece.triCoord.hr, piece.triCoord.slot),
+          piece.id,
+        )
+      }
+    } else if (piece.side) {
       index.set(toEdgeKey(piece.position, piece.side), piece.id)
     } else {
       index.set(toKey(piece.position), piece.id)
@@ -60,6 +88,88 @@ export const useStore = create<AppStore>((set) => ({
   placePiece(type, position, rotation, side) {
     const id = crypto.randomUUID()
     const piece: PlacedPiece = { id, type, position, rotation, ...(side ? { side } : {}) }
+    set((state) => {
+      const pieces = [...state.pieces, piece]
+      return {
+        pieces,
+        coordinateIndex: buildIndex(pieces),
+        _history: pushHistory(state._history, state.pieces),
+        _future: [],
+      }
+    })
+  },
+
+  placeTrianglePiece(type, y, triCoord) {
+    const id = crypto.randomUUID()
+    const piece: PlacedPiece = {
+      id,
+      type,
+      position: { x: 0, y, z: 0 },
+      rotation: 0,
+      triCoord,
+    }
+    set((state) => {
+      const pieces = [...state.pieces, piece]
+      return {
+        pieces,
+        coordinateIndex: buildIndex(pieces),
+        _history: pushHistory(state._history, state.pieces),
+        _future: [],
+      }
+    })
+  },
+
+  placeTriangleEdgePiece(type, y, triCoord, triEdge) {
+    const id = crypto.randomUUID()
+    const piece: PlacedPiece = {
+      id,
+      type,
+      position: { x: 0, y, z: 0 },
+      rotation: 0,
+      triCoord,
+      triEdge,
+    }
+    set((state) => {
+      const pieces = [...state.pieces, piece]
+      return {
+        pieces,
+        coordinateIndex: buildIndex(pieces),
+        _history: pushHistory(state._history, state.pieces),
+        _future: [],
+      }
+    })
+  },
+
+  placeTriangleSnapped(type, snap) {
+    const id = crypto.randomUUID()
+    const piece: PlacedPiece = {
+      id,
+      type,
+      position: { x: 0, y: snap.y, z: 0 },
+      rotation: 0,
+      triSnap: { worldX: snap.worldX, worldZ: snap.worldZ, angleDeg: snap.angleDeg },
+    }
+    set((state) => {
+      const pieces = [...state.pieces, piece]
+      return {
+        pieces,
+        coordinateIndex: buildIndex(pieces),
+        _history: pushHistory(state._history, state.pieces),
+        _future: [],
+      }
+    })
+  },
+
+  placeTriSnapEdgePiece(type, snap, y, edge) {
+    const id = crypto.randomUUID()
+    const piece: PlacedPiece = {
+      id,
+      type,
+      position: { x: 0, y, z: 0 },
+      rotation: 0,
+      triSnap: snap,
+      triEdge: edge,
+    }
     set((state) => {
       const pieces = [...state.pieces, piece]
       return {
