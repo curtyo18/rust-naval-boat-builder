@@ -1,6 +1,6 @@
 /* src/components/Sidebar.css */
 .sidebar {
-  width: 220px;
+  width: 260px;
   flex-shrink: 0;
   background: #141414;
   border-right: 1px solid #333;
@@ -11,16 +11,16 @@
 
 .sidebar__pieces {
   flex: 1;
-  padding: 10px 0;
+  padding: 12px 0;
 }
 
 .sidebar__group {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .sidebar__group-label {
-  padding: 8px 16px 4px;
-  font-size: 12px;
+  padding: 10px 20px 4px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #666;
@@ -29,12 +29,12 @@
 .sidebar__piece {
   display: block;
   width: 100%;
-  padding: 8px 16px;
+  padding: 10px 20px;
   text-align: left;
   background: none;
   border: none;
   color: #ccc;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 .sidebar__piece:hover {
@@ -48,24 +48,24 @@
 }
 
 .sidebar__floors {
-  padding: 10px 16px 14px;
+  padding: 12px 20px 16px;
   border-top: 1px solid #333;
 }
 
 .sidebar__floor-toggles {
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .sidebar__floor-btn {
   flex: 1;
-  padding: 8px 0;
+  padding: 10px 0;
   background: #333;
   border: 1px solid #555;
   border-radius: 4px;
   color: #888;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .sidebar__floor-btn--active {

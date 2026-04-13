@@ -11,11 +11,6 @@ interface AppStore {
   selectedPieceType: string | null
   selectedPieceId: string | null
   cameraResetFn: (() => void) | null
-  uiScale: number
-  setUiScale(scale: number): void
-  radialMenu: { open: boolean; x: number; y: number }
-  openRadialMenu(x: number, y: number): void
-  closeRadialMenu(): void
 
   // History for undo/redo
   _history: PlacedPiece[][]
@@ -101,8 +96,6 @@ export const useStore = create<AppStore>((set) => ({
   selectedPieceType: null,
   selectedPieceId: null,
   cameraResetFn: null,
-  uiScale: 100,
-  radialMenu: { open: false, x: 0, y: 0 },
   _history: [],
   _future: [],
 
@@ -297,18 +290,6 @@ export const useStore = create<AppStore>((set) => ({
 
   setCameraResetFn(fn) {
     set({ cameraResetFn: fn })
-  },
-
-  setUiScale(scale) {
-    set({ uiScale: scale })
-  },
-
-  openRadialMenu(x, y) {
-    set({ radialMenu: { open: true, x, y } })
-  },
-
-  closeRadialMenu() {
-    set({ radialMenu: { open: false, x: 0, y: 0 } })
   },
 
   undo() {

@@ -5,7 +5,7 @@ const CONTROLS = [
   { key: 'Scroll', action: 'Zoom' },
   { key: 'Middle-click drag', action: 'Zoom' },
   { key: 'Ctrl + Left drag', action: 'Pan' },
-  { key: 'Right-click hold', action: 'Build menu' },
+  { key: 'Right-click drag', action: 'Pan' },
 ]
 
 export default function CameraHints() {

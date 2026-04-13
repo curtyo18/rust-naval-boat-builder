@@ -5,11 +5,9 @@ import TopBar from './components/TopBar'
 import Sidebar from './components/Sidebar'
 import CostWidget from './components/CostWidget'
 import CameraHints from './components/CameraHints'
-import UIScaleSlider from './components/UIScaleSlider'
-import RadialMenu from './components/RadialMenu'
 import Viewport from './scene/Viewport'
 import { useStore } from './store/useStore'
-import { encodeState } from './utils/serialization'
+import { encodePieces } from './utils/serialization'
 import { usePersistence } from './hooks/usePersistence'
 
 export default function App() {
@@ -24,8 +22,6 @@ export default function App() {
   const deleteSelectedPiece = useStore((s) => s.deleteSelectedPiece)
   const selectPiece = useStore((s) => s.selectPiece)
   const [shareLabel, setShareLabel] = useState('Share')
-  const uiScale = useStore((s) => s.uiScale)
-  const openRadialMenu = useStore((s) => s.openRadialMenu)
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -51,7 +47,7 @@ export default function App() {
   }, [selectPieceType, undo, redo, deleteSelectedPiece, selectPiece])
 
   function handleShare() {
-    const encoded = encodeState(pieces, useStore.getState().uiScale)
+    const encoded = encodePieces(pieces)
     window.location.hash = `#data=${encoded}`
     navigator.clipboard.writeText(window.location.href).then(() => {
       setShareLabel('Copied!')
@@ -67,7 +63,7 @@ export default function App() {
   }
 
   return (
-    <div className="app" style={{ '--ui-scale': uiScale / 100 } as React.CSSProperties}>
+    <div className="app">
       <TopBar
         onResetCamera={() => cameraResetFn?.()}
         onShare={handleShare}
@@ -76,18 +72,10 @@ export default function App() {
       />
       <div className="app__body">
         <Sidebar />
-        <div
-          className="app__viewport"
-          onContextMenu={(e) => {
-            e.preventDefault()
-            openRadialMenu(e.clientX, e.clientY)
-          }}
-        >
+        <div className="app__viewport">
           <Viewport />
           <CostWidget />
           <CameraHints />
-          <UIScaleSlider />
-          <RadialMenu />
         </div>
       </div>
     </div>

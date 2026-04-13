@@ -14,28 +14,3 @@
   flex: 1;
   position: relative;
 }
-
-/* Sidebar and topbar use zoom so layout flow adjusts properly */
-.app .topbar {
-  zoom: var(--ui-scale, 1);
-}
-
-.app .sidebar {
-  zoom: var(--ui-scale, 1);
-}
-
-/* Overlays use transform since they're position:absolute and don't affect flow */
-.app .cost-widget {
-  transform: scale(var(--ui-scale, 1));
-  transform-origin: top right;
-}
-
-.app .camera-hints {
-  transform: scale(var(--ui-scale, 1));
-  transform-origin: bottom left;
-}
-
-.app .ui-scale-slider {
-  transform: scale(var(--ui-scale, 1));
-  transform-origin: bottom right;
-}

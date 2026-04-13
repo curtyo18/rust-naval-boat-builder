@@ -1,39 +1,39 @@
 .cost-widget {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 14px 16px;
   background: rgba(0, 0, 0, 0.75);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 6px;
   pointer-events: none;
-  min-width: 140px;
+  min-width: 160px;
 }
 
 .cost-widget__item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .cost-icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
 }
 
 .cost-widget__amount {
   color: #fff;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  min-width: 42px;
+  min-width: 48px;
 }
 
 .cost-widget__label {
   color: #aaa;
-  font-size: 13px;
+  font-size: 14px;
 }

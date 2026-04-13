@@ -2,9 +2,9 @@
 .topbar {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 20px;
-  height: 52px;
+  gap: 16px;
+  padding: 0 24px;
+  height: 56px;
   background: #111;
   border-bottom: 1px solid #333;
   flex-shrink: 0;
@@ -12,14 +12,14 @@
 
 .topbar__title {
   font-weight: 600;
-  font-size: 17px;
+  font-size: 19px;
   color: #fff;
 }
 
 .topbar__link {
   color: #aaa;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .topbar__link:hover {
@@ -29,16 +29,16 @@
 .topbar__actions {
   margin-left: auto;
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .topbar__btn {
-  padding: 6px 16px;
+  padding: 8px 20px;
   background: #333;
   border: 1px solid #555;
   border-radius: 4px;
   color: #e0e0e0;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .topbar__btn:hover {
