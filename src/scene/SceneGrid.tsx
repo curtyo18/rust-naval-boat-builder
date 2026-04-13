@@ -17,10 +17,10 @@ export default function SceneGrid() {
             args={[5, 11]}
             cellSize={1}
             cellThickness={0.4}
-            cellColor="#444"
+            cellColor="#6a9ab0"
             sectionSize={5}
             sectionThickness={0.8}
-            sectionColor="#666"
+            sectionColor="#4a7a90"
             fadeDistance={50}
             infiniteGrid={false}
           />
