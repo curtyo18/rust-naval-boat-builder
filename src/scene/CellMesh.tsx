@@ -13,7 +13,7 @@ interface CellMeshProps {
   angleDeg?: number  // for triangle slot rotation (0, 60, 120, 180, 240, 300)
 }
 
-export default function CellMesh({ type, color, opacity = 1, roughness = 0.85, rotation = 0, angleDeg }: CellMeshProps) {
+export default function CellMesh({ type, color, opacity = 1, roughness = 0.85, angleDeg }: CellMeshProps) {
   const transparent = opacity < 1
   const mat = { color, opacity, transparent, roughness }
 
