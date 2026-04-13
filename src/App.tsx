@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import TopBar from './components/TopBar'
 import Sidebar from './components/Sidebar'
-import CostWidget from './components/CostWidget'
+import StatsWidget from './components/StatsWidget'
 import CameraHints from './components/CameraHints'
 import Viewport from './scene/Viewport'
 import { useStore } from './store/useStore'
@@ -74,7 +74,7 @@ export default function App() {
         <Sidebar />
         <div className="app__viewport">
           <Viewport />
-          <CostWidget />
+          <StatsWidget />
           <CameraHints />
         </div>
       </div>

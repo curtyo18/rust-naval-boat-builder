@@ -1,0 +1,156 @@
+.stats-widget {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  pointer-events: none;
+  min-width: 200px;
+  gap: 0;
+}
+
+/* Section headers */
+.stats-widget__section-header {
+  color: #888;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 0 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stats-widget__section-header:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Speed header with tooltip */
+.stats-widget__speed-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: auto;
+  position: relative;
+  cursor: default;
+}
+
+.stats-widget__info-icon {
+  width: 14px;
+  height: 14px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.stats-widget__tooltip {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: rgba(0, 0, 0, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 8px 10px;
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1.4;
+  width: 220px;
+  z-index: 10;
+}
+
+.stats-widget__speed-header:hover .stats-widget__tooltip {
+  display: block;
+}
+
+/* Stat rows */
+.stats-widget__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+.stats-widget__row-label {
+  color: #aaa;
+  font-size: 14px;
+}
+
+.stats-widget__row-value {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Speed status indicator */
+.stats-widget__speed-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 4px 0 0;
+}
+
+.stats-widget__speed-ok {
+  color: #4caf50;
+  font-size: 16px;
+}
+
+.stats-widget__speed-fail {
+  color: #f44336;
+  font-size: 16px;
+}
+
+/* Raid cost rows */
+.stats-widget__raid-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+
+.stats-widget__raid-count {
+  color: #aaa;
+  font-size: 14px;
+}
+
+.stats-widget__raid-sulfur {
+  color: #e8d44d;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Material rows (same style as old CostWidget) */
+.stats-widget__material {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+}
+
+.stats-widget__material-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.stats-widget__material-amount {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+}
+
+.stats-widget__material-label {
+  color: #aaa;
+  font-size: 13px;
+}
