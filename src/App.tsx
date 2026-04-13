@@ -6,6 +6,7 @@ import Sidebar from './components/Sidebar'
 import CostWidget from './components/CostWidget'
 import CameraHints from './components/CameraHints'
 import UIScaleSlider from './components/UIScaleSlider'
+import RadialMenu from './components/RadialMenu'
 import Viewport from './scene/Viewport'
 import { useStore } from './store/useStore'
 import { encodeState } from './utils/serialization'
@@ -24,6 +25,7 @@ export default function App() {
   const selectPiece = useStore((s) => s.selectPiece)
   const [shareLabel, setShareLabel] = useState('Share')
   const uiScale = useStore((s) => s.uiScale)
+  const openRadialMenu = useStore((s) => s.openRadialMenu)
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -74,11 +76,18 @@ export default function App() {
       />
       <div className="app__body">
         <Sidebar />
-        <div className="app__viewport">
+        <div
+          className="app__viewport"
+          onContextMenu={(e) => {
+            e.preventDefault()
+            openRadialMenu(e.clientX, e.clientY)
+          }}
+        >
           <Viewport />
           <CostWidget />
           <CameraHints />
           <UIScaleSlider />
+          <RadialMenu />
         </div>
       </div>
     </div>
