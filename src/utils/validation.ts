@@ -1,10 +1,10 @@
-import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord } from '../types'
-import { toKey, toEdgeKey, toTriKey, toTriEdgeKey } from './coordinateKey'
+import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget } from '../types'
+import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey } from './coordinateKey'
 
 const GRID_X = 5
 const GRID_Z = 11
 const GRID_Y = 3
-const TRI_HEX_RADIUS = 3
+const TRI_HEX_RADIUS = 8
 
 export function isTriInBounds(hq: number, hr: number, y: number): boolean {
   if (y < 0 || y >= GRID_Y) return false
@@ -95,5 +95,44 @@ export function canPlace(
     if (isCellOccupied(position, coordinateIndex)) return false
   }
 
+  return true
+}
+
+export function canPlaceTriSnap(
+  type: string,
+  snap: TriSnapTarget & { y: number },
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+  config: PiecesConfig,
+): boolean {
+  const pieceConfig = config[type]
+  if (!pieceConfig) return false
+  if (!isFloorAllowed({ x: 0, y: snap.y, z: 0 }, pieceConfig.floorConstraint)) return false
+  if (isMaxCountReached(type, pieces, config)) return false
+  // Must not already have a triangle at this snap position
+  const snapKey = toTriSnapKey(snap.worldX, snap.y, snap.worldZ)
+  if (coordinateIndex.has(snapKey)) return false
+  return true
+}
+
+export function canPlaceTriSnapEdge(
+  type: string,
+  snap: TriSnapTarget,
+  y: number,
+  edge: number,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+  config: PiecesConfig,
+): boolean {
+  const pieceConfig = config[type]
+  if (!pieceConfig) return false
+  if (!isFloorAllowed({ x: 0, y, z: 0 }, pieceConfig.floorConstraint)) return false
+  if (isMaxCountReached(type, pieces, config)) return false
+  // Must have a snap-placed triangle foundation at this position
+  const foundKey = toTriSnapKey(snap.worldX, y, snap.worldZ)
+  if (!coordinateIndex.has(foundKey)) return false
+  // Must not already have an edge piece here
+  const edgeKey = toTriSnapEdgeKey(snap.worldX, y, snap.worldZ, edge)
+  if (coordinateIndex.has(edgeKey)) return false
   return true
 }

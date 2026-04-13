@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   HEX_SIZE,
+  HEX_ORIGIN,
   hexCenter,
   triSlotRotationDeg,
   triSlotVertices,
@@ -22,22 +23,22 @@ function dist(a: { x: number; z: number }, b: { x: number; z: number }): number 
 // hexCenter
 // ---------------------------------------------------------------------------
 describe('hexCenter', () => {
-  it('returns origin for hex (0,0)', () => {
+  it('returns HEX_ORIGIN for hex (0,0)', () => {
     const c = hexCenter(0, 0)
-    expect(c.x).toBeCloseTo(0)
-    expect(c.z).toBeCloseTo(0)
+    expect(c.x).toBeCloseTo(HEX_ORIGIN.x)
+    expect(c.z).toBeCloseTo(HEX_ORIGIN.z)
   })
 
   it('returns correct world position for hex (1,0)', () => {
     const c = hexCenter(1, 0)
-    expect(c.x).toBeCloseTo(HEX_SIZE * 1.5)
-    expect(c.z).toBeCloseTo(HEX_SIZE * SQRT3 * 0.5)
+    expect(c.x).toBeCloseTo(HEX_ORIGIN.x + HEX_SIZE * 1.5)
+    expect(c.z).toBeCloseTo(HEX_ORIGIN.z + HEX_SIZE * SQRT3 * 0.5)
   })
 
   it('returns correct world position for hex (0,1)', () => {
     const c = hexCenter(0, 1)
-    expect(c.x).toBeCloseTo(0)
-    expect(c.z).toBeCloseTo(HEX_SIZE * SQRT3)
+    expect(c.x).toBeCloseTo(HEX_ORIGIN.x)
+    expect(c.z).toBeCloseTo(HEX_ORIGIN.z + HEX_SIZE * SQRT3)
   })
 })
 
@@ -75,8 +76,8 @@ describe('triSlotVertices', () => {
     const center = hexCenter(0, 0)
     for (let s = 0; s < 6; s++) {
       const verts = triSlotVertices(0, 0, s)
-      expect(verts[0].x).toBeCloseTo(center.x)
-      expect(verts[0].z).toBeCloseTo(center.z)
+      expect(verts[0].x).toBeCloseTo(center.x, 5)
+      expect(verts[0].z).toBeCloseTo(center.z, 5)
     }
   })
 
@@ -204,8 +205,8 @@ describe('worldToTriCoord', () => {
     }
   })
 
-  it('origin (0,0) maps to hex (0,0)', () => {
-    const result = worldToTriCoord(0, 0)
+  it('HEX_ORIGIN maps to hex (0,0)', () => {
+    const result = worldToTriCoord(HEX_ORIGIN.x, HEX_ORIGIN.z)
     expect(result.hq).toBe(0)
     expect(result.hr).toBe(0)
   })

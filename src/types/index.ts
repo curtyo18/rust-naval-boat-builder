@@ -20,6 +20,12 @@ export interface TriCoord {
 
 export type PlacementType = 'cell' | 'edge'
 
+export interface TriSnapTarget {
+  worldX: number
+  worldZ: number
+  angleDeg: number
+}
+
 export interface PlacedPiece {
   id: string
   type: string
@@ -28,6 +34,7 @@ export interface PlacedPiece {
   side?: PieceSide // only set for edge pieces (walls, doorways, etc.)
   triCoord?: TriCoord
   triEdge?: TriEdgeIndex
+  triSnap?: TriSnapTarget // triangle snapped to a square edge
 }
 
 export type FloorConstraint = 'ground_only' | 'upper_only' | null

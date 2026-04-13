@@ -11,16 +11,24 @@
 
 export const SQRT3 = Math.sqrt(3)
 
-/** Hex outer radius: distance from hex center to vertex */
-export const HEX_SIZE = 1 / SQRT3
+/** Hex outer radius: distance from hex center to vertex.
+ *  With HEX_SIZE = 1.0, triangle edge length = 1.0 (matches square cell width). */
+export const HEX_SIZE = 1.0
+
+/**
+ * Offset so that hex (0,0) center sits at the right edge of the square grid.
+ * Square grid runs x:[0,5] z:[0,11]. We place hex origin at x=5, z=5.5
+ * so triangles attach naturally to the east wall of the building.
+ */
+export const HEX_ORIGIN = { x: 5, z: 5.5 }
 
 /**
  * World-space center of a hex cell at axial coordinates (hq, hr).
  */
 export function hexCenter(hq: number, hr: number): { x: number; z: number } {
   return {
-    x: HEX_SIZE * (3 / 2) * hq,
-    z: HEX_SIZE * SQRT3 * (hr + hq / 2),
+    x: HEX_ORIGIN.x + HEX_SIZE * (3 / 2) * hq,
+    z: HEX_ORIGIN.z + HEX_SIZE * SQRT3 * (hr + hq / 2),
   }
 }
 
@@ -120,8 +128,11 @@ export function triNeighbors(
  * 3. Angle from hex center to cursor → slot = floor(angle / 60) % 6
  */
 export function worldToTriCoord(wx: number, wz: number): { hq: number; hr: number; slot: number } {
-  const fq = ((2 / 3) * wx) / HEX_SIZE
-  const fr = ((-1 / 3) * wx + (SQRT3 / 3) * wz) / HEX_SIZE
+  // Subtract origin offset before inverse axial conversion
+  const lx = wx - HEX_ORIGIN.x
+  const lz = wz - HEX_ORIGIN.z
+  const fq = ((2 / 3) * lx) / HEX_SIZE
+  const fr = ((-1 / 3) * lx + (SQRT3 / 3) * lz) / HEX_SIZE
 
   const fs = -fq - fr
   let rq = Math.round(fq)
@@ -177,18 +188,18 @@ export function triEdgeWorldPosition(
   }
 }
 
-/** Rotation angle (degrees) for an edge piece on a triangle edge. */
+/** Rotation angle (degrees) for an edge piece on a triangle edge.
+ *  Returns the Y-rotation so that a "north" EdgeMesh extends along the edge direction.
+ *  The EdgeMesh extends along X at rotation 0; rotating by -α makes it extend along α. */
 export function triEdgeRotationDeg(slot: number, edge: number): number {
-  // Edge direction is determined by which vertices it connects.
-  // We compute the angle of the edge vector.
-  // For simplicity, use slot base angle + offset per edge.
-  const baseAngle = slot * 60
-  switch (edge) {
-    case 0: return baseAngle           // center → boundary[slot]: radial direction
-    case 1: return baseAngle + 150     // boundary[slot] → boundary[slot+1]: outer edge
-    case 2: return baseAngle + 60 + 180 // boundary[slot+1] → center: other radial
-    default: return 0
-  }
+  // Compute actual edge direction from vertices (use hex (0,0); offsets cancel in the diff)
+  const verts = triSlotVertices(0, 0, slot)
+  const i0 = edge
+  const i1 = (edge + 1) % 3
+  const dx = verts[i1].x - verts[i0].x
+  const dz = verts[i1].z - verts[i0].z
+  const edgeAngleDeg = Math.atan2(dz, dx) * (180 / Math.PI)
+  return -edgeAngleDeg
 }
 
 /**
@@ -218,5 +229,121 @@ export function detectTriEdge(
     }
   }
 
+  return closest
+}
+
+/**
+ * Compute world-space centroid and tip angle for a triangle snapped to a square cell edge.
+ * The triangle's flat edge aligns with the square edge; the tip points outward.
+ *
+ * Square cell at (sx, sz) occupies world-space [sx, sx+1] × [sz, sz+1].
+ * Inradius = 1/(2√3) is the centroid-to-flat-edge distance for edge length 1.
+ */
+export function squareEdgeSnapPosition(
+  sx: number, sz: number, side: 'north' | 'south' | 'east' | 'west'
+): { worldX: number; worldZ: number; angleDeg: number } {
+  const inR = 1 / (2 * SQRT3)
+  switch (side) {
+    case 'east':
+      return { worldX: sx + 1 + inR, worldZ: sz + 0.5, angleDeg: 0 }
+    case 'west':
+      return { worldX: sx - inR, worldZ: sz + 0.5, angleDeg: 180 }
+    case 'south':
+      return { worldX: sx + 0.5, worldZ: sz + 1 + inR, angleDeg: 90 }
+    case 'north':
+      return { worldX: sx + 0.5, worldZ: sz - inR, angleDeg: 270 }
+  }
+}
+
+/**
+ * Compute the two free-edge neighbor positions for a snapped triangle.
+ * Each equilateral triangle has 3 edges; one is the "parent" edge (occupied).
+ * The other two can accept new triangles.
+ *
+ * For a triangle at (cx, cz) with tip at angleDeg α:
+ *   Left neighbor:  centroid offset by d at angle (α+60°), angleDeg = α+60°
+ *   Right neighbor: centroid offset by d at angle (α-60°), angleDeg = α-60°
+ *   where d = 2 * inradius = 1/√3
+ */
+export function triSnapNeighbors(
+  worldX: number, worldZ: number, angleDeg: number
+): [{ worldX: number; worldZ: number; angleDeg: number }, { worldX: number; worldZ: number; angleDeg: number }] {
+  const d = 1 / SQRT3
+  const leftDeg = angleDeg + 60
+  const rightDeg = angleDeg - 60
+  const leftRad = (leftDeg * Math.PI) / 180
+  const rightRad = (rightDeg * Math.PI) / 180
+  return [
+    { worldX: worldX + d * Math.cos(leftRad), worldZ: worldZ + d * Math.sin(leftRad), angleDeg: leftDeg },
+    { worldX: worldX + d * Math.cos(rightRad), worldZ: worldZ + d * Math.sin(rightRad), angleDeg: rightDeg },
+  ]
+}
+
+/**
+ * Compute the 3 vertices of a snap-placed triangle in world space.
+ * Vertex order: [tip, base_left, base_right] — same as CellMesh rendering.
+ */
+export function triSnapVertices(
+  worldX: number, worldZ: number, angleDeg: number
+): [{ x: number; z: number }, { x: number; z: number }, { x: number; z: number }] {
+  const angleRad = (angleDeg * Math.PI) / 180
+  const circumR = HEX_SIZE / SQRT3
+  const inR = HEX_SIZE / (2 * SQRT3)
+  const halfEdge = HEX_SIZE / 2
+  const perpRad = angleRad + Math.PI / 2
+  const bx = worldX - inR * Math.cos(angleRad)
+  const bz = worldZ - inR * Math.sin(angleRad)
+  const px = halfEdge * Math.cos(perpRad)
+  const pz = halfEdge * Math.sin(perpRad)
+  return [
+    { x: worldX + circumR * Math.cos(angleRad), z: worldZ + circumR * Math.sin(angleRad) },
+    { x: bx + px, z: bz + pz },
+    { x: bx - px, z: bz - pz },
+  ]
+}
+
+/** World position (midpoint) of a snap-placed triangle's edge. */
+export function triSnapEdgeWorldPosition(
+  worldX: number, worldZ: number, angleDeg: number, y: number, edge: number
+): { x: number; y: number; z: number } {
+  const verts = triSnapVertices(worldX, worldZ, angleDeg)
+  const i0 = edge
+  const i1 = (edge + 1) % 3
+  return {
+    x: (verts[i0].x + verts[i1].x) / 2,
+    y,
+    z: (verts[i0].z + verts[i1].z) / 2,
+  }
+}
+
+/** Rotation angle for an edge piece on a snap-placed triangle's edge. */
+export function triSnapEdgeRotationDeg(worldX: number, worldZ: number, angleDeg: number, edge: number): number {
+  const verts = triSnapVertices(worldX, worldZ, angleDeg)
+  const i0 = edge
+  const i1 = (edge + 1) % 3
+  const dx = verts[i1].x - verts[i0].x
+  const dz = verts[i1].z - verts[i0].z
+  return -Math.atan2(dz, dx) * (180 / Math.PI)
+}
+
+/** Detect which edge (0, 1, 2) a world point is closest to on a snap-placed triangle. */
+export function detectTriSnapEdge(
+  worldX: number, worldZ: number, angleDeg: number,
+  wx: number, wz: number,
+): 0 | 1 | 2 {
+  const verts = triSnapVertices(worldX, worldZ, angleDeg)
+  let minDist = Infinity
+  let closest: 0 | 1 | 2 = 0
+  for (let e = 0; e < 3; e++) {
+    const i0 = e
+    const i1 = (e + 1) % 3
+    const mx = (verts[i0].x + verts[i1].x) / 2
+    const mz = (verts[i0].z + verts[i1].z) / 2
+    const dist = (wx - mx) ** 2 + (wz - mz) ** 2
+    if (dist < minDist) {
+      minDist = dist
+      closest = e as 0 | 1 | 2
+    }
+  }
   return closest
 }

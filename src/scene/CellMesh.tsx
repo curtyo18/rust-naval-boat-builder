@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { getCellPieceShape } from './pieceGeometry'
+import { HEX_SIZE } from '../utils/hexGrid'
 import type { PieceRotation } from '../types'
 
 interface CellMeshProps {
@@ -37,7 +38,7 @@ interface MatProps {
   roughness: number
 }
 
-const HEX_SIZE = 1 / Math.sqrt(3)
+// HEX_SIZE imported from hexGrid.ts
 
 /**
  * Equilateral triangle vertices for a given angle (degrees).
