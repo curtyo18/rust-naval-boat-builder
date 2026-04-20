@@ -99,3 +99,13 @@
   color: #888;
   line-height: 1.3;
 }
+
+.sidebar__tier {
+  width: 100%;
+  padding: 6px;
+  background: #2a3a48;
+  color: #e0e6ec;
+  border: 1px solid #4a5a68;
+  border-radius: 4px;
+  font-size: 13px;
+}

@@ -24,6 +24,8 @@ export default function Sidebar() {
   const setTransparentPieces = useStore((s) => s.setTransparentPieces)
   const showGrid = useStore((s) => s.showGrid)
   const setShowGrid = useStore((s) => s.setShowGrid)
+  const activeTier = useStore((s) => s.activeTier)
+  const setActiveTier = useStore((s) => s.setActiveTier)
 
   const floorLevels: number[] = (() => {
     if (mode.maxFloors === 'dynamic') {
@@ -55,6 +57,21 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar">
+      {mode.supportsTiers && (
+        <div className="sidebar__group">
+          <div className="sidebar__group-label">Tier</div>
+          <select
+            className="sidebar__tier"
+            value={activeTier ?? mode.defaultTier ?? ''}
+            onChange={(e) => setActiveTier(e.target.value || null)}
+          >
+            <option value="wood">Wood</option>
+            <option value="stone">Stone</option>
+            <option value="metal">Metal</option>
+            <option value="hqm">HQM</option>
+          </select>
+        </div>
+      )}
       <div className="sidebar__pieces">
         {piecesByCategory.map(({ category, pieces }) =>
           pieces.length === 0 ? null : (

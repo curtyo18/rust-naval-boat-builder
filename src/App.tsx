@@ -42,6 +42,13 @@ function AppInner() {
   const clearSelection = useStore((s) => s.clearSelection)
   const [shareLabel, setShareLabel] = useState('Share')
 
+  // Set default tier when switching to a mode that supports tiers
+  useEffect(() => {
+    if (mode.supportsTiers && !useStore.getState().activeTier) {
+      useStore.getState().setActiveTier(mode.defaultTier ?? null)
+    }
+  }, [mode])
+
   // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
