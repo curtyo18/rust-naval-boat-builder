@@ -2,15 +2,24 @@ import { useEffect } from 'react'
 import { useStore } from '../store/useStore'
 import { encodePieces, decodePieces } from '../utils/serialization'
 
-const STORAGE_KEY = 'naval-planner-design'
+const LEGACY_KEY = 'naval-planner-design'
 
-export function usePersistence() {
+export function usePersistence(storageKey: string) {
   const pieces = useStore((s) => s.pieces)
   const loadPieces = useStore((s) => s.loadPieces)
 
-  // Restore on mount: URL hash takes priority over localStorage
   useEffect(() => {
+    // One-time migration: legacy key → boat storage key (only on the boat mode's first load)
+    if (storageKey === 'rust-builder:boat') {
+      const legacy = localStorage.getItem(LEGACY_KEY)
+      if (legacy && !localStorage.getItem(storageKey)) {
+        localStorage.setItem(storageKey, legacy)
+        localStorage.removeItem(LEGACY_KEY)
+      }
+    }
+
     const hash = window.location.hash
+    // Legacy share-URL: `#data=...` (no mode prefix) → treat as current mode
     if (hash.startsWith('#data=')) {
       const encoded = hash.slice('#data='.length)
       const loaded = decodePieces(encoded)
@@ -19,16 +28,17 @@ export function usePersistence() {
         return
       }
     }
-    const saved = localStorage.getItem(STORAGE_KEY)
+
+    const saved = localStorage.getItem(storageKey)
     if (saved) {
       const loaded = decodePieces(saved)
       if (loaded) loadPieces(loaded)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [storageKey])
 
   // Auto-save to localStorage on every change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, encodePieces(pieces))
-  }, [pieces])
+    localStorage.setItem(storageKey, encodePieces(pieces))
+  }, [pieces, storageKey])
 }

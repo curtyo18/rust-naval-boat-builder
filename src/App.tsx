@@ -8,13 +8,13 @@ import Viewport from './core/scene/Viewport'
 import { useStore } from './core/store/useStore'
 import { encodePieces } from './core/utils/serialization'
 import { usePersistence } from './core/hooks/usePersistence'
-import { ModeProvider } from './core/context/ModeContext'
+import { ModeProvider, useMode } from './core/context/ModeContext'
 import boatMode from './modes/boat'
 
-const { StatsPanel } = boatMode
-
-export default function App() {
-  usePersistence()
+function AppInner() {
+  const mode = useMode()
+  const { StatsPanel } = mode
+  usePersistence(mode.storageKey)
 
   const clearAll = useStore((s) => s.clearAll)
   const pieces = useStore((s) => s.pieces)
@@ -66,23 +66,29 @@ export default function App() {
   }
 
   return (
-    <ModeProvider config={boatMode}>
-      <div className="app">
-        <TopBar
-          onResetCamera={() => cameraResetFn?.()}
-          onShare={handleShare}
-          onClear={handleClear}
-          shareLabel={shareLabel}
-        />
-        <div className="app__body">
-          <Sidebar />
-          <div className="app__viewport">
-            <Viewport />
-            <StatsPanel />
-            <CameraHints />
-          </div>
+    <div className="app">
+      <TopBar
+        onResetCamera={() => cameraResetFn?.()}
+        onShare={handleShare}
+        onClear={handleClear}
+        shareLabel={shareLabel}
+      />
+      <div className="app__body">
+        <Sidebar />
+        <div className="app__viewport">
+          <Viewport />
+          <StatsPanel />
+          <CameraHints />
         </div>
       </div>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <ModeProvider config={boatMode}>
+      <AppInner />
     </ModeProvider>
   )
 }
