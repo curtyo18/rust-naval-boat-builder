@@ -20,3 +20,8 @@
 }
 .base-stats__section-header:first-child { margin-top: 0; }
 .base-stats__placeholder { color: #6a7a88; font-style: italic; margin-top: 4px; }
+.base-stats__row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
