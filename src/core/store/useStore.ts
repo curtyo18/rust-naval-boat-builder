@@ -16,6 +16,7 @@ interface AppStore {
   transparentPieces: boolean
   showGrid: boolean
   selectedPieceType: string | null
+  activeTier: string | null
   selectedPieceIds: Set<string>
   cameraResetFn: (() => void) | null
 
@@ -35,6 +36,7 @@ interface AppStore {
   setTransparentPieces(on: boolean): void
   setShowGrid(on: boolean): void
   selectPieceType(type: string | null): void
+  setActiveTier(tier: string | null): void
   toggleSelectPiece(id: string): void
   clearSelection(): void
   deleteSelectedPiece(): void
@@ -106,6 +108,7 @@ export const useStore = create<AppStore>((set) => ({
   transparentPieces: true,
   showGrid: true,
   selectedPieceType: null,
+  activeTier: null,
   selectedPieceIds: new Set<string>(),
   cameraResetFn: null,
   _history: [],
@@ -113,7 +116,15 @@ export const useStore = create<AppStore>((set) => ({
 
   placePiece(type, position, rotation, side) {
     const id = crypto.randomUUID()
-    const piece: PlacedPiece = { id, type, position, rotation, ...(side ? { side } : {}) }
+    const tier = useStore.getState().activeTier ?? undefined
+    const piece: PlacedPiece = {
+      id,
+      type,
+      position,
+      rotation,
+      ...(side ? { side } : {}),
+      ...(tier ? { tier } : {}),
+    }
     set((state) => {
       const pieces = [...state.pieces, piece]
       const showLevel = autoShowLevel(position.y, state.visibleLevels)
@@ -129,12 +140,14 @@ export const useStore = create<AppStore>((set) => ({
 
   placeTrianglePiece(type, y, triCoord) {
     const id = crypto.randomUUID()
+    const tier = useStore.getState().activeTier ?? undefined
     const piece: PlacedPiece = {
       id,
       type,
       position: { x: 0, y, z: 0 },
       rotation: 0,
       triCoord,
+      ...(tier ? { tier } : {}),
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
@@ -151,6 +164,7 @@ export const useStore = create<AppStore>((set) => ({
 
   placeTriangleEdgePiece(type, y, triCoord, triEdge) {
     const id = crypto.randomUUID()
+    const tier = useStore.getState().activeTier ?? undefined
     const piece: PlacedPiece = {
       id,
       type,
@@ -158,6 +172,7 @@ export const useStore = create<AppStore>((set) => ({
       rotation: 0,
       triCoord,
       triEdge,
+      ...(tier ? { tier } : {}),
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
@@ -174,12 +189,14 @@ export const useStore = create<AppStore>((set) => ({
 
   placeTriangleSnapped(type, snap) {
     const id = crypto.randomUUID()
+    const tier = useStore.getState().activeTier ?? undefined
     const piece: PlacedPiece = {
       id,
       type,
       position: { x: 0, y: snap.y, z: 0 },
       rotation: 0,
       triSnap: { worldX: snap.worldX, worldZ: snap.worldZ, angleDeg: snap.angleDeg },
+      ...(tier ? { tier } : {}),
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
@@ -196,6 +213,7 @@ export const useStore = create<AppStore>((set) => ({
 
   placeTriSnapEdgePiece(type, snap, y, edge) {
     const id = crypto.randomUUID()
+    const tier = useStore.getState().activeTier ?? undefined
     const piece: PlacedPiece = {
       id,
       type,
@@ -203,6 +221,7 @@ export const useStore = create<AppStore>((set) => ({
       rotation: 0,
       triSnap: snap,
       triEdge: edge,
+      ...(tier ? { tier } : {}),
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
@@ -219,12 +238,14 @@ export const useStore = create<AppStore>((set) => ({
 
   placeSquareSnapped(type, snap) {
     const id = crypto.randomUUID()
+    const tier = useStore.getState().activeTier ?? undefined
     const piece: PlacedPiece = {
       id,
       type,
       position: { x: 0, y: snap.y, z: 0 },
       rotation: 0,
       squareSnap: { worldX: snap.worldX, worldZ: snap.worldZ, rotDeg: snap.rotDeg },
+      ...(tier ? { tier } : {}),
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
@@ -241,6 +262,7 @@ export const useStore = create<AppStore>((set) => ({
 
   placeSquareSnapEdgePiece(type, snap, y, side) {
     const id = crypto.randomUUID()
+    const tier = useStore.getState().activeTier ?? undefined
     const piece: PlacedPiece = {
       id,
       type,
@@ -248,6 +270,7 @@ export const useStore = create<AppStore>((set) => ({
       rotation: 0,
       squareSnap: snap,
       side,
+      ...(tier ? { tier } : {}),
     }
     set((state) => {
       const pieces = [...state.pieces, piece]
@@ -291,6 +314,10 @@ export const useStore = create<AppStore>((set) => ({
 
   selectPieceType(type) {
     set({ selectedPieceType: type, selectedPieceIds: new Set() })
+  },
+
+  setActiveTier(tier) {
+    set({ activeTier: tier })
   },
 
   toggleSelectPiece(id) {

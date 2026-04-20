@@ -195,3 +195,32 @@ describe('undo / redo', () => {
     expect(useStore.getState().coordinateIndex.size).toBe(0)
   })
 })
+
+describe('activeTier', () => {
+  it('defaults to null', () => {
+    useStore.getState().clearAll()
+    expect(useStore.getState().activeTier).toBeNull()
+  })
+
+  it('can be set', () => {
+    act(() => useStore.getState().setActiveTier('stone'))
+    expect(useStore.getState().activeTier).toBe('stone')
+  })
+
+  it('stamps tier onto placed pieces when active', () => {
+    useStore.getState().clearAll()
+    act(() => useStore.getState().setActiveTier('stone'))
+    act(() => useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0))
+    const placed = useStore.getState().pieces
+    expect(placed.length).toBeGreaterThan(0)
+    expect(placed[0].tier).toBe('stone')
+  })
+
+  it('does not stamp tier when activeTier is null', () => {
+    useStore.getState().clearAll()
+    act(() => useStore.getState().setActiveTier(null))
+    act(() => useStore.getState().placePiece('square_hull', { x: 1, y: 0, z: 1 }, 0))
+    const placed = useStore.getState().pieces
+    expect(placed[0].tier).toBeUndefined()
+  })
+})
