@@ -1,12 +1,13 @@
 import type { ComponentType } from 'react'
 import type { PiecesConfig } from './index'
+import type { ModeId } from '../routing/hashRoute'
 
 export type GridBounds = { x: number; y: number; z: number } | 'infinite'
 
 export type MaxFloors = number | 'dynamic'
 
 export interface ModeConfig {
-  id: 'boat' | 'base'
+  id: ModeId
   label: string
   pieces: PiecesConfig
   gridBounds: GridBounds

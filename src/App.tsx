@@ -24,11 +24,11 @@ function resolveModeFromHash(): ModeId {
 
 function resolveModeConfig(modeId: ModeId) {
   if (modeId === 'boat') return boatMode
-  // base mode added in Phase 4 — return boat as fallback for now
+  console.warn(`[resolveModeConfig] unknown mode '${modeId}', falling back to boat`)
   return boatMode
 }
 
-function AppInner({ modeId }: { modeId: ModeId }) {
+function AppInner() {
   const mode = useMode()
   const { StatsPanel } = mode
   usePersistence(mode.storageKey)
@@ -68,7 +68,7 @@ function AppInner({ modeId }: { modeId: ModeId }) {
 
   function handleShare() {
     const encoded = encodePieces(pieces)
-    window.location.hash = buildHashRoute({ mode: modeId, data: encoded })
+    window.location.hash = buildHashRoute({ mode: mode.id, data: encoded })
     navigator.clipboard.writeText(window.location.href).then(() => {
       setShareLabel('Copied!')
       setTimeout(() => setShareLabel('Share'), 2000)
@@ -78,7 +78,7 @@ function AppInner({ modeId }: { modeId: ModeId }) {
   function handleClear() {
     if (window.confirm('Remove all placed pieces?')) {
       clearAll()
-      window.location.hash = buildHashRoute({ mode: modeId, data: null })
+      window.location.hash = buildHashRoute({ mode: mode.id, data: null })
     }
   }
 
@@ -124,7 +124,7 @@ export default function App() {
 
   return (
     <ModeProvider config={modeConfig}>
-      <AppInner modeId={modeId} />
+      <AppInner />
     </ModeProvider>
   )
 }
