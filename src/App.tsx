@@ -10,6 +10,7 @@ import { encodePieces } from './core/utils/serialization'
 import { usePersistence } from './core/hooks/usePersistence'
 import { ModeProvider, useMode } from './core/context/ModeContext'
 import boatMode from './modes/boat'
+import baseMode from './modes/base'
 import { parseHashRoute, buildHashRoute } from './core/routing/hashRoute'
 import type { ModeId } from './core/routing/hashRoute'
 
@@ -23,9 +24,7 @@ function resolveModeFromHash(): ModeId {
 }
 
 function resolveModeConfig(modeId: ModeId) {
-  if (modeId === 'boat') return boatMode
-  console.warn(`[resolveModeConfig] unknown mode '${modeId}', falling back to boat`)
-  return boatMode
+  return modeId === 'base' ? baseMode : boatMode
 }
 
 function AppInner() {
