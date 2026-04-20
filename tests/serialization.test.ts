@@ -88,3 +88,19 @@ describe('versioned format', () => {
     expect(decoded).toEqual([expect.objectContaining({ type: 'wall', side: 'north' })])
   })
 })
+
+describe('tier field', () => {
+  it('round-trips tier field', () => {
+    const pieces: PlacedPiece[] = [{ id: 'a', type: 'wall', position: { x: 0, y: 0, z: 0 }, rotation: 0, side: 'north', tier: 'stone' }]
+    const encoded = encodePieces(pieces)
+    const decoded = decodePieces(encoded)!
+    expect(decoded[0].tier).toBe('stone')
+  })
+
+  it('omits tier if undefined', () => {
+    const pieces: PlacedPiece[] = [{ id: 'a', type: 'wall', position: { x: 0, y: 0, z: 0 }, rotation: 0, side: 'north' }]
+    const encoded = encodePieces(pieces)
+    const decoded = decodePieces(encoded)!
+    expect(decoded[0].tier).toBeUndefined()
+  })
+})

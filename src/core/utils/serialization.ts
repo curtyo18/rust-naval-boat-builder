@@ -11,6 +11,7 @@ interface CompactPiece {
   te?: number
   ts?: [number, number, number]
   ss?: [number, number, number]
+  tr?: string
 }
 
 function toCompact(piece: PlacedPiece): CompactPiece {
@@ -24,6 +25,7 @@ function toCompact(piece: PlacedPiece): CompactPiece {
   if (piece.triEdge != null) c.te = piece.triEdge
   if (piece.triSnap) c.ts = [piece.triSnap.worldX, piece.triSnap.worldZ, piece.triSnap.angleDeg]
   if (piece.squareSnap) c.ss = [piece.squareSnap.worldX, piece.squareSnap.worldZ, piece.squareSnap.rotDeg]
+  if (piece.tier) c.tr = piece.tier
   return c
 }
 
@@ -39,6 +41,7 @@ function fromCompact(c: CompactPiece): PlacedPiece {
   if (c.te != null) piece.triEdge = c.te as TriEdgeIndex
   if (c.ts) piece.triSnap = { worldX: c.ts[0], worldZ: c.ts[1], angleDeg: c.ts[2] }
   if (c.ss) piece.squareSnap = { worldX: c.ss[0], worldZ: c.ss[1], rotDeg: c.ss[2] }
+  if (c.tr) piece.tier = c.tr
   return piece
 }
 

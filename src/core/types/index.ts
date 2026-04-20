@@ -42,6 +42,7 @@ export interface PlacedPiece {
   triEdge?: TriEdgeIndex
   triSnap?: TriSnapTarget // triangle snapped to a square edge
   squareSnap?: SquareSnapTarget // square snapped to a triangle edge
+  tier?: string
 }
 
 export type FloorConstraint = 'ground_only' | 'upper_only' | null
