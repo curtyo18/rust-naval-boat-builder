@@ -10,6 +10,8 @@ export function usePersistence(storageKey: string) {
   const loadPieces = useStore((s) => s.loadPieces)
 
   useEffect(() => {
+    useStore.getState().switchMode()
+
     // One-time migration: legacy key → boat storage key (only on the boat mode's first load)
     if (storageKey === 'rust-builder:boat') {
       const legacy = localStorage.getItem(LEGACY_KEY)
@@ -41,5 +43,6 @@ export function usePersistence(storageKey: string) {
   // Auto-save to localStorage on every change
   useEffect(() => {
     localStorage.setItem(storageKey, encodePieces(pieces))
-  }, [pieces, storageKey])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pieces])
 }
