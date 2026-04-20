@@ -4,7 +4,8 @@ import type { PieceCategory } from '../types'
 import { useStore } from '../store/useStore'
 import { useMode } from '../context/ModeContext'
 
-const CATEGORY_ORDER: PieceCategory[] = ['hull', 'structural', 'floor']
+const BOAT_CATEGORIES: PieceCategory[] = ['hull', 'structural', 'floor']
+const BASE_CATEGORIES: PieceCategory[] = ['foundation', 'wall', 'floor']
 const CATEGORY_LABELS: Record<PieceCategory, string> = {
   hull: 'Hull',
   structural: 'Structural',
@@ -38,7 +39,9 @@ export default function Sidebar() {
     return Array.from({ length: mode.maxFloors }, (_, i) => i)
   })()
 
-  const piecesByCategory = CATEGORY_ORDER.map((cat) => ({
+  const categoryOrder = mode.id === 'base' ? BASE_CATEGORIES : BOAT_CATEGORIES
+
+  const piecesByCategory = categoryOrder.map((cat) => ({
     category: cat,
     pieces: Object.entries(config).filter(([, v]) => v.category === cat),
   }))
