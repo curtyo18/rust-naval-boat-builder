@@ -109,3 +109,19 @@
   border-radius: 4px;
   font-size: 13px;
 }
+
+.sidebar__upgrade {
+  width: 100%;
+  padding: 6px;
+  background: #3a6a88;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.sidebar__upgrade:hover {
+  background: #4a7a98;
+}

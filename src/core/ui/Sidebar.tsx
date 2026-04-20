@@ -29,6 +29,8 @@ export default function Sidebar() {
   const setShowGrid = useStore((s) => s.setShowGrid)
   const activeTier = useStore((s) => s.activeTier)
   const setActiveTier = useStore((s) => s.setActiveTier)
+  const selectedPieceIds = useStore((s) => s.selectedPieceIds)
+  const upgradeSelectedToTier = useStore((s) => s.upgradeSelectedToTier)
 
   const floorLevels: number[] = (() => {
     if (mode.maxFloors === 'dynamic') {
@@ -75,6 +77,14 @@ export default function Sidebar() {
             <option value="metal">Metal</option>
             <option value="hqm">HQM</option>
           </select>
+          {selectedPieceIds.size > 0 && (
+            <button
+              className="sidebar__upgrade"
+              onClick={() => activeTier && upgradeSelectedToTier(activeTier)}
+            >
+              Set selected to {activeTier}
+            </button>
+          )}
         </div>
       )}
       <div className="sidebar__pieces">

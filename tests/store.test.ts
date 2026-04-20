@@ -224,3 +224,18 @@ describe('activeTier', () => {
     expect(placed[0].tier).toBeUndefined()
   })
 })
+
+describe('upgradeSelectedToTier', () => {
+  it('updates tier on selected pieces', () => {
+    act(() => {
+      useStore.getState().setActiveTier('stone')
+      useStore.getState().placePiece('wall', { x: 0, y: 0, z: 0 }, 0, 'north')
+    })
+    const id = useStore.getState().pieces[0].id
+    act(() => {
+      useStore.getState().toggleSelectPiece(id)
+      useStore.getState().upgradeSelectedToTier('hqm')
+    })
+    expect(useStore.getState().pieces[0].tier).toBe('hqm')
+  })
+})

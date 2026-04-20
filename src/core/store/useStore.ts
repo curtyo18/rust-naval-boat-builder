@@ -40,6 +40,7 @@ interface AppStore {
   toggleSelectPiece(id: string): void
   clearSelection(): void
   deleteSelectedPiece(): void
+  upgradeSelectedToTier(tier: string): void
   clearAll(): void
   switchMode(): void
   loadPieces(pieces: PlacedPiece[]): void
@@ -345,6 +346,21 @@ export const useStore = create<AppStore>((set) => ({
         pieces,
         coordinateIndex: buildIndex(pieces),
         selectedPieceIds: new Set<string>(),
+        _history: pushHistory(state._history, state.pieces),
+        _future: [],
+      }
+    })
+  },
+
+  upgradeSelectedToTier(tier) {
+    set((state) => {
+      if (state.selectedPieceIds.size === 0) return state
+      const pieces = state.pieces.map((p) =>
+        state.selectedPieceIds.has(p.id) ? { ...p, tier } : p
+      )
+      return {
+        pieces,
+        coordinateIndex: buildIndex(pieces),
         _history: pushHistory(state._history, state.pieces),
         _future: [],
       }
