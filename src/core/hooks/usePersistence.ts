@@ -31,7 +31,9 @@ export function usePersistence(storageKey: string) {
     const saved = localStorage.getItem(storageKey)
     if (saved) {
       const loaded = decodePieces(saved)
-      if (loaded) loadPieces(loaded)
+      loadPieces(loaded ?? [])
+    } else {
+      loadPieces([])
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey])

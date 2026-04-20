@@ -41,6 +41,7 @@ interface AppStore {
   clearSelection(): void
   deleteSelectedPiece(): void
   clearAll(): void
+  switchMode(): void
   loadPieces(pieces: PlacedPiece[]): void
   setCameraResetFn(fn: () => void): void
   undo(): void
@@ -358,6 +359,19 @@ export const useStore = create<AppStore>((set) => ({
       _history: pushHistory(state._history, state.pieces),
       _future: [],
     }))
+  },
+
+  switchMode() {
+    set({
+      pieces: [],
+      coordinateIndex: new Map(),
+      visibleLevels: new Set<number>([0, 1]),
+      selectedPieceType: null,
+      selectedPieceIds: new Set(),
+      activeTier: null,
+      _history: [],
+      _future: [],
+    })
   },
 
   loadPieces(pieces) {

@@ -85,6 +85,10 @@ function AppInner() {
   function handleModeChange(newMode: ModeId) {
     clearSelection()
     selectPieceType(null)
+    const targetConfig = resolveModeConfig(newMode)
+    if (targetConfig.storageKey !== mode.storageKey) {
+      useStore.getState().switchMode()
+    }
     window.location.hash = buildHashRoute({ mode: newMode, data: null })
   }
 
