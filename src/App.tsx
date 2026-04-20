@@ -6,7 +6,7 @@ import Sidebar from './components/Sidebar'
 import StatsWidget from './components/StatsWidget'
 import CameraHints from './components/CameraHints'
 import Viewport from './core/scene/Viewport'
-import { useStore } from './store/useStore'
+import { useStore } from './core/store/useStore'
 import { encodePieces } from './core/utils/serialization'
 import { usePersistence } from './hooks/usePersistence'
 

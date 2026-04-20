@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useStore } from '../store/useStore'
+import { useStore } from '../core/store/useStore'
 import { encodePieces, decodePieces } from '../core/utils/serialization'
 
 const STORAGE_KEY = 'naval-planner-design'

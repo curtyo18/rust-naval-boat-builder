@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from '../core/utils/coordinateKey'
-import type { PlacedPiece, XYZ, PieceRotation, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget } from '../core/types'
+import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from '../utils/coordinateKey'
+import type { PlacedPiece, XYZ, PieceRotation, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget } from '../types'
 
 const MAX_HISTORY = 50
 

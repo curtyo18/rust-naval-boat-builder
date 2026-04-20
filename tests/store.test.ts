@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { act } from '@testing-library/react'
-import { useStore } from '../src/store/useStore'
+import { useStore } from '../src/core/store/useStore'
 
 beforeEach(() => {
   act(() => useStore.getState().clearAll())

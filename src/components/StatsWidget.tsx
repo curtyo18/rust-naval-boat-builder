@@ -1,5 +1,5 @@
 import './StatsWidget.css'
-import { useStore } from '../store/useStore'
+import { useStore } from '../core/store/useStore'
 import { computeTotalCosts, computeBoatStats, computeSpeedInfo, computeRaidCost } from '../utils/costs'
 import type { MaterialKey, PiecesConfig } from '../core/types'
 import piecesConfig from '../data/pieces-config.json'

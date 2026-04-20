@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useStore } from '../../store/useStore'
+import { useStore } from '../store/useStore'
 import { PIECE_COLORS, DEFAULT_COLOR, GHOST_VALID_COLOR, getPiecePosition, isTriangleType, getCellPieceShape } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
