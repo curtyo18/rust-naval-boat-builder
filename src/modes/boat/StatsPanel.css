@@ -1,4 +1,4 @@
-.stats-widget {
+.stats-panel {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -14,7 +14,7 @@
 }
 
 /* Section headers */
-.stats-widget__section-header {
+.stats-panel__section-header {
   color: #888;
   font-size: 10px;
   font-weight: 600;
@@ -24,13 +24,13 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.stats-widget__section-header:first-child {
+.stats-panel__section-header:first-child {
   padding-top: 0;
   border-top: none;
 }
 
 /* Speed header with tooltip */
-.stats-widget__speed-header {
+.stats-panel__speed-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -39,14 +39,14 @@
   cursor: default;
 }
 
-.stats-widget__info-icon {
+.stats-panel__info-icon {
   width: 12px;
   height: 12px;
   color: #666;
   flex-shrink: 0;
 }
 
-.stats-widget__tooltip {
+.stats-panel__tooltip {
   display: none;
   position: absolute;
   right: 0;
@@ -66,24 +66,24 @@
   z-index: 10;
 }
 
-.stats-widget__speed-header:hover .stats-widget__tooltip {
+.stats-panel__speed-header:hover .stats-panel__tooltip {
   display: block;
 }
 
 /* Stat rows */
-.stats-widget__row {
+.stats-panel__row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 2px 0;
 }
 
-.stats-widget__row-label {
+.stats-panel__row-label {
   color: #aaa;
   font-size: 12px;
 }
 
-.stats-widget__row-value {
+.stats-panel__row-value {
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -91,37 +91,37 @@
 }
 
 /* Speed status indicator */
-.stats-widget__speed-status {
+.stats-panel__speed-status {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 3px 0;
 }
 
-.stats-widget__speed-ok {
+.stats-panel__speed-ok {
   color: #4caf50;
   font-size: 13px;
 }
 
-.stats-widget__speed-fail {
+.stats-panel__speed-fail {
   color: #f44336;
   font-size: 13px;
 }
 
 /* Raid cost rows */
-.stats-widget__raid-row {
+.stats-panel__raid-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 3px 0;
 }
 
-.stats-widget__raid-count {
+.stats-panel__raid-count {
   color: #aaa;
   font-size: 12px;
 }
 
-.stats-widget__raid-sulfur {
+.stats-panel__raid-sulfur {
   color: #e8d44d;
   font-size: 12px;
   font-weight: 600;
@@ -129,20 +129,20 @@
 }
 
 /* Material rows (same style as old CostWidget) */
-.stats-widget__material {
+.stats-panel__material {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 2px 0;
 }
 
-.stats-widget__material-icon {
+.stats-panel__material-icon {
   width: 22px;
   height: 22px;
   flex-shrink: 0;
 }
 
-.stats-widget__material-amount {
+.stats-panel__material-amount {
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -150,7 +150,7 @@
   min-width: 40px;
 }
 
-.stats-widget__material-label {
+.stats-panel__material-label {
   color: #aaa;
   font-size: 11px;
 }

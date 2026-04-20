@@ -5,7 +5,7 @@ import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
 import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg } from '../utils/hexGrid'
 import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../utils/validation'
-import piecesConfig from '../../data/pieces-config.json'
+import piecesConfig from '../../modes/boat/pieces.json'
 import type { PiecesConfig, PlacedPiece } from '../types'
 
 const edgeConfig = piecesConfig as PiecesConfig

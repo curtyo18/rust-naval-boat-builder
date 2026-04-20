@@ -1,6 +1,6 @@
 // src/core/ui/Sidebar.tsx
 import './Sidebar.css'
-import piecesConfig from '../../data/pieces-config.json'
+import piecesConfig from '../../modes/boat/pieces.json'
 import type { PiecesConfig, PieceCategory } from '../types'
 import { useStore } from '../store/useStore'
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { computeTotalCosts, computeBoatStats, computeSpeedInfo, computeRaidCost } from '../src/utils/costs'
+import { computeTotalCosts } from '../src/core/utils/costs'
+import { computeBoatStats, computeSpeedInfo, computeRaidCost } from '../src/modes/boat/computeStats'
 import type { PlacedPiece, PiecesConfig } from '../src/core/types'
 
 const config: PiecesConfig = {

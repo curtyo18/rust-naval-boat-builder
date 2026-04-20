@@ -1,4 +1,4 @@
-// src/scene/HullMesh.tsx
+// src/modes/boat/HullMesh.tsx
 // Static decorative boat hull — visual reference only, not interactive.
 export default function HullMesh() {
   return (

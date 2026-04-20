@@ -3,12 +3,12 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { useRef, useCallback, useEffect } from 'react'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import HullMesh from '../../scene/HullMesh'
+import SceneFixtures from '../../modes/boat/SceneFixtures'
 import SceneGrid from './SceneGrid'
 import PlacedPieces from './PlacedPieces'
 import HitPlane, { TriHitPlane } from './HitPlane'
 import { useStore } from '../store/useStore'
-import piecesConfig from '../../data/pieces-config.json'
+import piecesConfig from '../../modes/boat/pieces.json'
 import type { PiecesConfig } from '../types'
 
 const config = piecesConfig as PiecesConfig
@@ -77,7 +77,7 @@ export default function Viewport() {
     >
       <ambientLight intensity={0.6} />
       <directionalLight position={[5, 10, 5]} intensity={0.8} />
-      <HullMesh />
+      <SceneFixtures />
       <SceneGrid />
       <PlacedPieces />
       <ActiveHitPlane />
