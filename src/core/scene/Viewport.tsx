@@ -24,7 +24,7 @@ function SceneSetup() {
 
   useEffect(() => {
     setCameraResetFn(resetCamera)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [resetCamera, setCameraResetFn])
 
   return (
     <OrbitControls
