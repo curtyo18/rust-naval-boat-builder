@@ -80,3 +80,5 @@ export const MATERIAL_LABELS: Record<MaterialKey, string> = {
   highQualityMetal: 'High Quality Metal',
   gears: 'Gears',
 }
+
+export type { ModeConfig, GridBounds, MaxFloors } from './modeConfig'

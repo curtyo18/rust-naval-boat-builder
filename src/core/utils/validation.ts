@@ -1,4 +1,4 @@
-import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget } from '../types'
+import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget, GridBounds } from '../types'
 import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from './coordinateKey'
 
 const ALL_SIDES: PieceSide[] = ['north', 'south', 'east', 'west']
@@ -278,8 +278,6 @@ export function canPlaceSquareSnapEdge(
 // These coexist with the hardcoded versions above; a later task will switch
 // callers over and remove the originals.
 // ---------------------------------------------------------------------------
-
-export type GridBounds = { x: number; y: number; z: number } | 'infinite'
 
 export function isInBoundsWith(pos: XYZ, bounds: GridBounds): boolean {
   if (bounds === 'infinite') return true
