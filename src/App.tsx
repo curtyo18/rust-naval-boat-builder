@@ -10,8 +10,25 @@ import { encodePieces } from './core/utils/serialization'
 import { usePersistence } from './core/hooks/usePersistence'
 import { ModeProvider, useMode } from './core/context/ModeContext'
 import boatMode from './modes/boat'
+import { parseHashRoute, buildHashRoute } from './core/routing/hashRoute'
+import type { ModeId } from './core/routing/hashRoute'
 
-function AppInner() {
+const LAST_MODE_KEY = 'rust-builder:lastMode'
+
+function resolveModeFromHash(): ModeId {
+  const parsed = parseHashRoute(window.location.hash)
+  if (parsed) return parsed.mode
+  const last = localStorage.getItem(LAST_MODE_KEY) as ModeId | null
+  return last ?? 'boat'
+}
+
+function resolveModeConfig(modeId: ModeId) {
+  if (modeId === 'boat') return boatMode
+  // base mode added in Phase 4 — return boat as fallback for now
+  return boatMode
+}
+
+function AppInner({ modeId }: { modeId: ModeId }) {
   const mode = useMode()
   const { StatsPanel } = mode
   usePersistence(mode.storageKey)
@@ -51,7 +68,7 @@ function AppInner() {
 
   function handleShare() {
     const encoded = encodePieces(pieces)
-    window.location.hash = `#data=${encoded}`
+    window.location.hash = buildHashRoute({ mode: modeId, data: encoded })
     navigator.clipboard.writeText(window.location.href).then(() => {
       setShareLabel('Copied!')
       setTimeout(() => setShareLabel('Share'), 2000)
@@ -61,7 +78,7 @@ function AppInner() {
   function handleClear() {
     if (window.confirm('Remove all placed pieces?')) {
       clearAll()
-      window.location.hash = ''
+      window.location.hash = buildHashRoute({ mode: modeId, data: null })
     }
   }
 
@@ -86,9 +103,28 @@ function AppInner() {
 }
 
 export default function App() {
+  const [modeId, setModeId] = useState<ModeId>(resolveModeFromHash)
+
+  useEffect(() => {
+    function onHashChange() {
+      const parsed = parseHashRoute(window.location.hash)
+      if (parsed) setModeId(parsed.mode)
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(LAST_MODE_KEY, modeId)
+    const parsed = parseHashRoute(window.location.hash)
+    if (!parsed) window.location.hash = `#/${modeId}`
+  }, [modeId])
+
+  const modeConfig = resolveModeConfig(modeId)
+
   return (
-    <ModeProvider config={boatMode}>
-      <AppInner />
+    <ModeProvider config={modeConfig}>
+      <AppInner modeId={modeId} />
     </ModeProvider>
   )
 }

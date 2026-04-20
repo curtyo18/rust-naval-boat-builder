@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useStore } from '../store/useStore'
 import { encodePieces, decodePieces } from '../utils/serialization'
+import { parseHashRoute } from '../routing/hashRoute'
 
 const LEGACY_KEY = 'naval-planner-design'
 
@@ -18,11 +19,9 @@ export function usePersistence(storageKey: string) {
       }
     }
 
-    const hash = window.location.hash
-    // Legacy share-URL: `#data=...` (no mode prefix) → treat as current mode
-    if (hash.startsWith('#data=')) {
-      const encoded = hash.slice('#data='.length)
-      const loaded = decodePieces(encoded)
+    const parsed = parseHashRoute(window.location.hash)
+    if (parsed?.data) {
+      const loaded = decodePieces(parsed.data)
       if (loaded) {
         loadPieces(loaded)
         return
