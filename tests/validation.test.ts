@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { toKey, fromKey, toEdgeKey } from '../src/core/utils/coordinateKey'
-import { isInBounds, isFloorAllowed, isOccupied, isMaxCountReached, canPlace, hasFoundation, isEdgeOccupied } from '../src/utils/validation'
+import { isInBounds, isFloorAllowed, isOccupied, isMaxCountReached, canPlace, hasFoundation, isEdgeOccupied, isInBoundsWith, canPlaceWith } from '../src/core/utils/validation'
 import type { PlacedPiece, PiecesConfig } from '../src/core/types'
 
 const mockConfig: PiecesConfig = {
@@ -142,5 +142,117 @@ describe('canPlace — edge pieces', () => {
       ['0,0,0,north', 'wall-1'],
     ])
     expect(canPlace('wall', { x: 0, y: 0, z: 0 }, [], index, mockConfig, 'south')).toBe(true)
+  })
+})
+
+describe('isInBoundsWith', () => {
+  it('accepts positions within custom bounds', () => {
+    expect(isInBoundsWith({ x: 0, y: 0, z: 0 }, { x: 10, y: 5, z: 20 })).toBe(true)
+    expect(isInBoundsWith({ x: 9, y: 4, z: 19 }, { x: 10, y: 5, z: 20 })).toBe(true)
+  })
+
+  it('rejects positions outside custom bounds', () => {
+    expect(isInBoundsWith({ x: 10, y: 0, z: 0 }, { x: 10, y: 5, z: 20 })).toBe(false)
+  })
+
+  it('returns true for infinite bounds', () => {
+    expect(isInBoundsWith({ x: 1000, y: 1000, z: 1000 }, 'infinite')).toBe(true)
+  })
+})
+
+describe('canPlaceWith', () => {
+  it('accepts a very large position when bounds are infinite', () => {
+    expect(
+      canPlaceWith(
+        'square_hull',
+        { x: 9999, y: 0, z: 9999 },
+        [],
+        new Map(),
+        mockConfig,
+        'infinite',
+        'infinite',
+        new Set(),
+      ),
+    ).toBe(true)
+  })
+
+  it('rejects positions outside custom bounds', () => {
+    expect(
+      canPlaceWith(
+        'square_hull',
+        { x: 5, y: 0, z: 0 },
+        [],
+        new Map(),
+        mockConfig,
+        { x: 5, y: 3, z: 10 },
+        3,
+        new Set(['low_wall']),
+      ),
+    ).toBe(false)
+  })
+
+  it('matches hardcoded canPlace with boat-mode bounds', () => {
+    // Same inputs as the "allows hull placement on empty ground cell" canPlace test
+    expect(
+      canPlaceWith(
+        'square_hull',
+        { x: 0, y: 0, z: 0 },
+        [],
+        new Map(),
+        mockConfig,
+        { x: 5, y: 3, z: 10 },
+        3,
+        new Set(['low_wall', 'low_cannon_wall', 'low_wall_barrier']),
+      ),
+    ).toBe(true)
+  })
+
+  it('enforces top-floor low-wall rule using topFloorAllowedTypes', () => {
+    const index = new Map([['0,2,0', 'hull-1']]) // foundation exists on top floor
+    // regular wall on top floor (y=2, maxFloors=3 => top) is rejected
+    expect(
+      canPlaceWith(
+        'wall',
+        { x: 0, y: 2, z: 0 },
+        [],
+        index,
+        mockConfig,
+        { x: 5, y: 3, z: 10 },
+        3,
+        new Set(['low_wall']),
+        'north',
+      ),
+    ).toBe(false)
+    // same wall would be accepted when wall is in the allowed-types set
+    expect(
+      canPlaceWith(
+        'wall',
+        { x: 0, y: 2, z: 0 },
+        [],
+        index,
+        mockConfig,
+        { x: 5, y: 3, z: 10 },
+        3,
+        new Set(['wall']),
+        'north',
+      ),
+    ).toBe(true)
+  })
+
+  it('has no top-floor restriction when maxFloors is infinite', () => {
+    const index = new Map([['0,99,0', 'hull-1']])
+    expect(
+      canPlaceWith(
+        'wall',
+        { x: 0, y: 99, z: 0 },
+        [],
+        index,
+        mockConfig,
+        'infinite',
+        'infinite',
+        new Set(), // empty set, but infinite maxFloors means no "top floor"
+        'north',
+      ),
+    ).toBe(true)
   })
 })

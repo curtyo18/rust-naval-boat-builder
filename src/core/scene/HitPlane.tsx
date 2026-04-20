@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useStore } from '../store/useStore'
-import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../../utils/validation'
+import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../utils/validation'
 import { detectSide, getCellPieceShape } from './pieceGeometry'
 import piecesConfig from '../../data/pieces-config.json'
 import type { PiecesConfig, XYZ, PieceSide, PieceRotation, PlacedPiece } from '../types'

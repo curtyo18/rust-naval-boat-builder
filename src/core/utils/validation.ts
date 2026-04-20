@@ -1,5 +1,5 @@
-import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget } from '../core/types'
-import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from '../core/utils/coordinateKey'
+import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget } from '../types'
+import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from './coordinateKey'
 
 const ALL_SIDES: PieceSide[] = ['north', 'south', 'east', 'west']
 
@@ -260,6 +260,188 @@ export function canPlaceSquareSnapEdge(
   if (!isFloorAllowed({ x: 0, y, z: 0 }, pieceConfig.floorConstraint)) return false
   if (isMaxCountReached(type, pieces, config)) return false
   if (y >= GRID_Y - 1 && !LOW_WALL_TYPES.has(type)) return false
+  // Foundation at same position OR edge piece below on same side (stacking)
+  const foundKey = toSquareSnapKey(snap.worldX, y, snap.worldZ)
+  const hasSnapFoundation = coordinateIndex.has(foundKey)
+  const hasSnapEdgeBelow = y > 0
+    && coordinateIndex.has(toSquareSnapEdgeKey(snap.worldX, y - 1, snap.worldZ, side))
+  if (!hasSnapFoundation && !hasSnapEdgeBelow) return false
+  // Must not already have an edge piece here
+  const edgeKey = toSquareSnapEdgeKey(snap.worldX, y, snap.worldZ, side)
+  if (coordinateIndex.has(edgeKey)) return false
+  return true
+}
+
+// ---------------------------------------------------------------------------
+// Parameterized variants (Task 1.7): allow callers to pass custom bounds,
+// maxFloors, and the set of piece types allowed on the top floor (low walls).
+// These coexist with the hardcoded versions above; a later task will switch
+// callers over and remove the originals.
+// ---------------------------------------------------------------------------
+
+export type GridBounds = { x: number; y: number; z: number } | 'infinite'
+
+export function isInBoundsWith(pos: XYZ, bounds: GridBounds): boolean {
+  if (bounds === 'infinite') return true
+  return pos.x >= 0 && pos.x < bounds.x
+    && pos.y >= 0 && pos.y < bounds.y
+    && pos.z >= 0 && pos.z < bounds.z
+}
+
+export function isTriInBoundsWith(hq: number, hr: number, y: number, maxFloors: number | 'infinite'): boolean {
+  if (maxFloors !== 'infinite' && (y < 0 || y >= maxFloors)) return false
+  const dist = (Math.abs(hq) + Math.abs(hr) + Math.abs(-hq - hr)) / 2
+  return dist <= TRI_HEX_RADIUS
+}
+
+export function canPlaceWith(
+  type: string,
+  position: XYZ,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+  config: PiecesConfig,
+  bounds: GridBounds,
+  maxFloors: number | 'infinite',
+  topFloorAllowedTypes: Set<string>,
+  side?: PieceSide,
+  triCoord?: TriCoord,
+  triEdge?: 0 | 1 | 2,
+): boolean {
+  // Triangle placement path
+  if (triCoord) {
+    if (!isTriInBoundsWith(triCoord.hq, triCoord.hr, position.y, maxFloors)) return false
+    const pieceConfig = config[type]
+    if (!pieceConfig) return false
+    if (!isFloorAllowed(position, pieceConfig.floorConstraint)) return false
+    if (isMaxCountReached(type, pieces, config)) return false
+
+    if (pieceConfig.placementType === 'edge') {
+      // Edge piece on a triangle edge
+      if (triEdge === undefined) return false
+      if (maxFloors !== 'infinite' && position.y >= maxFloors - 1 && !topFloorAllowedTypes.has(type)) return false
+      const foundationKey = toTriKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot)
+      const hasTriFoundation = coordinateIndex.has(foundationKey)
+      const hasTriEdgeBelow = position.y > 0
+        && coordinateIndex.has(toTriEdgeKey(triCoord.hq, position.y - 1, triCoord.hr, triCoord.slot, triEdge))
+      if (!hasTriFoundation && !hasTriEdgeBelow) return false
+      const edgeKey = toTriEdgeKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot, triEdge)
+      if (coordinateIndex.has(edgeKey)) return false
+      return true
+    }
+
+    // Cell piece (triangle foundation)
+    const key = toTriKey(triCoord.hq, position.y, triCoord.hr, triCoord.slot)
+    if (coordinateIndex.has(key)) return false
+    if (!hasTriWallSupport(triCoord.hq, position.y, triCoord.hr, triCoord.slot, coordinateIndex)) return false
+    return true
+  }
+
+  if (!isInBoundsWith(position, bounds)) return false
+  const pieceConfig = config[type]
+  if (!pieceConfig) return false
+  if (!isFloorAllowed(position, pieceConfig.floorConstraint)) return false
+  if (isMaxCountReached(type, pieces, config)) return false
+
+  if (pieceConfig.placementType === 'edge') {
+    if (!side) return false
+    if (maxFloors !== 'infinite' && position.y >= maxFloors - 1 && !topFloorAllowedTypes.has(type)) return false
+    if (isEdgeOccupied(position, side, coordinateIndex)) return false
+    // Foundation at same cell OR edge piece below on same side (wall stacking)
+    const hasEdgeBelowOnSide = position.y > 0
+      && coordinateIndex.has(toEdgeKey({ x: position.x, y: position.y - 1, z: position.z }, side))
+    if (!hasFoundation(position, coordinateIndex) && !hasEdgeBelowOnSide) return false
+  } else {
+    if (isCellOccupied(position, coordinateIndex)) return false
+    if (!hasWallSupport(position, coordinateIndex)) return false
+    if (overlapsSnappedPiece(position, pieces)) return false
+  }
+
+  return true
+}
+
+export function canPlaceTriSnapWith(
+  type: string,
+  snap: TriSnapTarget & { y: number },
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+  config: PiecesConfig,
+  _maxFloors: number | 'infinite',
+  _topFloorAllowedTypes: Set<string>,
+): boolean {
+  const pieceConfig = config[type]
+  if (!pieceConfig) return false
+  if (!isFloorAllowed({ x: 0, y: snap.y, z: 0 }, pieceConfig.floorConstraint)) return false
+  if (isMaxCountReached(type, pieces, config)) return false
+  // Must not already have a triangle at this snap position
+  const snapKey = toTriSnapKey(snap.worldX, snap.y, snap.worldZ)
+  if (coordinateIndex.has(snapKey)) return false
+  if (overlapsGridPiece(snap.worldX, snap.worldZ, snap.y, coordinateIndex)) return false
+  return true
+}
+
+export function canPlaceTriSnapEdgeWith(
+  type: string,
+  snap: TriSnapTarget,
+  y: number,
+  edge: number,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+  config: PiecesConfig,
+  maxFloors: number | 'infinite',
+  topFloorAllowedTypes: Set<string>,
+): boolean {
+  const pieceConfig = config[type]
+  if (!pieceConfig) return false
+  if (!isFloorAllowed({ x: 0, y, z: 0 }, pieceConfig.floorConstraint)) return false
+  if (isMaxCountReached(type, pieces, config)) return false
+  if (maxFloors !== 'infinite' && y >= maxFloors - 1 && !topFloorAllowedTypes.has(type)) return false
+  // Foundation at same position OR edge piece below on same edge (stacking)
+  const foundKey = toTriSnapKey(snap.worldX, y, snap.worldZ)
+  const hasSnapFoundation = coordinateIndex.has(foundKey)
+  const hasSnapEdgeBelow = y > 0
+    && coordinateIndex.has(toTriSnapEdgeKey(snap.worldX, y - 1, snap.worldZ, edge))
+  if (!hasSnapFoundation && !hasSnapEdgeBelow) return false
+  // Must not already have an edge piece here
+  const edgeKey = toTriSnapEdgeKey(snap.worldX, y, snap.worldZ, edge)
+  if (coordinateIndex.has(edgeKey)) return false
+  return true
+}
+
+export function canPlaceSquareSnapWith(
+  type: string,
+  snap: SquareSnapTarget & { y: number },
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+  config: PiecesConfig,
+  _maxFloors: number | 'infinite',
+  _topFloorAllowedTypes: Set<string>,
+): boolean {
+  const pieceConfig = config[type]
+  if (!pieceConfig) return false
+  if (!isFloorAllowed({ x: 0, y: snap.y, z: 0 }, pieceConfig.floorConstraint)) return false
+  if (isMaxCountReached(type, pieces, config)) return false
+  const snapKey = toSquareSnapKey(snap.worldX, snap.y, snap.worldZ)
+  if (coordinateIndex.has(snapKey)) return false
+  if (overlapsGridPiece(snap.worldX, snap.worldZ, snap.y, coordinateIndex)) return false
+  return true
+}
+
+export function canPlaceSquareSnapEdgeWith(
+  type: string,
+  snap: SquareSnapTarget,
+  y: number,
+  side: PieceSide,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+  config: PiecesConfig,
+  maxFloors: number | 'infinite',
+  topFloorAllowedTypes: Set<string>,
+): boolean {
+  const pieceConfig = config[type]
+  if (!pieceConfig) return false
+  if (!isFloorAllowed({ x: 0, y, z: 0 }, pieceConfig.floorConstraint)) return false
+  if (isMaxCountReached(type, pieces, config)) return false
+  if (maxFloors !== 'infinite' && y >= maxFloors - 1 && !topFloorAllowedTypes.has(type)) return false
   // Foundation at same position OR edge piece below on same side (stacking)
   const foundKey = toSquareSnapKey(snap.worldX, y, snap.worldZ)
   const hasSnapFoundation = coordinateIndex.has(foundKey)

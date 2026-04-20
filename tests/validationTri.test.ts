@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { canPlace, isTriInBounds } from '../src/utils/validation'
+import { canPlace, isTriInBounds } from '../src/core/utils/validation'
 import type { PlacedPiece, PiecesConfig } from '../src/core/types'
 import { toTriKey, toTriEdgeKey } from '../src/core/utils/coordinateKey'
 import piecesConfig from '../src/data/pieces-config.json'
