@@ -1,5 +1,5 @@
 import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget } from '../types'
-import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from './coordinateKey'
+import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from '../core/utils/coordinateKey'
 
 const ALL_SIDES: PieceSide[] = ['north', 'south', 'east', 'west']
 

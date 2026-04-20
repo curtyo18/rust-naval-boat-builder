@@ -7,7 +7,7 @@ import StatsWidget from './components/StatsWidget'
 import CameraHints from './components/CameraHints'
 import Viewport from './scene/Viewport'
 import { useStore } from './store/useStore'
-import { encodePieces } from './utils/serialization'
+import { encodePieces } from './core/utils/serialization'
 import { usePersistence } from './hooks/usePersistence'
 
 export default function App() {

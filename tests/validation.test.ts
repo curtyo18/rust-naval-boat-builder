@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toKey, fromKey, toEdgeKey } from '../src/utils/coordinateKey'
+import { toKey, fromKey, toEdgeKey } from '../src/core/utils/coordinateKey'
 import { isInBounds, isFloorAllowed, isOccupied, isMaxCountReached, canPlace, hasFoundation, isEdgeOccupied } from '../src/utils/validation'
 import type { PlacedPiece, PiecesConfig } from '../src/types'
 

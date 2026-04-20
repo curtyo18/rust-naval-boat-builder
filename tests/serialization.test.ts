@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { encodePieces, decodePieces } from '../src/utils/serialization'
+import { encodePieces, decodePieces } from '../src/core/utils/serialization'
 import type { PlacedPiece } from '../src/types'
 
 const pieces: PlacedPiece[] = [

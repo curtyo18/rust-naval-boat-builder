@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { getCellPieceShape } from './pieceGeometry'
-import { HEX_SIZE } from '../utils/hexGrid'
+import { HEX_SIZE } from '../core/utils/hexGrid'
 import { getWoodTexture } from './woodTexture'
 import type { PieceRotation } from '../types'
 

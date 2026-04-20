@@ -1,5 +1,5 @@
 import { deflateSync, inflateSync } from 'fflate'
-import type { PlacedPiece, PieceRotation, PieceSide, TriSlot, TriEdgeIndex } from '../types'
+import type { PlacedPiece, PieceRotation, PieceSide, TriSlot, TriEdgeIndex } from '../../types'
 
 /** Compact wire format — no id, short keys, arrays for coords */
 interface CompactPiece {
