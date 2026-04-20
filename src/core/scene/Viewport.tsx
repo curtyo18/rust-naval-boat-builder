@@ -3,13 +3,13 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { useRef, useCallback, useEffect } from 'react'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import HullMesh from './HullMesh'
+import HullMesh from '../../scene/HullMesh'
 import SceneGrid from './SceneGrid'
 import PlacedPieces from './PlacedPieces'
 import HitPlane, { TriHitPlane } from './HitPlane'
-import { useStore } from '../store/useStore'
-import piecesConfig from '../data/pieces-config.json'
-import type { PiecesConfig } from '../core/types'
+import { useStore } from '../../store/useStore'
+import piecesConfig from '../../data/pieces-config.json'
+import type { PiecesConfig } from '../types'
 
 const config = piecesConfig as PiecesConfig
 

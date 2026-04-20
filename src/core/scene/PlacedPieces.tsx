@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { useStore } from '../store/useStore'
+import { useStore } from '../../store/useStore'
 import { PIECE_COLORS, DEFAULT_COLOR, GHOST_VALID_COLOR, getPiecePosition, isTriangleType, getCellPieceShape } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
-import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg } from '../core/utils/hexGrid'
-import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../utils/validation'
-import piecesConfig from '../data/pieces-config.json'
-import type { PiecesConfig, PlacedPiece } from '../core/types'
+import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg } from '../utils/hexGrid'
+import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../../utils/validation'
+import piecesConfig from '../../data/pieces-config.json'
+import type { PiecesConfig, PlacedPiece } from '../types'
 
 const edgeConfig = piecesConfig as PiecesConfig
 

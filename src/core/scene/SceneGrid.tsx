@@ -1,6 +1,6 @@
 // src/scene/SceneGrid.tsx
 import { Grid } from '@react-three/drei'
-import { useStore } from '../store/useStore'
+import { useStore } from '../../store/useStore'
 
 const FLOOR_Y = [0, 1, 2] as const
 

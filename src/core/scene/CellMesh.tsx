@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
 import { getCellPieceShape } from './pieceGeometry'
-import { HEX_SIZE } from '../core/utils/hexGrid'
+import { HEX_SIZE } from '../utils/hexGrid'
 import { getWoodTexture } from './woodTexture'
-import type { PieceRotation } from '../core/types'
+import type { PieceRotation } from '../types'
 
 interface CellMeshProps {
   type: string
