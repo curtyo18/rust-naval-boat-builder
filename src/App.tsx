@@ -82,6 +82,12 @@ function AppInner() {
     }
   }
 
+  function handleModeChange(newMode: ModeId) {
+    clearSelection()
+    selectPieceType(null)
+    window.location.hash = buildHashRoute({ mode: newMode, data: null })
+  }
+
   return (
     <div className="app">
       <TopBar
@@ -89,6 +95,8 @@ function AppInner() {
         onShare={handleShare}
         onClear={handleClear}
         shareLabel={shareLabel}
+        modeId={mode.id}
+        onModeChange={handleModeChange}
       />
       <div className="app__body">
         <Sidebar />

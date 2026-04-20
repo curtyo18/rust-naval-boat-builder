@@ -52,3 +52,18 @@
 .topbar__btn--danger:hover {
   background: #5a1c1c;
 }
+
+.topbar__mode {
+  margin: 0 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #2a3a48;
+  color: #e0e6ec;
+  border: 1px solid #4a5a68;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.topbar__mode:hover {
+  background: #3a4a58;
+}
