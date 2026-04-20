@@ -27,6 +27,6 @@ export function parseHashRoute(hash: string): HashRoute | null {
 }
 
 export function buildHashRoute(route: { mode: ModeId; data: string | null }): string {
-  if (route.data) return `#/${route.mode}?data=${route.data}`
+  if (route.data) return `#/${route.mode}?data=${encodeURIComponent(route.data)}`
   return `#/${route.mode}`
 }
