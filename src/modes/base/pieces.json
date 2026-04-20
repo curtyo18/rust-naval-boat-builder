@@ -1,1 +1,185 @@
-{}
+{
+  "foundation_square": {
+    "label": "Square Foundation",
+    "category": "foundation",
+    "placementType": "cell",
+    "floorConstraint": "ground_only",
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 500,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 12 } }
+    }
+  },
+  "foundation_triangle": {
+    "label": "Triangle Foundation",
+    "category": "foundation",
+    "placementType": "cell",
+    "floorConstraint": "ground_only",
+    "maxCount": null,
+    "cost": { "stone": 150 },
+    "hp": 250,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 150 }, "hp": 250, "upkeepPerDay": { "stone": 6 } }
+    }
+  },
+  "wall": {
+    "label": "Wall",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 500 },
+    "hp": 500,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 500 }, "hp": 500, "upkeepPerDay": { "stone": 20 } }
+    }
+  },
+  "low_wall": {
+    "label": "Low Wall",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 250 },
+    "hp": 250,
+    "mass": 0,
+    "topFloorAllowed": true,
+    "tiers": {
+      "stone": { "cost": { "stone": 250 }, "hp": 250, "upkeepPerDay": { "stone": 10 } }
+    }
+  },
+  "wall_frame": {
+    "label": "Wall Frame",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 250 },
+    "hp": 250,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 250 }, "hp": 250, "upkeepPerDay": { "stone": 10 } }
+    }
+  },
+  "doorway": {
+    "label": "Doorway",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 400 },
+    "hp": 400,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 400 }, "hp": 400, "upkeepPerDay": { "stone": 16 } }
+    }
+  },
+  "double_doorway": {
+    "label": "Double Doorway",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 500 },
+    "hp": 500,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 500 }, "hp": 500, "upkeepPerDay": { "stone": 20 } }
+    }
+  },
+  "window": {
+    "label": "Window",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 300,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 300 }, "hp": 300, "upkeepPerDay": { "stone": 12 } }
+    }
+  },
+  "ceiling_square": {
+    "label": "Square Ceiling",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": "upper_only",
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 500,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 12 } }
+    }
+  },
+  "ceiling_triangle": {
+    "label": "Triangle Ceiling",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": "upper_only",
+    "maxCount": null,
+    "cost": { "stone": 150 },
+    "hp": 250,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 150 }, "hp": 250, "upkeepPerDay": { "stone": 6 } }
+    }
+  },
+  "ladder_hatch": {
+    "label": "Ladder Hatch",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": "upper_only",
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 400,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 300 }, "hp": 400, "upkeepPerDay": { "stone": 12 } }
+    }
+  },
+  "floor_frame_square_base": {
+    "label": "Floor Frame",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": "upper_only",
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 500,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 12 } }
+    }
+  },
+  "stairs_l": {
+    "label": "L Stairs",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 400 },
+    "hp": 500,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 400 }, "hp": 500, "upkeepPerDay": { "stone": 16 } }
+    }
+  },
+  "stairs_u": {
+    "label": "U Stairs",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 400 },
+    "hp": 500,
+    "mass": 0,
+    "tiers": {
+      "stone": { "cost": { "stone": 400 }, "hp": 500, "upkeepPerDay": { "stone": 16 } }
+    }
+  }
+}

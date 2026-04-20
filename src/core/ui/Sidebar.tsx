@@ -10,6 +10,8 @@ const CATEGORY_LABELS: Record<PieceCategory, string> = {
   structural: 'Structural',
   floor: 'Floor',
   deployable: 'Deployable',
+  foundation: 'Foundation',
+  wall: 'Wall',
 }
 
 export default function Sidebar() {

@@ -54,9 +54,16 @@ export interface MaterialCosts {
   tarp?: number
   highQualityMetal?: number
   gears?: number
+  stone?: number
 }
 
-export type PieceCategory = 'hull' | 'structural' | 'floor' | 'deployable'
+export type PieceCategory = 'hull' | 'structural' | 'floor' | 'deployable' | 'foundation' | 'wall'
+
+export interface TierData {
+  cost: MaterialCosts
+  hp: number
+  upkeepPerDay: MaterialCosts
+}
 
 export interface PieceConfig {
   label: string
@@ -67,6 +74,8 @@ export interface PieceConfig {
   cost: MaterialCosts
   hp: number
   mass: number
+  tiers?: Record<string, TierData>
+  topFloorAllowed?: boolean
 }
 
 export type PiecesConfig = Record<string, PieceConfig>
@@ -80,6 +89,7 @@ export const MATERIAL_LABELS: Record<MaterialKey, string> = {
   tarp: 'Tarp',
   highQualityMetal: 'High Quality Metal',
   gears: 'Gears',
+  stone: 'Stone',
 }
 
 export type { ModeConfig, GridBounds, MaxFloors } from './modeConfig'

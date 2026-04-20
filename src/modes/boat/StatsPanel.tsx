@@ -16,6 +16,7 @@ const MATERIAL_SHORT_LABELS: Record<MaterialKey, string> = {
   tarp: 'Tarp',
   highQualityMetal: 'HQM',
   gears: 'Gears',
+  stone: 'Stone',
 }
 
 function MaterialIcon({ material }: { material: MaterialKey }) {
