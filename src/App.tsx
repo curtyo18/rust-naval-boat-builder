@@ -1,14 +1,14 @@
 // src/App.tsx
 import { useState, useEffect } from 'react'
 import './App.css'
-import TopBar from './components/TopBar'
-import Sidebar from './components/Sidebar'
+import TopBar from './core/ui/TopBar'
+import Sidebar from './core/ui/Sidebar'
 import StatsWidget from './components/StatsWidget'
-import CameraHints from './components/CameraHints'
+import CameraHints from './core/ui/CameraHints'
 import Viewport from './core/scene/Viewport'
 import { useStore } from './core/store/useStore'
 import { encodePieces } from './core/utils/serialization'
-import { usePersistence } from './hooks/usePersistence'
+import { usePersistence } from './core/hooks/usePersistence'
 
 export default function App() {
   usePersistence()
