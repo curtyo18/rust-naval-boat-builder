@@ -9,7 +9,10 @@
     "hp": 500,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 12 } }
+      "wood":  { "cost": { "wood": 120 }, "hp": 250, "upkeepPerDay": { "wood": 6 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 12 } },
+      "metal": { "cost": { "metalFragments": 300 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 4 } },
+      "hqm":   { "cost": { "highQualityMetal": 30 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "foundation_triangle": {
@@ -22,7 +25,10 @@
     "hp": 250,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 150 }, "hp": 250, "upkeepPerDay": { "stone": 6 } }
+      "wood":  { "cost": { "wood": 60 }, "hp": 125, "upkeepPerDay": { "wood": 3 } },
+      "stone": { "cost": { "stone": 150 }, "hp": 250, "upkeepPerDay": { "stone": 6 } },
+      "metal": { "cost": { "metalFragments": 150 }, "hp": 500, "upkeepPerDay": { "metalFragments": 2 } },
+      "hqm":   { "cost": { "highQualityMetal": 15 }, "hp": 1000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "wall": {
@@ -35,7 +41,10 @@
     "hp": 500,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 500 }, "hp": 500, "upkeepPerDay": { "stone": 20 } }
+      "wood":  { "cost": { "wood": 200 }, "hp": 250, "upkeepPerDay": { "wood": 10 } },
+      "stone": { "cost": { "stone": 500 }, "hp": 500, "upkeepPerDay": { "stone": 20 } },
+      "metal": { "cost": { "metalFragments": 500 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 7 } },
+      "hqm":   { "cost": { "highQualityMetal": 50 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "low_wall": {
@@ -49,7 +58,10 @@
     "mass": 0,
     "topFloorAllowed": true,
     "tiers": {
-      "stone": { "cost": { "stone": 250 }, "hp": 250, "upkeepPerDay": { "stone": 10 } }
+      "wood":  { "cost": { "wood": 100 }, "hp": 125, "upkeepPerDay": { "wood": 5 } },
+      "stone": { "cost": { "stone": 250 }, "hp": 250, "upkeepPerDay": { "stone": 10 } },
+      "metal": { "cost": { "metalFragments": 250 }, "hp": 500, "upkeepPerDay": { "metalFragments": 4 } },
+      "hqm":   { "cost": { "highQualityMetal": 25 }, "hp": 1000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "wall_frame": {
@@ -62,7 +74,10 @@
     "hp": 250,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 250 }, "hp": 250, "upkeepPerDay": { "stone": 10 } }
+      "wood":  { "cost": { "wood": 100 }, "hp": 125, "upkeepPerDay": { "wood": 5 } },
+      "stone": { "cost": { "stone": 250 }, "hp": 250, "upkeepPerDay": { "stone": 10 } },
+      "metal": { "cost": { "metalFragments": 250 }, "hp": 500, "upkeepPerDay": { "metalFragments": 4 } },
+      "hqm":   { "cost": { "highQualityMetal": 25 }, "hp": 1000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "doorway": {
@@ -75,7 +90,10 @@
     "hp": 400,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 400 }, "hp": 400, "upkeepPerDay": { "stone": 16 } }
+      "wood":  { "cost": { "wood": 160 }, "hp": 200, "upkeepPerDay": { "wood": 8 } },
+      "stone": { "cost": { "stone": 400 }, "hp": 400, "upkeepPerDay": { "stone": 16 } },
+      "metal": { "cost": { "metalFragments": 400 }, "hp": 800, "upkeepPerDay": { "metalFragments": 6 } },
+      "hqm":   { "cost": { "highQualityMetal": 40 }, "hp": 1600, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "double_doorway": {
@@ -88,7 +106,10 @@
     "hp": 500,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 500 }, "hp": 500, "upkeepPerDay": { "stone": 20 } }
+      "wood":  { "cost": { "wood": 200 }, "hp": 250, "upkeepPerDay": { "wood": 10 } },
+      "stone": { "cost": { "stone": 500 }, "hp": 500, "upkeepPerDay": { "stone": 20 } },
+      "metal": { "cost": { "metalFragments": 500 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 7 } },
+      "hqm":   { "cost": { "highQualityMetal": 50 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "window": {
@@ -101,7 +122,10 @@
     "hp": 300,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 300 }, "hp": 300, "upkeepPerDay": { "stone": 12 } }
+      "wood":  { "cost": { "wood": 120 }, "hp": 150, "upkeepPerDay": { "wood": 6 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 300, "upkeepPerDay": { "stone": 12 } },
+      "metal": { "cost": { "metalFragments": 300 }, "hp": 600, "upkeepPerDay": { "metalFragments": 4 } },
+      "hqm":   { "cost": { "highQualityMetal": 30 }, "hp": 1200, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "ceiling_square": {
@@ -114,7 +138,10 @@
     "hp": 500,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 12 } }
+      "wood":  { "cost": { "wood": 120 }, "hp": 250, "upkeepPerDay": { "wood": 6 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 12 } },
+      "metal": { "cost": { "metalFragments": 300 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 4 } },
+      "hqm":   { "cost": { "highQualityMetal": 30 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "ceiling_triangle": {
@@ -127,7 +154,10 @@
     "hp": 250,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 150 }, "hp": 250, "upkeepPerDay": { "stone": 6 } }
+      "wood":  { "cost": { "wood": 60 }, "hp": 125, "upkeepPerDay": { "wood": 3 } },
+      "stone": { "cost": { "stone": 150 }, "hp": 250, "upkeepPerDay": { "stone": 6 } },
+      "metal": { "cost": { "metalFragments": 150 }, "hp": 500, "upkeepPerDay": { "metalFragments": 2 } },
+      "hqm":   { "cost": { "highQualityMetal": 15 }, "hp": 1000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "ladder_hatch": {
@@ -140,7 +170,10 @@
     "hp": 400,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 300 }, "hp": 400, "upkeepPerDay": { "stone": 12 } }
+      "wood":  { "cost": { "wood": 120 }, "hp": 200, "upkeepPerDay": { "wood": 6 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 400, "upkeepPerDay": { "stone": 12 } },
+      "metal": { "cost": { "metalFragments": 300 }, "hp": 800, "upkeepPerDay": { "metalFragments": 4 } },
+      "hqm":   { "cost": { "highQualityMetal": 30 }, "hp": 1600, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "floor_frame_square_base": {
@@ -153,7 +186,10 @@
     "hp": 500,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 12 } }
+      "wood":  { "cost": { "wood": 120 }, "hp": 250, "upkeepPerDay": { "wood": 6 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 12 } },
+      "metal": { "cost": { "metalFragments": 300 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 4 } },
+      "hqm":   { "cost": { "highQualityMetal": 30 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "stairs_l": {
@@ -166,7 +202,10 @@
     "hp": 500,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 400 }, "hp": 500, "upkeepPerDay": { "stone": 16 } }
+      "wood":  { "cost": { "wood": 160 }, "hp": 250, "upkeepPerDay": { "wood": 8 } },
+      "stone": { "cost": { "stone": 400 }, "hp": 500, "upkeepPerDay": { "stone": 16 } },
+      "metal": { "cost": { "metalFragments": 400 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 6 } },
+      "hqm":   { "cost": { "highQualityMetal": 40 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   },
   "stairs_u": {
@@ -179,7 +218,10 @@
     "hp": 500,
     "mass": 0,
     "tiers": {
-      "stone": { "cost": { "stone": 400 }, "hp": 500, "upkeepPerDay": { "stone": 16 } }
+      "wood":  { "cost": { "wood": 160 }, "hp": 250, "upkeepPerDay": { "wood": 8 } },
+      "stone": { "cost": { "stone": 400 }, "hp": 500, "upkeepPerDay": { "stone": 16 } },
+      "metal": { "cost": { "metalFragments": 400 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 6 } },
+      "hqm":   { "cost": { "highQualityMetal": 40 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 1 } }
     }
   }
 }
