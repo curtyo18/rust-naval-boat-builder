@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useStore } from '../store/useStore'
 import { useMode } from '../context/ModeContext'
-import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../utils/validation'
+import { canPlaceWith, canPlaceTriSnapWith, canPlaceTriSnapEdgeWith, canPlaceSquareSnapWith, canPlaceSquareSnapEdgeWith } from '../utils/validation'
 import { detectSide, getCellPieceShape } from './pieceGeometry'
 import type { XYZ, PieceSide, PieceRotation, PlacedPiece } from '../types'
 import GhostPiece from './GhostPiece'
@@ -12,9 +12,6 @@ import { GHOST_VALID_COLOR } from './pieceGeometry'
 import CellMesh from './CellMesh'
 import EdgeMesh from './EdgeMesh'
 import type { TriCoord, TriEdgeIndex, TriSnapTarget, SquareSnapTarget } from '../types'
-
-const GRID_W = 5
-const GRID_L = 10
 
 interface HitPlaneProps {
   floorY: 0 | 1 | 2
@@ -27,7 +24,13 @@ interface GhostState {
 }
 
 export default function HitPlane({ floorY }: HitPlaneProps) {
-  const config = useMode().pieces
+  const mode = useMode()
+  const config = mode.pieces
+  const bounds = mode.gridBounds
+  const gridW = bounds === 'infinite' ? 60 : bounds.x
+  const gridL = bounds === 'infinite' ? 60 : bounds.z
+  const effectiveMaxFloors: number | 'infinite' = mode.maxFloors === 'dynamic' ? 'infinite' : mode.maxFloors
+  const topSet = new Set(mode.topFloorAllowedTypes)
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const pieces = useStore((s) => s.pieces)
   const coordinateIndex = useStore((s) => s.coordinateIndex)
@@ -45,8 +48,8 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
   if (selectedPieceType.includes('triangle') && !isEdgePiece) return null
 
   function toGhostState(point: { x: number; z: number }): GhostState {
-    const cellX = Math.max(0, Math.min(GRID_W - 1, Math.floor(point.x)))
-    const cellZ = Math.max(0, Math.min(GRID_L - 1, Math.floor(point.z)))
+    const cellX = Math.max(0, Math.min(gridW - 1, Math.floor(point.x)))
+    const cellZ = Math.max(0, Math.min(gridL - 1, Math.floor(point.z)))
 
     if (isEdgePiece) {
       const localX = point.x - cellX
@@ -92,25 +95,25 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
     if (e.delta > 5) return
     e.stopPropagation()
     const state = toGhostState(e.point)
-    if (canPlace(selectedPieceType!, state.pos, pieces, coordinateIndex, config, state.side)) {
+    if (canPlaceWith(selectedPieceType!, state.pos, pieces, coordinateIndex, config, bounds, effectiveMaxFloors, topSet, state.side)) {
       placePiece(selectedPieceType!, state.pos, state.rotation, state.side)
     }
   }
 
   const isValid = ghost
-    ? canPlace(selectedPieceType, ghost.pos, pieces, coordinateIndex, config, ghost.side)
+    ? canPlaceWith(selectedPieceType, ghost.pos, pieces, coordinateIndex, config, bounds, effectiveMaxFloors, topSet, ghost.side)
     : false
 
   return (
     <>
       <mesh
-        position={[GRID_W / 2, floorY, GRID_L / 2]}
+        position={[gridW / 2, floorY, gridL / 2]}
         rotation={[-Math.PI / 2, 0, 0]}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
         onClick={handleClick}
       >
-        <planeGeometry args={[GRID_W, GRID_L]} />
+        <planeGeometry args={[gridW, gridL]} />
         <meshBasicMaterial visible={false} />
       </mesh>
       {ghost && (
@@ -519,7 +522,11 @@ function collectSquareFloorSnaps(
 }
 
 export function TriHitPlane({ floorY }: HitPlaneProps) {
-  const config = useMode().pieces
+  const mode = useMode()
+  const config = mode.pieces
+  const bounds = mode.gridBounds
+  const effectiveMaxFloors: number | 'infinite' = mode.maxFloors === 'dynamic' ? 'infinite' : mode.maxFloors
+  const topSet = new Set(mode.topFloorAllowedTypes)
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const pieces = useStore((s) => s.pieces)
   const coordinateIndex = useStore((s) => s.coordinateIndex)
@@ -635,7 +642,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
       const sqSnap = pickClosestSquareSnap(sqCandidates, e.point.x, e.point.z)
       if (sqSnap) {
         e.stopPropagation()
-        if (canPlaceSquareSnap(selectedPieceType!, sqSnap, pieces, coordinateIndex, config)) {
+        if (canPlaceSquareSnapWith(selectedPieceType!, sqSnap, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)) {
           placeSquareSnapped(selectedPieceType!, sqSnap)
         }
       }
@@ -656,7 +663,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
         if (hasTriFound || hasTriEdgeBelow) {
           e.stopPropagation()
           const triCoord: TriCoord = { hq, hr, slot: slot as TriCoord['slot'] }
-          if (canPlace(selectedPieceType!, { x: 0, y: f, z: 0 }, pieces, coordinateIndex, config, undefined, triCoord, detectedEdge)) {
+          if (canPlaceWith(selectedPieceType!, { x: 0, y: f, z: 0 }, pieces, coordinateIndex, config, bounds, effectiveMaxFloors, topSet, undefined, triCoord, detectedEdge)) {
             placeTriangleEdgePiece(selectedPieceType!, f, triCoord, detectedEdge)
           }
           return
@@ -665,7 +672,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
         const se = findSnapTriForEdge(e.point.x, e.point.z, f, pieces)
         if (se) {
           e.stopPropagation()
-          if (canPlaceTriSnapEdge(selectedPieceType!, se.parentSnap, f, se.edge, pieces, coordinateIndex, config)) {
+          if (canPlaceTriSnapEdgeWith(selectedPieceType!, se.parentSnap, f, se.edge, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)) {
             placeTriSnapEdgePiece(selectedPieceType!, se.parentSnap, f, se.edge)
           }
           return
@@ -674,7 +681,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
         const sqse = findSquareSnapForEdge(e.point.x, e.point.z, f, pieces)
         if (sqse) {
           e.stopPropagation()
-          if (canPlaceSquareSnapEdge(selectedPieceType!, sqse.parentSnap, f, sqse.side, pieces, coordinateIndex, config)) {
+          if (canPlaceSquareSnapEdgeWith(selectedPieceType!, sqse.parentSnap, f, sqse.side, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)) {
             placeSquareSnapEdgePiece(selectedPieceType!, sqse.parentSnap, f, sqse.side)
           }
           return
@@ -690,7 +697,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     const snapCandidates = collectFloorSnaps(e.point.x, e.point.z, snapFloors, pieces, coordinateIndex)
     const snap = pickClosestSnap(snapCandidates, e.point.x, e.point.z)
     if (snap) {
-      if (canPlaceTriSnap(selectedPieceType!, snap, pieces, coordinateIndex, config)) {
+      if (canPlaceTriSnapWith(selectedPieceType!, snap, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)) {
         placeTriangleSnapped(selectedPieceType!, snap)
       }
       return
@@ -699,7 +706,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     // Fall back to hex grid placement
     const { hq, hr, slot } = worldToTriCoord(e.point.x, e.point.z)
     const triCoord: TriCoord = { hq, hr, slot: slot as TriCoord['slot'] }
-    if (canPlace(selectedPieceType!, { x: 0, y: floorY, z: 0 }, pieces, coordinateIndex, config, undefined, triCoord)) {
+    if (canPlaceWith(selectedPieceType!, { x: 0, y: floorY, z: 0 }, pieces, coordinateIndex, config, bounds, effectiveMaxFloors, topSet, undefined, triCoord)) {
       placeTrianglePiece(selectedPieceType!, floorY, triCoord)
     }
   }
@@ -708,15 +715,15 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
   let isValid = false
   if (ghost) {
     if (ghost.squareSnap) {
-      isValid = canPlaceSquareSnap(selectedPieceType, ghost.squareSnap, pieces, coordinateIndex, config)
+      isValid = canPlaceSquareSnapWith(selectedPieceType, ghost.squareSnap, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)
     } else if (ghost.squareSnapEdge) {
-      isValid = canPlaceSquareSnapEdge(selectedPieceType, ghost.squareSnapEdge.parentSnap, ghost.squareSnapEdge.y, ghost.squareSnapEdge.side, pieces, coordinateIndex, config)
+      isValid = canPlaceSquareSnapEdgeWith(selectedPieceType, ghost.squareSnapEdge.parentSnap, ghost.squareSnapEdge.y, ghost.squareSnapEdge.side, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)
     } else if (ghost.snapEdge) {
-      isValid = canPlaceTriSnapEdge(selectedPieceType, ghost.snapEdge.parentSnap, ghost.snapEdge.y, ghost.snapEdge.edge, pieces, coordinateIndex, config)
+      isValid = canPlaceTriSnapEdgeWith(selectedPieceType, ghost.snapEdge.parentSnap, ghost.snapEdge.y, ghost.snapEdge.edge, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)
     } else if (ghost.snap) {
-      isValid = canPlaceTriSnap(selectedPieceType, ghost.snap, pieces, coordinateIndex, config)
+      isValid = canPlaceTriSnapWith(selectedPieceType, ghost.snap, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)
     } else {
-      isValid = canPlace(selectedPieceType, { x: 0, y: ghost.y, z: 0 }, pieces, coordinateIndex, config, undefined, ghost.triCoord, ghost.triEdge)
+      isValid = canPlaceWith(selectedPieceType, { x: 0, y: ghost.y, z: 0 }, pieces, coordinateIndex, config, bounds, effectiveMaxFloors, topSet, undefined, ghost.triCoord, ghost.triEdge)
     }
   }
 

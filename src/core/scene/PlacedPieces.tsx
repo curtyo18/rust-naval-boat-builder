@@ -5,11 +5,15 @@ import { PIECE_COLORS, DEFAULT_COLOR, GHOST_VALID_COLOR, getPiecePosition, isTri
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
 import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg } from '../utils/hexGrid'
-import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../utils/validation'
+import { canPlaceWith, canPlaceTriSnapWith, canPlaceTriSnapEdgeWith, canPlaceSquareSnapWith, canPlaceSquareSnapEdgeWith } from '../utils/validation'
 import type { PlacedPiece } from '../types'
 
 export default function PlacedPieces() {
-  const edgeConfig = useMode().pieces
+  const mode = useMode()
+  const edgeConfig = mode.pieces
+  const bounds = mode.gridBounds
+  const effectiveMaxFloors: number | 'infinite' = mode.maxFloors === 'dynamic' ? 'infinite' : mode.maxFloors
+  const topSet = new Set(mode.topFloorAllowedTypes)
   const pieces = useStore((s) => s.pieces)
   const visibleLevels = useStore((s) => s.visibleLevels)
   const transparentPieces = useStore((s) => s.transparentPieces)
@@ -38,16 +42,16 @@ export default function PlacedPieces() {
     if (!selectedPieceType || !isEdgePlacement) return false
     const sy = piece.position.y + 1
     if (piece.squareSnap && piece.side) {
-      return canPlaceSquareSnapEdge(selectedPieceType, piece.squareSnap, sy, piece.side, pieces, coordinateIndex, edgeConfig)
+      return canPlaceSquareSnapEdgeWith(selectedPieceType, piece.squareSnap, sy, piece.side, pieces, coordinateIndex, edgeConfig, effectiveMaxFloors, topSet)
     }
     if (piece.triSnap && piece.triEdge !== undefined) {
-      return canPlaceTriSnapEdge(selectedPieceType, piece.triSnap, sy, piece.triEdge, pieces, coordinateIndex, edgeConfig)
+      return canPlaceTriSnapEdgeWith(selectedPieceType, piece.triSnap, sy, piece.triEdge, pieces, coordinateIndex, edgeConfig, effectiveMaxFloors, topSet)
     }
     if (piece.triCoord && piece.triEdge !== undefined) {
-      return canPlace(selectedPieceType, { x: 0, y: sy, z: 0 }, pieces, coordinateIndex, edgeConfig, undefined, piece.triCoord, piece.triEdge as 0 | 1 | 2)
+      return canPlaceWith(selectedPieceType, { x: 0, y: sy, z: 0 }, pieces, coordinateIndex, edgeConfig, bounds, effectiveMaxFloors, topSet, undefined, piece.triCoord, piece.triEdge as 0 | 1 | 2)
     }
     if (piece.side) {
-      return canPlace(selectedPieceType, { ...piece.position, y: sy }, pieces, coordinateIndex, edgeConfig, piece.side)
+      return canPlaceWith(selectedPieceType, { ...piece.position, y: sy }, pieces, coordinateIndex, edgeConfig, bounds, effectiveMaxFloors, topSet, piece.side)
     }
     return false
   }
@@ -73,22 +77,22 @@ export default function PlacedPieces() {
     // Grid square edge → square floor above
     if (piece.side && !piece.squareSnap && !piece.triSnap && !piece.triCoord) {
       if (!isSquareFloor) return false
-      return canPlace(selectedPieceType, { ...piece.position, y: sy }, pieces, coordinateIndex, edgeConfig)
+      return canPlaceWith(selectedPieceType, { ...piece.position, y: sy }, pieces, coordinateIndex, edgeConfig, bounds, effectiveMaxFloors, topSet)
     }
     // Snap-placed square edge → square floor above
     if (piece.squareSnap && piece.side) {
       if (!isSquareFloor) return false
-      return canPlaceSquareSnap(selectedPieceType, { ...piece.squareSnap, y: sy }, pieces, coordinateIndex, edgeConfig)
+      return canPlaceSquareSnapWith(selectedPieceType, { ...piece.squareSnap, y: sy }, pieces, coordinateIndex, edgeConfig, effectiveMaxFloors, topSet)
     }
     // Snap-placed triangle edge → triangle floor above
     if (piece.triSnap && piece.triEdge !== undefined) {
       if (!isTriFloor) return false
-      return canPlaceTriSnap(selectedPieceType, { ...piece.triSnap, y: sy }, pieces, coordinateIndex, edgeConfig)
+      return canPlaceTriSnapWith(selectedPieceType, { ...piece.triSnap, y: sy }, pieces, coordinateIndex, edgeConfig, effectiveMaxFloors, topSet)
     }
     // Hex-grid triangle edge → triangle floor above
     if (piece.triCoord && piece.triEdge !== undefined) {
       if (!isTriFloor) return false
-      return canPlace(selectedPieceType, { x: 0, y: sy, z: 0 }, pieces, coordinateIndex, edgeConfig, undefined, piece.triCoord)
+      return canPlaceWith(selectedPieceType, { x: 0, y: sy, z: 0 }, pieces, coordinateIndex, edgeConfig, bounds, effectiveMaxFloors, topSet, undefined, piece.triCoord)
     }
     return false
   }
