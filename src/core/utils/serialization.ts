@@ -56,8 +56,14 @@ function fromBase64Url(s: string): Uint8Array {
   return bytes
 }
 
+interface VersionedPayload {
+  v: 1
+  p: CompactPiece[]
+}
+
 export function encodePieces(pieces: PlacedPiece[]): string {
-  const json = JSON.stringify(pieces.map(toCompact))
+  const payload: VersionedPayload = { v: 1, p: pieces.map(toCompact) }
+  const json = JSON.stringify(payload)
   const compressed = deflateSync(new TextEncoder().encode(json))
   return 'z:' + toBase64Url(compressed)
 }
@@ -68,15 +74,17 @@ export function decodePieces(encoded: string): PlacedPiece[] | null {
     if (encoded.startsWith('z:')) {
       const bytes = fromBase64Url(encoded.slice(2))
       const json = new TextDecoder().decode(inflateSync(bytes))
-      const compact: CompactPiece[] = JSON.parse(json)
+      const parsed = JSON.parse(json)
+      const compact: CompactPiece[] = Array.isArray(parsed) ? parsed : parsed.p
       if (!Array.isArray(compact)) return null
       return compact.map(fromCompact)
     }
-    // Legacy: raw base64 JSON
+    // Legacy: raw base64 JSON (may be flat array or versioned object)
     const json = atob(encoded)
     const parsed = JSON.parse(json)
-    if (!Array.isArray(parsed)) return null
-    return parsed as PlacedPiece[]
+    const arr = Array.isArray(parsed) ? parsed : parsed.p
+    if (!Array.isArray(arr)) return null
+    return arr.map(fromCompact)
   } catch {
     return null
   }

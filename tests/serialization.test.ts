@@ -38,9 +38,14 @@ describe('encodePieces / decodePieces', () => {
   })
 
   it('decodes legacy base64 format (backward compat)', () => {
-    const legacy = btoa(JSON.stringify(pieces))
-    const decoded = decodePieces(legacy)
-    expect(decoded).toEqual(pieces)
+    // Legacy format: uncompressed base64 JSON of the compact-shape array
+    const legacyCompact = [
+      { t: 'wall', p: [1, 0, 2], r: 0 },
+      { t: 'sail', p: [3, 1, 4], r: 90 },
+    ]
+    const legacy = btoa(JSON.stringify(legacyCompact))
+    const decoded = decodePieces(legacy)!
+    expect(stripIds(decoded)).toEqual(stripIds(pieces))
   })
 
   it('returns null for invalid input', () => {
@@ -64,5 +69,22 @@ describe('encodePieces / decodePieces', () => {
     ]
     const decoded = decodePieces(encodePieces(snapPieces))!
     expect(stripIds(decoded)).toEqual(stripIds(snapPieces))
+  })
+})
+
+describe('versioned format', () => {
+  it('encodes with version 1 wrapper', () => {
+    const pieces: PlacedPiece[] = [{ id: 'a', type: 'wall', position: { x: 0, y: 0, z: 0 }, rotation: 0, side: 'north' }]
+    const encoded = encodePieces(pieces)
+    const decoded = decodePieces(encoded)
+    expect(decoded).toEqual([expect.objectContaining({ type: 'wall', side: 'north' })])
+  })
+
+  it('decodes legacy array format (no version)', () => {
+    // Reconstruct a legacy-format string: raw base64 JSON of compact pieces
+    const legacyJson = JSON.stringify([{ t: 'wall', p: [0, 0, 0], r: 0, s: 'north' }])
+    const compressed = btoa(legacyJson)
+    const decoded = decodePieces(compressed)
+    expect(decoded).toEqual([expect.objectContaining({ type: 'wall', side: 'north' })])
   })
 })
