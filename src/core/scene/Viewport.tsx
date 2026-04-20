@@ -3,29 +3,24 @@ import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { useRef, useCallback, useEffect } from 'react'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import SceneFixtures from '../../modes/boat/SceneFixtures'
 import SceneGrid from './SceneGrid'
 import PlacedPieces from './PlacedPieces'
 import HitPlane, { TriHitPlane } from './HitPlane'
 import { useStore } from '../store/useStore'
-import piecesConfig from '../../modes/boat/pieces.json'
-import type { PiecesConfig } from '../types'
-
-const config = piecesConfig as PiecesConfig
-
-const SCENE_CENTER: [number, number, number] = [2.5, 0, 5]
+import { useMode } from '../context/ModeContext'
 
 function SceneSetup() {
+  const mode = useMode()
   const controlsRef = useRef<OrbitControlsImpl>(null)
   const setCameraResetFn = useStore((s) => s.setCameraResetFn)
 
   const resetCamera = useCallback(() => {
     const controls = controlsRef.current
     if (!controls) return
-    controls.target.set(...SCENE_CENTER)
-    controls.object.position.set(2.5, 10, 10)
+    controls.target.set(...mode.initialCamera.target)
+    controls.object.position.set(...mode.initialCamera.position)
     controls.update()
-  }, [])
+  }, [mode])
 
   useEffect(() => {
     setCameraResetFn(resetCamera)
@@ -34,13 +29,14 @@ function SceneSetup() {
   return (
     <OrbitControls
       ref={controlsRef}
-      target={SCENE_CENTER}
+      target={mode.initialCamera.target}
       makeDefault
     />
   )
 }
 
 function ActiveHitPlane() {
+  const config = useMode().pieces
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const visibleLevels = useStore((s) => s.visibleLevels)
 
@@ -69,10 +65,14 @@ function ActiveHitPlane() {
 }
 
 export default function Viewport() {
+  const mode = useMode()
+  const { SceneFixtures } = mode
+  const [camX, camY, camZ] = mode.initialCamera.position
+
   return (
     <Canvas
-      camera={{ position: [2.5, 10, 10], fov: 50 }}
-      style={{ width: '100%', height: '100%', background: '#2a4a68' }}
+      camera={{ position: [camX, camY, camZ], fov: 50 }}
+      style={{ width: '100%', height: '100%', background: mode.sceneBackground }}
       onContextMenu={(e) => e.preventDefault()}
     >
       <ambientLight intensity={0.6} />

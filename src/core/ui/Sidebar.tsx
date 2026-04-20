@@ -1,10 +1,8 @@
 // src/core/ui/Sidebar.tsx
 import './Sidebar.css'
-import piecesConfig from '../../modes/boat/pieces.json'
-import type { PiecesConfig, PieceCategory } from '../types'
+import type { PieceCategory } from '../types'
 import { useStore } from '../store/useStore'
-
-const config = piecesConfig as PiecesConfig
+import { useMode } from '../context/ModeContext'
 
 const CATEGORY_ORDER: PieceCategory[] = ['hull', 'structural', 'floor']
 const CATEGORY_LABELS: Record<PieceCategory, string> = {
@@ -17,6 +15,7 @@ const CATEGORY_LABELS: Record<PieceCategory, string> = {
 const FLOOR_LEVELS = [0, 1, 2] as const
 
 export default function Sidebar() {
+  const config = useMode().pieces
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const selectPieceType = useStore((s) => s.selectPieceType)
   const visibleLevels = useStore((s) => s.visibleLevels)

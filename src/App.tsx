@@ -3,12 +3,15 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import TopBar from './core/ui/TopBar'
 import Sidebar from './core/ui/Sidebar'
-import StatsPanel from './modes/boat/StatsPanel'
 import CameraHints from './core/ui/CameraHints'
 import Viewport from './core/scene/Viewport'
 import { useStore } from './core/store/useStore'
 import { encodePieces } from './core/utils/serialization'
 import { usePersistence } from './core/hooks/usePersistence'
+import { ModeProvider } from './core/context/ModeContext'
+import boatMode from './modes/boat'
+
+const { StatsPanel } = boatMode
 
 export default function App() {
   usePersistence()
@@ -63,21 +66,23 @@ export default function App() {
   }
 
   return (
-    <div className="app">
-      <TopBar
-        onResetCamera={() => cameraResetFn?.()}
-        onShare={handleShare}
-        onClear={handleClear}
-        shareLabel={shareLabel}
-      />
-      <div className="app__body">
-        <Sidebar />
-        <div className="app__viewport">
-          <Viewport />
-          <StatsPanel />
-          <CameraHints />
+    <ModeProvider config={boatMode}>
+      <div className="app">
+        <TopBar
+          onResetCamera={() => cameraResetFn?.()}
+          onShare={handleShare}
+          onClear={handleClear}
+          shareLabel={shareLabel}
+        />
+        <div className="app__body">
+          <Sidebar />
+          <div className="app__viewport">
+            <Viewport />
+            <StatsPanel />
+            <CameraHints />
+          </div>
         </div>
       </div>
-    </div>
+    </ModeProvider>
   )
 }

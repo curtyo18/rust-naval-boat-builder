@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { useStore } from '../store/useStore'
+import { useMode } from '../context/ModeContext'
 import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../utils/validation'
 import { detectSide, getCellPieceShape } from './pieceGeometry'
-import piecesConfig from '../../modes/boat/pieces.json'
-import type { PiecesConfig, XYZ, PieceSide, PieceRotation, PlacedPiece } from '../types'
+import type { XYZ, PieceSide, PieceRotation, PlacedPiece } from '../types'
 import GhostPiece from './GhostPiece'
 import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, detectTriEdge, squareEdgeSnapPosition, triSnapNeighbors, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, detectTriSnapEdge, triEdgeSquareSnapPosition, triSnapEdgeSquareSnapPosition, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg, detectSquareSnapSide, HEX_ORIGIN } from '../utils/hexGrid'
 import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toSquareSnapKey } from '../utils/coordinateKey'
@@ -13,7 +13,6 @@ import CellMesh from './CellMesh'
 import EdgeMesh from './EdgeMesh'
 import type { TriCoord, TriEdgeIndex, TriSnapTarget, SquareSnapTarget } from '../types'
 
-const config = piecesConfig as PiecesConfig
 const GRID_W = 5
 const GRID_L = 10
 
@@ -28,6 +27,7 @@ interface GhostState {
 }
 
 export default function HitPlane({ floorY }: HitPlaneProps) {
+  const config = useMode().pieces
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const pieces = useStore((s) => s.pieces)
   const coordinateIndex = useStore((s) => s.coordinateIndex)
@@ -519,6 +519,7 @@ function collectSquareFloorSnaps(
 }
 
 export function TriHitPlane({ floorY }: HitPlaneProps) {
+  const config = useMode().pieces
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const pieces = useStore((s) => s.pieces)
   const coordinateIndex = useStore((s) => s.coordinateIndex)

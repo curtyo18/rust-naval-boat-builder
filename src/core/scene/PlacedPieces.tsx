@@ -1,16 +1,15 @@
 import { useState } from 'react'
 import { useStore } from '../store/useStore'
+import { useMode } from '../context/ModeContext'
 import { PIECE_COLORS, DEFAULT_COLOR, GHOST_VALID_COLOR, getPiecePosition, isTriangleType, getCellPieceShape } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
 import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg } from '../utils/hexGrid'
 import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../utils/validation'
-import piecesConfig from '../../modes/boat/pieces.json'
-import type { PiecesConfig, PlacedPiece } from '../types'
-
-const edgeConfig = piecesConfig as PiecesConfig
+import type { PlacedPiece } from '../types'
 
 export default function PlacedPieces() {
+  const edgeConfig = useMode().pieces
   const pieces = useStore((s) => s.pieces)
   const visibleLevels = useStore((s) => s.visibleLevels)
   const transparentPieces = useStore((s) => s.transparentPieces)
