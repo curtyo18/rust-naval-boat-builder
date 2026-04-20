@@ -126,6 +126,13 @@ describe('setVisibleLevels', () => {
   })
 })
 
+describe('visibleLevels (generic)', () => {
+  it('accepts floor numbers beyond 2', () => {
+    act(() => useStore.getState().setVisibleLevels(new Set([0, 1, 5])))
+    expect(useStore.getState().visibleLevels.has(5)).toBe(true)
+  })
+})
+
 describe('undo / redo', () => {
   it('undo reverts placePiece', () => {
     act(() => useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0))
