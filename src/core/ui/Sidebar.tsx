@@ -12,10 +12,10 @@ const CATEGORY_LABELS: Record<PieceCategory, string> = {
   deployable: 'Deployable',
 }
 
-const FLOOR_LEVELS = [0, 1, 2] as const
-
 export default function Sidebar() {
-  const config = useMode().pieces
+  const mode = useMode()
+  const config = mode.pieces
+  const pieces = useStore((s) => s.pieces)
   const selectedPieceType = useStore((s) => s.selectedPieceType)
   const selectPieceType = useStore((s) => s.selectPieceType)
   const visibleLevels = useStore((s) => s.visibleLevels)
@@ -24,6 +24,15 @@ export default function Sidebar() {
   const setTransparentPieces = useStore((s) => s.setTransparentPieces)
   const showGrid = useStore((s) => s.showGrid)
   const setShowGrid = useStore((s) => s.setShowGrid)
+
+  const floorLevels: number[] = (() => {
+    if (mode.maxFloors === 'dynamic') {
+      const maxY = pieces.reduce((m, p) => Math.max(m, p.position.y), -1)
+      const top = Math.max(0, maxY) + 1
+      return Array.from({ length: top + 1 }, (_, i) => i)
+    }
+    return Array.from({ length: mode.maxFloors }, (_, i) => i)
+  })()
 
   const piecesByCategory = CATEGORY_ORDER.map((cat) => ({
     category: cat,
@@ -34,7 +43,7 @@ export default function Sidebar() {
     selectPieceType(selectedPieceType === type ? null : type)
   }
 
-  function handleFloorToggle(level: 0 | 1 | 2) {
+  function handleFloorToggle(level: number) {
     const next = new Set(visibleLevels)
     if (next.has(level)) {
       next.delete(level)
@@ -88,7 +97,7 @@ export default function Sidebar() {
       <div className="sidebar__floors">
         <div className="sidebar__group-label">Floors</div>
         <div className="sidebar__floor-toggles">
-          {FLOOR_LEVELS.map((level) => (
+          {floorLevels.map((level) => (
             <button
               key={level}
               className={`sidebar__floor-btn ${visibleLevels.has(level) ? 'sidebar__floor-btn--active' : ''}`}
@@ -98,9 +107,9 @@ export default function Sidebar() {
             </button>
           ))}
         </div>
-        {visibleLevels.has(2) && (
+        {typeof mode.maxFloors === 'number' && visibleLevels.has(mode.maxFloors - 1) && (
           <div className="sidebar__floor-hint">
-            Trouble placing? Try hiding floor 2.
+            Trouble placing? Try hiding floor {mode.maxFloors - 1}.
           </div>
         )}
       </div>
