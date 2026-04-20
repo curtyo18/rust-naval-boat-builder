@@ -4,14 +4,14 @@ import { useStore } from '../store/useStore'
 import { canPlace, canPlaceTriSnap, canPlaceTriSnapEdge, canPlaceSquareSnap, canPlaceSquareSnapEdge } from '../utils/validation'
 import { detectSide, getCellPieceShape } from './pieceGeometry'
 import piecesConfig from '../data/pieces-config.json'
-import type { PiecesConfig, XYZ, PieceSide, PieceRotation, PlacedPiece } from '../types'
+import type { PiecesConfig, XYZ, PieceSide, PieceRotation, PlacedPiece } from '../core/types'
 import GhostPiece from './GhostPiece'
 import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, detectTriEdge, squareEdgeSnapPosition, triSnapNeighbors, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, detectTriSnapEdge, triEdgeSquareSnapPosition, triSnapEdgeSquareSnapPosition, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg, detectSquareSnapSide, HEX_ORIGIN } from '../core/utils/hexGrid'
 import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toSquareSnapKey } from '../core/utils/coordinateKey'
 import { GHOST_VALID_COLOR } from './pieceGeometry'
 import CellMesh from './CellMesh'
 import EdgeMesh from './EdgeMesh'
-import type { TriCoord, TriEdgeIndex, TriSnapTarget, SquareSnapTarget } from '../types'
+import type { TriCoord, TriEdgeIndex, TriSnapTarget, SquareSnapTarget } from '../core/types'
 
 const config = piecesConfig as PiecesConfig
 const GRID_W = 5

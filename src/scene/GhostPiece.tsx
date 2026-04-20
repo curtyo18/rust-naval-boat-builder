@@ -1,4 +1,4 @@
-import type { XYZ, PieceSide, PieceRotation } from '../types'
+import type { XYZ, PieceSide, PieceRotation } from '../core/types'
 import { GHOST_VALID_COLOR, getPiecePosition } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'

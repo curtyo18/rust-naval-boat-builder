@@ -9,7 +9,7 @@ import PlacedPieces from './PlacedPieces'
 import HitPlane, { TriHitPlane } from './HitPlane'
 import { useStore } from '../store/useStore'
 import piecesConfig from '../data/pieces-config.json'
-import type { PiecesConfig } from '../types'
+import type { PiecesConfig } from '../core/types'
 
 const config = piecesConfig as PiecesConfig
 

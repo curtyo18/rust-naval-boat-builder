@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { encodePieces, decodePieces } from '../src/core/utils/serialization'
-import type { PlacedPiece } from '../src/types'
+import type { PlacedPiece } from '../src/core/types'
 
 const pieces: PlacedPiece[] = [
   { id: 'abc', type: 'wall', position: { x: 1, y: 0, z: 2 }, rotation: 0 },

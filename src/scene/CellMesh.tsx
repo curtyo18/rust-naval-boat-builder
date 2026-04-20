@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { getCellPieceShape } from './pieceGeometry'
 import { HEX_SIZE } from '../core/utils/hexGrid'
 import { getWoodTexture } from './woodTexture'
-import type { PieceRotation } from '../types'
+import type { PieceRotation } from '../core/types'
 
 interface CellMeshProps {
   type: string

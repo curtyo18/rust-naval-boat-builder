@@ -1,4 +1,4 @@
-import type { PlacedPiece, PiecesConfig, MaterialCosts, MaterialKey } from '../types'
+import type { PlacedPiece, PiecesConfig, MaterialCosts, MaterialKey } from '../core/types'
 import { SAIL_POWER, ENGINE_POWER, MAX_SPEED_RATIO, MAX_SAILS, MAX_ENGINES, EXPLOSIVES } from '../data/boat-constants'
 import type { ExplosiveKey } from '../data/boat-constants'
 

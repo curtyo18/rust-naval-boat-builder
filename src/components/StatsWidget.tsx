@@ -1,7 +1,7 @@
 import './StatsWidget.css'
 import { useStore } from '../store/useStore'
 import { computeTotalCosts, computeBoatStats, computeSpeedInfo, computeRaidCost } from '../utils/costs'
-import type { MaterialKey, PiecesConfig } from '../types'
+import type { MaterialKey, PiecesConfig } from '../core/types'
 import piecesConfig from '../data/pieces-config.json'
 
 const config = piecesConfig as PiecesConfig

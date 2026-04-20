@@ -1,7 +1,7 @@
 // src/components/Sidebar.tsx
 import './Sidebar.css'
 import piecesConfig from '../data/pieces-config.json'
-import type { PiecesConfig, PieceCategory } from '../types'
+import type { PiecesConfig, PieceCategory } from '../core/types'
 import { useStore } from '../store/useStore'
 
 const config = piecesConfig as PiecesConfig

@@ -1,4 +1,4 @@
-import type { PieceSide, XYZ } from '../types'
+import type { PieceSide, XYZ } from '../core/types'
 
 // Visual colors per piece type — warm wood palette
 export const PIECE_COLORS: Record<string, string> = {

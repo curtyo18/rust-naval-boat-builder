@@ -1,4 +1,4 @@
-import type { XYZ, PieceSide } from '../../types'
+import type { XYZ, PieceSide } from '../types'
 
 export const toKey = (pos: XYZ): string => `${pos.x},${pos.y},${pos.z}`
 

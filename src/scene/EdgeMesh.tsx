@@ -1,4 +1,4 @@
-import type { PieceSide } from '../types'
+import type { PieceSide } from '../core/types'
 import { getWoodTexture } from './woodTexture'
 
 const SIDE_ROTATIONS: Record<PieceSide, number> = {

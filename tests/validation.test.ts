@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { toKey, fromKey, toEdgeKey } from '../src/core/utils/coordinateKey'
 import { isInBounds, isFloorAllowed, isOccupied, isMaxCountReached, canPlace, hasFoundation, isEdgeOccupied } from '../src/utils/validation'
-import type { PlacedPiece, PiecesConfig } from '../src/types'
+import type { PlacedPiece, PiecesConfig } from '../src/core/types'
 
 const mockConfig: PiecesConfig = {
   wall: { label: 'Wall', category: 'structural', placementType: 'edge', floorConstraint: null, maxCount: null, cost: { wood: 300 } },
