@@ -8,6 +8,7 @@ export function ModeProvider({ config, children }: { config: ModeConfig; childre
   return <ModeContext.Provider value={config}>{children}</ModeContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useMode(): ModeConfig {
   const config = useContext(ModeContext)
   if (!config) throw new Error('useMode() called outside ModeProvider')
