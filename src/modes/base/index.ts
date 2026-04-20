@@ -13,7 +13,7 @@ const baseMode: ModeConfig = {
   gridBounds: 'infinite',
   maxFloors: 'dynamic',
   initialCamera: {
-    position: [8, 8, 12],
+    position: [12, 12, 16],
     target: [0, 0, 0],
   },
   sceneBackground: '#9fb5c4',
