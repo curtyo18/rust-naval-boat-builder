@@ -14,6 +14,8 @@ export function computeBaseMaterials(pieces: PlacedPiece[], config: PiecesConfig
     const pieceConfig = config[piece.type]
     const tierData = pieceConfig?.tiers?.[piece.tier]
     if (!tierData) continue
+    // Every piece is placed as twig first, then upgraded. Twig cost applies to all tiers.
+    if (pieceConfig.twigCost) addMaterials(totals, pieceConfig.twigCost)
     addMaterials(totals, tierData.cost)
   }
   return totals

@@ -21,14 +21,18 @@ interface GhostState {
   pos: XYZ
   side?: PieceSide
   rotation: PieceRotation
+  stackLevel?: 0 | 1
 }
 
 export default function HitPlane({ floorY }: HitPlaneProps) {
   const mode = useMode()
   const config = mode.pieces
   const bounds = mode.gridBounds
-  const gridW = bounds === 'infinite' ? 60 : bounds.x
-  const gridL = bounds === 'infinite' ? 60 : bounds.z
+  const isInfinite = bounds === 'infinite'
+  const gridW = isInfinite ? 120 : bounds.x
+  const gridL = isInfinite ? 120 : bounds.z
+  const centerX = isInfinite ? 0 : gridW / 2
+  const centerZ = isInfinite ? 0 : gridL / 2
   const effectiveMaxFloors: number | 'infinite' = mode.maxFloors === 'dynamic' ? 'infinite' : mode.maxFloors
   const topSet = new Set(mode.topFloorAllowedTypes)
   const selectedPieceType = useStore((s) => s.selectedPieceType)
@@ -48,8 +52,8 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
   if (selectedPieceType.includes('triangle') && !isEdgePiece) return null
 
   function toGhostState(point: { x: number; z: number }): GhostState {
-    const cellX = Math.max(0, Math.min(gridW - 1, Math.floor(point.x)))
-    const cellZ = Math.max(0, Math.min(gridL - 1, Math.floor(point.z)))
+    const cellX = isInfinite ? Math.floor(point.x) : Math.max(0, Math.min(gridW - 1, Math.floor(point.x)))
+    const cellZ = isInfinite ? Math.floor(point.z) : Math.max(0, Math.min(gridL - 1, Math.floor(point.z)))
 
     if (isEdgePiece) {
       const localX = point.x - cellX
@@ -63,10 +67,12 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
         const hasEdgeBelow = f > 0
           && coordinateIndex.has(toEdgeKey({ x: cellX, y: f - 1, z: cellZ }, side))
         if (hasFoundation || hasEdgeBelow) {
-          return { pos: { x: cellX, y: f, z: cellZ }, side, rotation: 0 }
+          const stackLevel = halfWallStackLevel(selectedPieceType!, { x: cellX, y: f, z: cellZ }, side, pieces, coordinateIndex)
+          return { pos: { x: cellX, y: f, z: cellZ }, side, rotation: 0, stackLevel }
         }
       }
-      return { pos: { x: cellX, y: floorY, z: cellZ }, side, rotation: 0 }
+      const stackLevel = halfWallStackLevel(selectedPieceType!, { x: cellX, y: floorY, z: cellZ }, side, pieces, coordinateIndex)
+      return { pos: { x: cellX, y: floorY, z: cellZ }, side, rotation: 0, stackLevel }
     }
 
     // Cell pieces: scan visible floors bottom-to-top for first unoccupied cell
@@ -107,7 +113,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
   return (
     <>
       <mesh
-        position={[gridW / 2, floorY, gridL / 2]}
+        position={[centerX, floorY, centerZ]}
         rotation={[-Math.PI / 2, 0, 0]}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
@@ -123,6 +129,7 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
           valid={isValid}
           side={ghost.side}
           rotation={ghost.rotation}
+          stackLevel={ghost.stackLevel}
         />
       )}
     </>
@@ -166,6 +173,21 @@ interface TriGhostState {
 }
 
 const SNAP_THRESHOLD = 0.5
+
+/** For a half_wall placement, return 1 if the lower slot already has a half_wall (stacking on top). */
+function halfWallStackLevel(
+  type: string,
+  pos: XYZ,
+  side: PieceSide,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+): 0 | 1 | undefined {
+  if (type !== 'half_wall') return undefined
+  const lowerId = coordinateIndex.get(toEdgeKey(pos, side))
+  if (!lowerId) return undefined
+  const lower = pieces.find(p => p.id === lowerId)
+  return lower?.type === 'half_wall' ? 1 : undefined
+}
 
 /** Find the nearest placed-square edge within threshold of cursor position. */
 function findSquareEdgeSnap(
@@ -727,12 +749,14 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     }
   }
 
-  const planeSize = 24
+  const planeSize = bounds === 'infinite' ? 120 : 24
+  const hitX = bounds === 'infinite' ? 0 : HEX_ORIGIN.x
+  const hitZ = bounds === 'infinite' ? 0 : HEX_ORIGIN.z
 
   return (
     <>
       <mesh
-        position={[HEX_ORIGIN.x, floorY + 0.001, HEX_ORIGIN.z]}
+        position={[hitX, floorY + 0.001, hitZ]}
         rotation={[-Math.PI / 2, 0, 0]}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}

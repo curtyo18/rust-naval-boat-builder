@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
-import { getCellPieceShape } from './pieceGeometry'
+import { getCellPieceShape, getTierMaterial } from './pieceGeometry'
 import { HEX_SIZE } from '../utils/hexGrid'
-import { getWoodTexture } from './woodTexture'
+import { getTierTexture } from './tierTextures'
 import type { PieceRotation } from '../types'
 
 interface CellMeshProps {
@@ -12,24 +12,48 @@ interface CellMeshProps {
   roughness?: number
   rotation?: PieceRotation
   angleDeg?: number  // for triangle slot rotation (0, 60, 120, 180, 240, 300)
+  tier?: string
 }
 
-export default function CellMesh({ type, color, opacity = 1, roughness = 0.7, angleDeg }: CellMeshProps) {
+export default function CellMesh({ type, color, opacity = 1, angleDeg, tier }: CellMeshProps) {
   const transparent = opacity < 1
-  const woodTex = getWoodTexture()
-  const mat = { color, opacity, transparent, roughness, metalness: 0.05, map: woodTex }
-
-  if (type === 'triangle_hull' || type === 'floor_triangle') {
-    const h = type === 'triangle_hull' ? 0.15 : 0.1
-    return <TrianglePrism height={h} mat={mat} angleDeg={angleDeg ?? 210} />
+  const tierMat = getTierMaterial(tier)
+  const map = tierMat.useTexture ? getTierTexture(tier) : undefined
+  const mat = {
+    color,
+    opacity,
+    transparent,
+    roughness: tierMat.roughness,
+    metalness: tierMat.metalness,
+    ...(map ? { map } : {}),
   }
 
-  if (type === 'floor_frame_triangle') {
+  // Triangle floor frame — hollow triangle outline (check before triangle solid)
+  if (type.startsWith('floor_frame_triangle')) {
     return <TriangleFramePrism height={0.1} mat={mat} angleDeg={angleDeg ?? 210} />
   }
 
-  if (type === 'floor_frame_square') {
+  // Solid triangle prisms: hull, floor, ceiling, foundation (all triangle variants)
+  if (type.includes('triangle')) {
+    const h = type.includes('foundation') || type.includes('hull') ? 0.15
+      : type.includes('ceiling') ? 0.04
+      : 0.1
+    return <TrianglePrism height={h} mat={mat} angleDeg={angleDeg ?? 210} />
+  }
+
+  // Square floor frame (both boat's 'floor_frame_square' and base's 'floor_frame_square_base')
+  if (type.startsWith('floor_frame_square')) {
     return <SquareFloorFrame mat={mat} />
+  }
+
+  if (type === 'stairs_l') {
+    return <StairsL mat={mat} />
+  }
+  if (type === 'stairs_u') {
+    return <StairsU mat={mat} />
+  }
+  if (type === 'spiral_staircase') {
+    return <SpiralStaircase mat={mat} />
   }
 
   const shape = getCellPieceShape(type)
@@ -47,7 +71,7 @@ interface MatProps {
   transparent: boolean
   roughness: number
   metalness: number
-  map: THREE.Texture
+  map?: THREE.Texture
 }
 
 // HEX_SIZE imported from hexGrid.ts
@@ -163,6 +187,103 @@ function SquareFloorFrame({ mat }: { mat: MatProps }) {
           <meshStandardMaterial {...mat} />
         </mesh>
       ))}
+    </group>
+  )
+}
+
+/**
+ * L Stairs — straight stepped flight rising from y=-0.5 to y=+0.5,
+ * with treads stepping in +X. Mesh spans the cell (-0.5..+0.5 on all axes).
+ */
+function StairsL({ mat }: { mat: MatProps }) {
+  const steps = 6
+  const stepH = 1 / steps
+  const stepD = 1 / steps
+  return (
+    <group>
+      {Array.from({ length: steps }, (_, i) => {
+        const y = -0.5 + (i + 0.5) * stepH
+        const x = -0.5 + (i + 0.5) * stepD
+        return (
+          <mesh key={i} position={[x, y, 0]}>
+            <boxGeometry args={[stepD, stepH, 1]} />
+            <meshStandardMaterial {...mat} />
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
+/**
+ * U Stairs — two flights with a landing, making a 180° turn.
+ * First flight rises halfway along -Z side; landing at mid-height; second
+ * flight continues to top along +Z side.
+ */
+function StairsU({ mat }: { mat: MatProps }) {
+  const perFlight = 4
+  const stepH = 0.5 / perFlight       // 8 steps total → 1.0 rise
+  const stepD = 1 / perFlight         // each flight spans full cell in X
+  const flightW = 0.45
+
+  const firstFlight = Array.from({ length: perFlight }, (_, i) => {
+    const y = -0.5 + (i + 0.5) * stepH
+    const x = -0.5 + (i + 0.5) * stepD
+    return { pos: [x, y, -0.25] as [number, number, number], size: [stepD, stepH, flightW] as [number, number, number] }
+  })
+  const landingY = -0.5 + perFlight * stepH + stepH / 2
+  const landing = {
+    pos: [0.5 - stepD / 2, landingY, 0] as [number, number, number],
+    size: [stepD, stepH, flightW * 2 + 0.1] as [number, number, number],
+  }
+  const secondFlight = Array.from({ length: perFlight }, (_, i) => {
+    const y = landingY + (i + 1) * stepH
+    const x = 0.5 - (i + 1.5) * stepD
+    return { pos: [x, y, 0.25] as [number, number, number], size: [stepD, stepH, flightW] as [number, number, number] }
+  })
+
+  return (
+    <group>
+      {[...firstFlight, landing, ...secondFlight].map((p, i) => (
+        <mesh key={i} position={p.pos}>
+          <boxGeometry args={p.size} />
+          <meshStandardMaterial {...mat} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/**
+ * Spiral staircase — circular steps winding around a central column,
+ * rising one full floor (y=-0.5 to y=+0.5).
+ */
+function SpiralStaircase({ mat }: { mat: MatProps }) {
+  const steps = 10
+  const stepH = 1 / steps
+  const stepRadius = 0.32
+  const stepW = 0.42
+  const stepD = 0.16
+  const centerR = 0.08
+
+  return (
+    <group>
+      <mesh>
+        <cylinderGeometry args={[centerR, centerR, 1, 12]} />
+        <meshStandardMaterial {...mat} />
+      </mesh>
+      {Array.from({ length: steps }, (_, i) => {
+        const angle = (i / steps) * Math.PI * 2
+        const y = -0.5 + (i + 0.5) * stepH
+        const x = Math.cos(angle) * stepRadius
+        const z = Math.sin(angle) * stepRadius
+        return (
+          <mesh key={i} position={[x, y, z]} rotation={[0, angle, 0]}>
+            <boxGeometry args={[stepW, stepH * 0.85, stepD]} />
+            <meshStandardMaterial {...mat} />
+          </mesh>
+        )
+      })}
     </group>
   )
 }

@@ -43,6 +43,9 @@ export interface PlacedPiece {
   triSnap?: TriSnapTarget // triangle snapped to a square edge
   squareSnap?: SquareSnapTarget // square snapped to a triangle edge
   tier?: string
+  // Half-walls can be stacked two-high within a single floor cell.
+  // 1 = upper slot (top half); absent/0 = lower slot or non-stacked piece.
+  stackLevel?: 0 | 1
 }
 
 export type FloorConstraint = 'ground_only' | 'upper_only' | null
@@ -75,6 +78,9 @@ export interface PieceConfig {
   hp: number
   mass: number
   tiers?: Record<string, TierData>
+  // Every building piece is placed as twig first (Rust mechanic), then upgraded directly
+  // to the chosen tier. Tier costs are upgrade-only; twigCost is the placement cost.
+  twigCost?: MaterialCosts
   topFloorAllowed?: boolean
 }
 

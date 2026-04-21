@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from '../utils/coordinateKey'
+import { toKey, toEdgeKey, toEdgeKeyUpper, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from '../utils/coordinateKey'
 import type { PlacedPiece, XYZ, PieceRotation, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget } from '../types'
 
 const MAX_HISTORY = 50
@@ -89,7 +89,10 @@ function buildIndex(pieces: PlacedPiece[]): Map<string, string> {
         )
       }
     } else if (piece.side) {
-      index.set(toEdgeKey(piece.position, piece.side), piece.id)
+      const key = piece.stackLevel === 1
+        ? toEdgeKeyUpper(piece.position, piece.side)
+        : toEdgeKey(piece.position, piece.side)
+      index.set(key, piece.id)
     } else {
       index.set(toKey(piece.position), piece.id)
     }
@@ -101,6 +104,28 @@ function pushHistory(history: PlacedPiece[][], current: PlacedPiece[]): PlacedPi
   const next = [...history, current]
   if (next.length > MAX_HISTORY) next.shift()
   return next
+}
+
+/**
+ * Extend a deletion set with cascading removals: deleting the lower half of a
+ * stacked half_wall pair also removes the orphaned upper half above it.
+ */
+function expandDeletionSet(ids: Set<string>, pieces: PlacedPiece[]): Set<string> {
+  const result = new Set(ids)
+  for (const id of ids) {
+    const p = pieces.find(x => x.id === id)
+    if (!p || p.type !== 'half_wall' || p.stackLevel === 1 || !p.side) continue
+    const upper = pieces.find(x =>
+      x.type === 'half_wall'
+      && x.stackLevel === 1
+      && x.side === p.side
+      && x.position.x === p.position.x
+      && x.position.y === p.position.y
+      && x.position.z === p.position.z
+    )
+    if (upper) result.add(upper.id)
+  }
+  return result
 }
 
 export const useStore = create<AppStore>((set) => ({
@@ -119,15 +144,25 @@ export const useStore = create<AppStore>((set) => ({
   placePiece(type, position, rotation, side) {
     const id = crypto.randomUUID()
     const tier = useStore.getState().activeTier ?? undefined
-    const piece: PlacedPiece = {
-      id,
-      type,
-      position,
-      rotation,
-      ...(side ? { side } : {}),
-      ...(tier ? { tier } : {}),
-    }
     set((state) => {
+      // Half-walls stack: if lower slot already has a half_wall, this one goes to upper slot
+      let stackLevel: 0 | 1 | undefined = undefined
+      if (type === 'half_wall' && side) {
+        const lowerPieceId = state.coordinateIndex.get(toEdgeKey(position, side))
+        const lowerPiece = lowerPieceId ? state.pieces.find(p => p.id === lowerPieceId) : null
+        if (lowerPiece?.type === 'half_wall') {
+          stackLevel = 1
+        }
+      }
+      const piece: PlacedPiece = {
+        id,
+        type,
+        position,
+        rotation,
+        ...(side ? { side } : {}),
+        ...(tier ? { tier } : {}),
+        ...(stackLevel !== undefined ? { stackLevel } : {}),
+      }
       const pieces = [...state.pieces, piece]
       const showLevel = autoShowLevel(position.y, state.visibleLevels)
       return {
@@ -289,9 +324,10 @@ export const useStore = create<AppStore>((set) => ({
 
   removePiece(id) {
     set((state) => {
-      const pieces = state.pieces.filter((p) => p.id !== id)
+      const toRemove = expandDeletionSet(new Set([id]), state.pieces)
+      const pieces = state.pieces.filter((p) => !toRemove.has(p.id))
       const selectedPieceIds = new Set(state.selectedPieceIds)
-      selectedPieceIds.delete(id)
+      for (const rid of toRemove) selectedPieceIds.delete(rid)
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),
@@ -341,7 +377,8 @@ export const useStore = create<AppStore>((set) => ({
   deleteSelectedPiece() {
     set((state) => {
       if (state.selectedPieceIds.size === 0) return state
-      const pieces = state.pieces.filter((p) => !state.selectedPieceIds.has(p.id))
+      const toRemove = expandDeletionSet(state.selectedPieceIds, state.pieces)
+      const pieces = state.pieces.filter((p) => !toRemove.has(p.id))
       return {
         pieces,
         coordinateIndex: buildIndex(pieces),

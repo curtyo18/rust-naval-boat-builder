@@ -1,5 +1,5 @@
 import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget, GridBounds } from '../types'
-import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from './coordinateKey'
+import { toKey, toEdgeKey, toEdgeKeyUpper, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from './coordinateKey'
 
 const ALL_SIDES: PieceSide[] = ['north', 'south', 'east', 'west']
 
@@ -36,6 +36,31 @@ export function isCellOccupied(pos: XYZ, coordinateIndex: Map<string, string>): 
 
 export function isEdgeOccupied(pos: XYZ, side: PieceSide, coordinateIndex: Map<string, string>): boolean {
   return coordinateIndex.has(toEdgeKey(pos, side))
+}
+
+/**
+ * Edge-slot availability for a piece type. Half-walls occupy one of two
+ * vertical slots (lower/upper) at an edge; everything else takes a single
+ * slot and blocks any stacking.
+ */
+function isEdgeSlotAvailable(
+  type: string,
+  pos: XYZ,
+  side: PieceSide,
+  coordinateIndex: Map<string, string>,
+  pieces: PlacedPiece[],
+): boolean {
+  const lowerId = coordinateIndex.get(toEdgeKey(pos, side))
+  const hasUpper = coordinateIndex.has(toEdgeKeyUpper(pos, side))
+  if (type === 'half_wall') {
+    if (!lowerId && !hasUpper) return true
+    if (lowerId && !hasUpper) {
+      const lower = pieces.find(p => p.id === lowerId)
+      return lower?.type === 'half_wall'
+    }
+    return false
+  }
+  return !lowerId && !hasUpper
 }
 
 export function hasFoundation(pos: XYZ, coordinateIndex: Map<string, string>): boolean {
@@ -171,7 +196,7 @@ export function canPlace(
   if (pieceConfig.placementType === 'edge') {
     if (!side) return false
     if (position.y >= GRID_Y - 1 && !LOW_WALL_TYPES.has(type)) return false
-    if (isEdgeOccupied(position, side, coordinateIndex)) return false
+    if (!isEdgeSlotAvailable(type, position, side, coordinateIndex, pieces)) return false
     // Foundation at same cell OR edge piece below on same side (wall stacking)
     const hasEdgeBelowOnSide = position.y > 0
       && coordinateIndex.has(toEdgeKey({ x: position.x, y: position.y - 1, z: position.z }, side))
@@ -288,6 +313,7 @@ export function isInBoundsWith(pos: XYZ, bounds: GridBounds): boolean {
 
 export function isTriInBoundsWith(hq: number, hr: number, y: number, maxFloors: number | 'infinite'): boolean {
   if (maxFloors !== 'infinite' && (y < 0 || y >= maxFloors)) return false
+  if (maxFloors === 'infinite') return true
   const dist = (Math.abs(hq) + Math.abs(hr) + Math.abs(-hq - hr)) / 2
   return dist <= TRI_HEX_RADIUS
 }
@@ -343,7 +369,7 @@ export function canPlaceWith(
   if (pieceConfig.placementType === 'edge') {
     if (!side) return false
     if (maxFloors !== 'infinite' && position.y >= maxFloors - 1 && !topFloorAllowedTypes.has(type)) return false
-    if (isEdgeOccupied(position, side, coordinateIndex)) return false
+    if (!isEdgeSlotAvailable(type, position, side, coordinateIndex, pieces)) return false
     // Foundation at same cell OR edge piece below on same side (wall stacking)
     const hasEdgeBelowOnSide = position.y > 0
       && coordinateIndex.has(toEdgeKey({ x: position.x, y: position.y - 1, z: position.z }, side))

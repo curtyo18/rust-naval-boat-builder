@@ -8,10 +8,9 @@ export const TIER_LABELS: Record<TierId, string> = {
   hqm: 'HQM',
 }
 
-export const ENTRY_PIECE_TYPES = ['doorway', 'double_doorway', 'ladder_hatch']
+export const ENTRY_PIECE_TYPES = ['doorway', 'double_door_frame']
 
 export const ENTRY_PIECE_LABELS: Record<string, string> = {
   doorway: 'Doorways',
-  double_doorway: 'Double doorways',
-  ladder_hatch: 'Ladder hatches',
+  double_door_frame: 'Double door frames',
 }

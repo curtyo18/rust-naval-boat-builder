@@ -15,6 +15,7 @@ export const PIECE_COLORS: Record<string, string> = {
   doorway: '#b59164',
   window: '#b59164',
   low_wall: '#b59164',
+  half_wall: '#b59164',
   low_cannon_wall: '#b59164',
   low_wall_barrier: '#c0996a',
   boat_stairs: '#b59164',
@@ -29,6 +30,42 @@ export const PIECE_COLORS: Record<string, string> = {
 export const DEFAULT_COLOR = '#b59164'
 export const GHOST_VALID_COLOR = '#4a9eff'
 
+// Tier-based visual treatment for structural pieces (wood/stone/metal/hqm)
+export const TIER_COLORS: Record<string, string> = {
+  wood:  '#a67c52',
+  stone: '#8c8c88',
+  // Weathered rusty steel — warm brown/orange with enough grey to read as metal
+  metal: '#8a6a4c',
+  // Dark gunmetal / graphite
+  hqm:   '#5a5f67',
+}
+
+export interface TierMaterial {
+  roughness: number
+  metalness: number
+  useTexture: boolean
+}
+
+export const TIER_MATERIALS: Record<string, TierMaterial> = {
+  wood:  { roughness: 0.8,  metalness: 0.05, useTexture: true },
+  stone: { roughness: 0.95, metalness: 0.05, useTexture: true },
+  // Metalness kept modest because the scene has no environment map — too-high values
+  // would reflect the warm default sky and read as pink/red on the piece.
+  metal: { roughness: 0.55, metalness: 0.25, useTexture: true },
+  hqm:   { roughness: 0.3,  metalness: 0.45, useTexture: true },
+}
+
+/** Tier takes priority over per-type color for structural pieces. */
+export function getPieceColor(type: string, tier?: string): string {
+  if (tier && TIER_COLORS[tier]) return TIER_COLORS[tier]
+  return PIECE_COLORS[type] ?? DEFAULT_COLOR
+}
+
+export function getTierMaterial(tier?: string): TierMaterial {
+  if (tier && TIER_MATERIALS[tier]) return TIER_MATERIALS[tier]
+  return TIER_MATERIALS.wood
+}
+
 // Geometry dimensions for each piece category/type
 export interface PieceShape {
   size: [number, number, number] // width, height, depth (before rotation)
@@ -40,6 +77,10 @@ export function getCellPieceShape(type: string): PieceShape {
   // Hull and floor pieces are flat slabs
   if (type.includes('hull')) {
     return { size: [1, 0.15, 1], offset: [0.5, 0.075, 0.5], rotationY: 0 }
+  }
+  // Ceilings are much thinner than foundations
+  if (type.includes('ceiling')) {
+    return { size: [1, 0.04, 1], offset: [0.5, 0.02, 0.5], rotationY: 0 }
   }
   if (type.includes('floor')) {
     return { size: [1, 0.1, 1], offset: [0.5, 0.05, 0.5], rotationY: 0 }
@@ -60,15 +101,20 @@ export function getCellPieceShape(type: string): PieceShape {
   if (type === 'boat_engine') {
     return { size: [0.5, 0.4, 0.5], offset: [0.5, 0.2, 0.5], rotationY: 0 }
   }
+  // Stairs span a full cell, rising one floor height
+  if (type === 'stairs_l' || type === 'stairs_u' || type === 'spiral_staircase') {
+    return { size: [1, 1, 1], offset: [0.5, 0.5, 0.5], rotationY: 0 }
+  }
   // Default cell piece
   return { size: [1, 0.15, 1], offset: [0.5, 0.075, 0.5], rotationY: 0 }
 }
 
 export function getEdgePieceShape(type: string, side: PieceSide): PieceShape {
   const isNS = side === 'north' || side === 'south'
+  const isHalf = type.includes('half')
   const isLow = type.includes('low') || type.includes('barrier')
 
-  const wallHeight = isLow ? 0.33 : 1.0
+  const wallHeight = isHalf ? 0.5 : isLow ? 0.33 : 1.0
   const wallThickness = 0.08
 
   // Wall-like pieces
@@ -113,12 +159,15 @@ export function getPiecePosition(
   cellPos: XYZ,
   type: string,
   side?: PieceSide,
+  stackLevel?: 0 | 1,
 ): [number, number, number] {
   if (side) {
     const shape = getEdgePieceShape(type, side)
+    // Upper-slot half_wall sits on top of the lower one — shift Y by a half-wall height
+    const yOffset = stackLevel === 1 ? shape.offset[1] + 0.5 : shape.offset[1]
     return [
       cellPos.x + shape.offset[0],
-      cellPos.y + shape.offset[1],
+      cellPos.y + yOffset,
       cellPos.z + shape.offset[2],
     ]
   }

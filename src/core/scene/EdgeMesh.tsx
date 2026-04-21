@@ -1,5 +1,6 @@
 import type { PieceSide } from '../types'
-import { getWoodTexture } from './woodTexture'
+import { getTierMaterial } from './pieceGeometry'
+import { getTierTexture } from './tierTextures'
 
 const SIDE_ROTATIONS: Record<PieceSide, number> = {
   north: 0,
@@ -14,6 +15,7 @@ interface EdgeMeshProps {
   color: string
   opacity?: number
   roughness?: number
+  tier?: string
 }
 
 const THICKNESS = 0.08
@@ -23,17 +25,20 @@ const WALL_H = 1.0
 /**
  * Renders edge pieces with distinct geometry per type.
  * Positioned at local origin — parent <group> handles world placement.
- *
- * - wall: single solid box
- * - window: frame with a rectangular cutout (4 boxes around the opening)
- * - doorway: frame with a door-shaped cutout (3 boxes: top + two sides)
- * - low_wall / low_cannon_wall / low_wall_barrier: short solid box
  */
-export default function EdgeMesh({ type, side, color, opacity = 1, roughness = 0.7 }: EdgeMeshProps) {
+export default function EdgeMesh({ type, side, color, opacity = 1, tier }: EdgeMeshProps) {
   const isNS = side === 'north' || side === 'south'
   const transparent = opacity < 1
-  const woodTex = getWoodTexture()
-  const mat = { color, opacity, transparent, roughness, metalness: 0.05, map: woodTex }
+  const tierMat = getTierMaterial(tier)
+  const map = tierMat.useTexture ? getTierTexture(tier) : undefined
+  const mat = {
+    color,
+    opacity,
+    transparent,
+    roughness: tierMat.roughness,
+    metalness: tierMat.metalness,
+    ...(map ? { map } : {}),
+  }
 
   // Cannon wall — short wall with center cutout for cannon barrel
   if (type === 'low_cannon_wall') {
@@ -59,6 +64,20 @@ export default function EdgeMesh({ type, side, color, opacity = 1, roughness = 0
     )
   }
 
+  // Half walls — mid-height short box (1/2 of full wall)
+  if (type === 'half_wall') {
+    const h = 0.5
+    const size: [number, number, number] = isNS
+      ? [WALL_W, h, THICKNESS]
+      : [THICKNESS, h, WALL_W]
+    return (
+      <mesh>
+        <boxGeometry args={size} />
+        <meshStandardMaterial {...mat} />
+      </mesh>
+    )
+  }
+
   // Boat stairs — 3 ascending steps against the wall edge
   if (type === 'boat_stairs') {
     return <StairsMesh side={side} mat={mat} />
@@ -72,6 +91,11 @@ export default function EdgeMesh({ type, side, color, opacity = 1, roughness = 0
   // Doorway — frame with door-shaped opening at the bottom
   if (type === 'doorway') {
     return <DoorwayFrame isNS={isNS} mat={mat} />
+  }
+
+  // Double door frame — full-height wide rectangular cutout
+  if (type === 'double_door_frame') {
+    return <DoubleDoorFrame isNS={isNS} mat={mat} />
   }
 
   // Default wall — solid box
@@ -169,6 +193,43 @@ function DoorwayFrame({ isNS, mat }: FrameProps) {
         { size: [THICKNESS, topH, WALL_W], pos: [0, topY, 0] },
         { size: [THICKNESS, openH, sideW], pos: [0, sideY, -(openW + sideW) / 2] },
         { size: [THICKNESS, openH, sideW], pos: [0, sideY, (openW + sideW) / 2] },
+      ]
+
+  return (
+    <group>
+      {parts.map((p, i) => (
+        <mesh key={i} position={p.pos}>
+          <boxGeometry args={p.size} />
+          <meshStandardMaterial {...mat} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+/**
+ * Double door frame: 4-sided border with a large central opening —
+ * the wall-mounted analogue of the square floor frame.
+ */
+function DoubleDoorFrame({ isNS, mat }: FrameProps) {
+  const FRAME_T = 0.12
+  const innerH = WALL_H - 2 * FRAME_T
+  const topY = (WALL_H - FRAME_T) / 2
+  const botY = -(WALL_H - FRAME_T) / 2
+  const sideOffset = (WALL_W - FRAME_T) / 2
+
+  const parts: { size: [number, number, number]; pos: [number, number, number] }[] = isNS
+    ? [
+        { size: [WALL_W, FRAME_T, THICKNESS], pos: [0, topY, 0] },
+        { size: [WALL_W, FRAME_T, THICKNESS], pos: [0, botY, 0] },
+        { size: [FRAME_T, innerH, THICKNESS], pos: [-sideOffset, 0, 0] },
+        { size: [FRAME_T, innerH, THICKNESS], pos: [sideOffset, 0, 0] },
+      ]
+    : [
+        { size: [THICKNESS, FRAME_T, WALL_W], pos: [0, topY, 0] },
+        { size: [THICKNESS, FRAME_T, WALL_W], pos: [0, botY, 0] },
+        { size: [THICKNESS, innerH, FRAME_T], pos: [0, 0, -sideOffset] },
+        { size: [THICKNESS, innerH, FRAME_T], pos: [0, 0, sideOffset] },
       ]
 
   return (

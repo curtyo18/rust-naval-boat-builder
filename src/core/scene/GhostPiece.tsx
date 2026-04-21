@@ -9,11 +9,12 @@ interface GhostPieceProps {
   valid: boolean
   side?: PieceSide
   rotation?: PieceRotation
+  stackLevel?: 0 | 1
 }
 
-export default function GhostPiece({ position, type, valid, side, rotation = 0 }: GhostPieceProps) {
+export default function GhostPiece({ position, type, valid, side, rotation = 0, stackLevel }: GhostPieceProps) {
   const color = valid ? GHOST_VALID_COLOR : '#ff3333'
-  const worldPos = getPiecePosition(position, type, side)
+  const worldPos = getPiecePosition(position, type, side, stackLevel)
 
   // Edge pieces use EdgeMesh for distinct window/doorway ghost shapes
   if (side) {

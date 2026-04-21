@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store/useStore'
 import { useMode } from '../context/ModeContext'
-import { PIECE_COLORS, DEFAULT_COLOR, GHOST_VALID_COLOR, getPiecePosition, isTriangleType, getCellPieceShape } from './pieceGeometry'
+import { GHOST_VALID_COLOR, getPiecePosition, isTriangleType, getCellPieceShape, getPieceColor } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
 import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg } from '../utils/hexGrid'
@@ -116,9 +116,9 @@ export default function PlacedPieces() {
       {pieces.map((piece) => {
         if (!visibleLevels.has(piece.position.y as 0 | 1 | 2)) return null
         const isSelected = selectedPieceIds.has(piece.id)
-        const baseColor = PIECE_COLORS[piece.type] ?? DEFAULT_COLOR
+        const baseColor = getPieceColor(piece.type, piece.tier)
         const color = isSelected ? '#ff6666' : baseColor
-        const worldPos = getPiecePosition(piece.position, piece.type, piece.side)
+        const worldPos = getPiecePosition(piece.position, piece.type, piece.side, piece.stackLevel)
         const position: [number, number, number] = worldPos
         const renderRotation = piece.rotation
         const handleClick = (e: { stopPropagation: () => void; shiftKey?: boolean }) => {
@@ -172,6 +172,7 @@ export default function PlacedPieces() {
                   side="north"
                   color={color}
                   opacity={transparentPieces ? 0.8 : 1}
+                  tier={piece.tier}
                 />
               </group>
               {edgeGhostWp && (
@@ -204,6 +205,7 @@ export default function PlacedPieces() {
                 type={piece.type}
                 color={color}
                 opacity={transparentPieces ? 0.8 : 1}
+                tier={piece.tier}
               />
             </group>
           )
@@ -250,6 +252,7 @@ export default function PlacedPieces() {
                   side="north"
                   color={color}
                   opacity={transparentPieces ? 0.8 : 1}
+                  tier={piece.tier}
                 />
               </group>
               {edgeGhostWp && (
@@ -275,6 +278,7 @@ export default function PlacedPieces() {
                 color={color}
                 opacity={transparentPieces ? 0.8 : 1}
                 angleDeg={piece.triSnap.angleDeg}
+                tier={piece.tier}
               />
             </group>
           )
@@ -323,6 +327,7 @@ export default function PlacedPieces() {
                   side="north"
                   color={color}
                   opacity={transparentPieces ? 0.8 : 1}
+                  tier={piece.tier}
                 />
               </group>
               {edgeGhostWp && (
@@ -351,6 +356,7 @@ export default function PlacedPieces() {
                 color={color}
                 opacity={transparentPieces ? 0.8 : 1}
                 angleDeg={angleDeg}
+                tier={piece.tier}
               />
             </group>
           )
@@ -393,6 +399,7 @@ export default function PlacedPieces() {
                   side={piece.side}
                   color={color}
                   opacity={transparentPieces ? 0.8 : 1}
+                  tier={piece.tier}
                 />
               </group>
               {edgeGhostPos && (
@@ -417,6 +424,7 @@ export default function PlacedPieces() {
               color={color}
               opacity={transparentPieces ? 0.8 : 1}
               rotation={renderRotation}
+              tier={piece.tier}
             />
           </group>
         )
