@@ -11,7 +11,7 @@ import {
   triEdgeWorldPosition,
   triEdgeRotationDeg,
   detectTriEdge,
-} from '../src/utils/hexGrid'
+} from '../src/core/utils/hexGrid'
 
 const SQRT3 = Math.sqrt(3)
 

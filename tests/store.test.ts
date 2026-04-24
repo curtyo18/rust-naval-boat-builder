@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { act } from '@testing-library/react'
-import { useStore } from '../src/store/useStore'
+import { useStore } from '../src/core/store/useStore'
 
 beforeEach(() => {
   act(() => useStore.getState().clearAll())
@@ -126,6 +126,13 @@ describe('setVisibleLevels', () => {
   })
 })
 
+describe('visibleLevels (generic)', () => {
+  it('accepts floor numbers beyond 2', () => {
+    act(() => useStore.getState().setVisibleLevels(new Set([0, 1, 5])))
+    expect(useStore.getState().visibleLevels.has(5)).toBe(true)
+  })
+})
+
 describe('undo / redo', () => {
   it('undo reverts placePiece', () => {
     act(() => useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0))
@@ -186,5 +193,49 @@ describe('undo / redo', () => {
     act(() => useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0))
     act(() => useStore.getState().undo())
     expect(useStore.getState().coordinateIndex.size).toBe(0)
+  })
+})
+
+describe('activeTier', () => {
+  it('defaults to null', () => {
+    useStore.getState().clearAll()
+    expect(useStore.getState().activeTier).toBeNull()
+  })
+
+  it('can be set', () => {
+    act(() => useStore.getState().setActiveTier('stone'))
+    expect(useStore.getState().activeTier).toBe('stone')
+  })
+
+  it('stamps tier onto placed pieces when active', () => {
+    useStore.getState().clearAll()
+    act(() => useStore.getState().setActiveTier('stone'))
+    act(() => useStore.getState().placePiece('square_hull', { x: 0, y: 0, z: 0 }, 0))
+    const placed = useStore.getState().pieces
+    expect(placed.length).toBeGreaterThan(0)
+    expect(placed[0].tier).toBe('stone')
+  })
+
+  it('does not stamp tier when activeTier is null', () => {
+    useStore.getState().clearAll()
+    act(() => useStore.getState().setActiveTier(null))
+    act(() => useStore.getState().placePiece('square_hull', { x: 1, y: 0, z: 1 }, 0))
+    const placed = useStore.getState().pieces
+    expect(placed[0].tier).toBeUndefined()
+  })
+})
+
+describe('upgradeSelectedToTier', () => {
+  it('updates tier on selected pieces', () => {
+    act(() => {
+      useStore.getState().setActiveTier('stone')
+      useStore.getState().placePiece('wall', { x: 0, y: 0, z: 0 }, 0, 'north')
+    })
+    const id = useStore.getState().pieces[0].id
+    act(() => {
+      useStore.getState().toggleSelectPiece(id)
+      useStore.getState().upgradeSelectedToTier('hqm')
+    })
+    expect(useStore.getState().pieces[0].tier).toBe('hqm')
   })
 })

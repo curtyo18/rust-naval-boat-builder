@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toTriKey, toTriEdgeKey, parseTriKey } from '../src/utils/coordinateKey'
+import { toTriKey, toTriEdgeKey, parseTriKey } from '../src/core/utils/coordinateKey'
 
 describe('toTriKey', () => {
   it('formats triangle coordinate key', () => {

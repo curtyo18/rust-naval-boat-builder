@@ -1,0 +1,127 @@
+/* src/components/Sidebar.css */
+.sidebar {
+  width: 215px;
+  flex-shrink: 0;
+  background: #141414;
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar__pieces {
+  flex: 1;
+  padding: 10px 0;
+}
+
+.sidebar__group {
+  margin-bottom: 6px;
+}
+
+.sidebar__group-label {
+  padding: 8px 16px 3px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #666;
+}
+
+.sidebar__piece {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 13px;
+}
+
+.sidebar__piece:hover {
+  background: #222;
+  color: #fff;
+}
+
+.sidebar__piece--active {
+  background: #2a4a2a;
+  color: #7cfc7c;
+}
+
+.sidebar__display {
+  padding: 10px 16px 12px;
+  border-top: 1px solid #333;
+}
+
+.sidebar__toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  font-size: 12px;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.sidebar__toggle input {
+  accent-color: #4a8a4a;
+}
+
+.sidebar__floors {
+  padding: 10px 16px 12px;
+  border-top: 1px solid #333;
+}
+
+.sidebar__floor-toggles {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.sidebar__floor-btn {
+  flex: 1;
+  padding: 8px 0;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #888;
+  font-size: 13px;
+}
+
+.sidebar__floor-btn--active {
+  background: #2a4a2a;
+  border-color: #4a8a4a;
+  color: #7cfc7c;
+}
+
+.sidebar__floor-hint {
+  margin-top: 6px;
+  font-size: 10px;
+  color: #888;
+  line-height: 1.3;
+}
+
+.sidebar__tier {
+  width: 100%;
+  padding: 6px;
+  background: #2a3a48;
+  color: #e0e6ec;
+  border: 1px solid #4a5a68;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.sidebar__upgrade {
+  width: 100%;
+  padding: 6px;
+  background: #3a6a88;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.sidebar__upgrade:hover {
+  background: #4a7a98;
+}

@@ -1,0 +1,259 @@
+{
+  "foundation_square": {
+    "label": "Square Foundation",
+    "category": "foundation",
+    "placementType": "cell",
+    "floorConstraint": "ground_only",
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 500,
+    "mass": 0,
+    "twigCost": { "wood": 50 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 200 }, "hp": 250, "upkeepPerDay": { "wood": 20 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 30 } },
+      "metal": { "cost": { "metalFragments": 200 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 20 } },
+      "hqm":   { "cost": { "highQualityMetal": 25 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 3 } }
+    }
+  },
+  "foundation_triangle": {
+    "label": "Triangle Foundation",
+    "category": "foundation",
+    "placementType": "cell",
+    "floorConstraint": "ground_only",
+    "maxCount": null,
+    "cost": { "stone": 150 },
+    "hp": 250,
+    "mass": 0,
+    "twigCost": { "wood": 25 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 100 }, "hp": 125, "upkeepPerDay": { "wood": 10 } },
+      "stone": { "cost": { "stone": 150 }, "hp": 250, "upkeepPerDay": { "stone": 15 } },
+      "metal": { "cost": { "metalFragments": 100 }, "hp": 500, "upkeepPerDay": { "metalFragments": 10 } },
+      "hqm":   { "cost": { "highQualityMetal": 13 }, "hp": 1000, "upkeepPerDay": { "highQualityMetal": 1 } }
+    }
+  },
+  "wall": {
+    "label": "Wall",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 500,
+    "mass": 0,
+    "twigCost": { "wood": 50 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 200 }, "hp": 250, "upkeepPerDay": { "wood": 20 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 30 } },
+      "metal": { "cost": { "metalFragments": 200 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 20 } },
+      "hqm":   { "cost": { "highQualityMetal": 25 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 3 } }
+    }
+  },
+  "low_wall": {
+    "label": "Low Wall",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 150 },
+    "hp": 250,
+    "mass": 0,
+    "topFloorAllowed": true,
+    "twigCost": { "wood": 25 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 100 }, "hp": 125, "upkeepPerDay": { "wood": 10 } },
+      "stone": { "cost": { "stone": 150 }, "hp": 250, "upkeepPerDay": { "stone": 15 } },
+      "metal": { "cost": { "metalFragments": 100 }, "hp": 500, "upkeepPerDay": { "metalFragments": 10 } },
+      "hqm":   { "cost": { "highQualityMetal": 13 }, "hp": 1000, "upkeepPerDay": { "highQualityMetal": 1 } }
+    }
+  },
+  "half_wall": {
+    "label": "Half Wall",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 500,
+    "mass": 0,
+    "topFloorAllowed": true,
+    "twigCost": { "wood": 50 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 300 }, "hp": 250, "upkeepPerDay": { "wood": 30 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 30 } },
+      "metal": { "cost": { "metalFragments": 200 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 20 } },
+      "hqm":   { "cost": { "highQualityMetal": 25 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 3 } }
+    }
+  },
+  "doorway": {
+    "label": "Doorway",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 210 },
+    "hp": 500,
+    "mass": 0,
+    "twigCost": { "wood": 35 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 140 }, "hp": 250, "upkeepPerDay": { "wood": 14 } },
+      "stone": { "cost": { "stone": 210 }, "hp": 500, "upkeepPerDay": { "stone": 21 } },
+      "metal": { "cost": { "metalFragments": 140 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 14 } },
+      "hqm":   { "cost": { "highQualityMetal": 18 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 2 } }
+    }
+  },
+  "double_door_frame": {
+    "label": "Double Door Frame",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 150 },
+    "hp": 250,
+    "mass": 0,
+    "twigCost": { "wood": 25 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 100 }, "hp": 125, "upkeepPerDay": { "wood": 10 } },
+      "stone": { "cost": { "stone": 150 }, "hp": 250, "upkeepPerDay": { "stone": 15 } },
+      "metal": { "cost": { "metalFragments": 100 }, "hp": 500, "upkeepPerDay": { "metalFragments": 10 } },
+      "hqm":   { "cost": { "highQualityMetal": 13 }, "hp": 1000, "upkeepPerDay": { "highQualityMetal": 1 } }
+    }
+  },
+  "window": {
+    "label": "Window",
+    "category": "wall",
+    "placementType": "edge",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 210 },
+    "hp": 500,
+    "mass": 0,
+    "twigCost": { "wood": 35 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 140 }, "hp": 250, "upkeepPerDay": { "wood": 14 } },
+      "stone": { "cost": { "stone": 210 }, "hp": 500, "upkeepPerDay": { "stone": 21 } },
+      "metal": { "cost": { "metalFragments": 140 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 14 } },
+      "hqm":   { "cost": { "highQualityMetal": 18 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 2 } }
+    }
+  },
+  "ceiling_square": {
+    "label": "Square Ceiling",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": "upper_only",
+    "maxCount": null,
+    "cost": { "stone": 150 },
+    "hp": 500,
+    "mass": 0,
+    "twigCost": { "wood": 25 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 100 }, "hp": 250, "upkeepPerDay": { "wood": 10 } },
+      "stone": { "cost": { "stone": 150 }, "hp": 500, "upkeepPerDay": { "stone": 15 } },
+      "metal": { "cost": { "metalFragments": 100 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 10 } },
+      "hqm":   { "cost": { "highQualityMetal": 13 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 1 } }
+    }
+  },
+  "ceiling_triangle": {
+    "label": "Triangle Ceiling",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": "upper_only",
+    "maxCount": null,
+    "cost": { "stone": 75 },
+    "hp": 250,
+    "mass": 0,
+    "twigCost": { "wood": 13 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 50 }, "hp": 125, "upkeepPerDay": { "wood": 5 } },
+      "stone": { "cost": { "stone": 75 }, "hp": 250, "upkeepPerDay": { "stone": 8 } },
+      "metal": { "cost": { "metalFragments": 50 }, "hp": 500, "upkeepPerDay": { "metalFragments": 5 } },
+      "hqm":   { "cost": { "highQualityMetal": 7 }, "hp": 1000, "upkeepPerDay": { "highQualityMetal": 1 } }
+    }
+  },
+  "floor_frame_square_base": {
+    "label": "Square Floor Frame",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": "upper_only",
+    "maxCount": null,
+    "cost": { "stone": 150 },
+    "hp": 500,
+    "mass": 0,
+    "twigCost": { "wood": 25 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 100 }, "hp": 250, "upkeepPerDay": { "wood": 10 } },
+      "stone": { "cost": { "stone": 150 }, "hp": 500, "upkeepPerDay": { "stone": 15 } },
+      "metal": { "cost": { "metalFragments": 100 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 10 } },
+      "hqm":   { "cost": { "highQualityMetal": 13 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 1 } }
+    }
+  },
+  "floor_frame_triangle_base": {
+    "label": "Triangle Floor Frame",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": "upper_only",
+    "maxCount": null,
+    "cost": { "stone": 75 },
+    "hp": 250,
+    "mass": 0,
+    "twigCost": { "wood": 13 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 50 }, "hp": 125, "upkeepPerDay": { "wood": 5 } },
+      "stone": { "cost": { "stone": 75 }, "hp": 250, "upkeepPerDay": { "stone": 8 } },
+      "metal": { "cost": { "metalFragments": 50 }, "hp": 500, "upkeepPerDay": { "metalFragments": 5 } },
+      "hqm":   { "cost": { "highQualityMetal": 7 }, "hp": 1000, "upkeepPerDay": { "highQualityMetal": 1 } }
+    }
+  },
+  "stairs_l": {
+    "label": "L Stairs",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 500,
+    "mass": 0,
+    "twigCost": { "wood": 50 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 200 }, "hp": 250, "upkeepPerDay": { "wood": 20 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 30 } },
+      "metal": { "cost": { "metalFragments": 200 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 20 } },
+      "hqm":   { "cost": { "highQualityMetal": 25 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 3 } }
+    }
+  },
+  "stairs_u": {
+    "label": "U Stairs",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 500,
+    "mass": 0,
+    "twigCost": { "wood": 50 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 200 }, "hp": 250, "upkeepPerDay": { "wood": 20 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 30 } },
+      "metal": { "cost": { "metalFragments": 200 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 20 } },
+      "hqm":   { "cost": { "highQualityMetal": 25 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 3 } }
+    }
+  },
+  "spiral_staircase": {
+    "label": "Spiral Staircase",
+    "category": "floor",
+    "placementType": "cell",
+    "floorConstraint": null,
+    "maxCount": null,
+    "cost": { "stone": 300 },
+    "hp": 500,
+    "mass": 0,
+    "twigCost": { "wood": 50 },
+    "tiers": {
+      "wood":  { "cost": { "wood": 200 }, "hp": 250, "upkeepPerDay": { "wood": 20 } },
+      "stone": { "cost": { "stone": 300 }, "hp": 500, "upkeepPerDay": { "stone": 30 } },
+      "metal": { "cost": { "metalFragments": 200 }, "hp": 1000, "upkeepPerDay": { "metalFragments": 20 } },
+      "hqm":   { "cost": { "highQualityMetal": 25 }, "hp": 2000, "upkeepPerDay": { "highQualityMetal": 3 } }
+    }
+  }
+}

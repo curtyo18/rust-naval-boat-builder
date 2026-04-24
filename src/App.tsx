@@ -1,17 +1,36 @@
 // src/App.tsx
 import { useState, useEffect } from 'react'
 import './App.css'
-import TopBar from './components/TopBar'
-import Sidebar from './components/Sidebar'
-import StatsWidget from './components/StatsWidget'
-import CameraHints from './components/CameraHints'
-import Viewport from './scene/Viewport'
-import { useStore } from './store/useStore'
-import { encodePieces } from './utils/serialization'
-import { usePersistence } from './hooks/usePersistence'
+import TopBar from './core/ui/TopBar'
+import Sidebar from './core/ui/Sidebar'
+import CameraHints from './core/ui/CameraHints'
+import Viewport from './core/scene/Viewport'
+import { useStore } from './core/store/useStore'
+import { encodePieces } from './core/utils/serialization'
+import { usePersistence } from './core/hooks/usePersistence'
+import { ModeProvider, useMode } from './core/context/ModeContext'
+import boatMode from './modes/boat'
+import baseMode from './modes/base'
+import { parseHashRoute, buildHashRoute } from './core/routing/hashRoute'
+import type { ModeId } from './core/routing/hashRoute'
 
-export default function App() {
-  usePersistence()
+const LAST_MODE_KEY = 'rust-builder:lastMode'
+
+function resolveModeFromHash(): ModeId {
+  const parsed = parseHashRoute(window.location.hash)
+  if (parsed) return parsed.mode
+  const last = localStorage.getItem(LAST_MODE_KEY) as ModeId | null
+  return last ?? 'boat'
+}
+
+function resolveModeConfig(modeId: ModeId) {
+  return modeId === 'base' ? baseMode : boatMode
+}
+
+function AppInner() {
+  const mode = useMode()
+  const { StatsPanel } = mode
+  usePersistence(mode.storageKey)
 
   const clearAll = useStore((s) => s.clearAll)
   const pieces = useStore((s) => s.pieces)
@@ -22,6 +41,13 @@ export default function App() {
   const deleteSelectedPiece = useStore((s) => s.deleteSelectedPiece)
   const clearSelection = useStore((s) => s.clearSelection)
   const [shareLabel, setShareLabel] = useState('Share')
+
+  // Set default tier when switching to a mode that supports tiers
+  useEffect(() => {
+    if (mode.supportsTiers && !useStore.getState().activeTier) {
+      useStore.getState().setActiveTier(mode.defaultTier ?? null)
+    }
+  }, [mode])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -48,7 +74,7 @@ export default function App() {
 
   function handleShare() {
     const encoded = encodePieces(pieces)
-    window.location.hash = `#data=${encoded}`
+    window.location.hash = buildHashRoute({ mode: mode.id, data: encoded })
     navigator.clipboard.writeText(window.location.href).then(() => {
       setShareLabel('Copied!')
       setTimeout(() => setShareLabel('Share'), 2000)
@@ -58,8 +84,12 @@ export default function App() {
   function handleClear() {
     if (window.confirm('Remove all placed pieces?')) {
       clearAll()
-      window.location.hash = ''
+      window.location.hash = buildHashRoute({ mode: mode.id, data: null })
     }
+  }
+
+  function handleModeChange(newMode: ModeId) {
+    window.location.hash = buildHashRoute({ mode: newMode, data: null })
   }
 
   return (
@@ -69,15 +99,44 @@ export default function App() {
         onShare={handleShare}
         onClear={handleClear}
         shareLabel={shareLabel}
+        modeId={mode.id}
+        onModeChange={handleModeChange}
       />
       <div className="app__body">
         <Sidebar />
         <div className="app__viewport">
           <Viewport />
-          <StatsWidget />
+          <StatsPanel />
           <CameraHints />
         </div>
       </div>
     </div>
+  )
+}
+
+export default function App() {
+  const [modeId, setModeId] = useState<ModeId>(resolveModeFromHash)
+
+  useEffect(() => {
+    function onHashChange() {
+      const parsed = parseHashRoute(window.location.hash)
+      if (parsed) setModeId(parsed.mode)
+    }
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(LAST_MODE_KEY, modeId)
+    const parsed = parseHashRoute(window.location.hash)
+    if (!parsed) window.location.hash = `#/${modeId}`
+  }, [modeId])
+
+  const modeConfig = resolveModeConfig(modeId)
+
+  return (
+    <ModeProvider config={modeConfig}>
+      <AppInner />
+    </ModeProvider>
   )
 }

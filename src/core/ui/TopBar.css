@@ -1,0 +1,69 @@
+/* src/components/TopBar.css */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  height: 46px;
+  background: #111;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.topbar__title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #fff;
+}
+
+.topbar__link {
+  color: #aaa;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.topbar__link:hover {
+  color: #fff;
+}
+
+.topbar__actions {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+}
+
+.topbar__btn {
+  padding: 6px 16px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 13px;
+}
+
+.topbar__btn:hover {
+  background: #444;
+}
+
+.topbar__btn--danger {
+  border-color: #8b2020;
+}
+
+.topbar__btn--danger:hover {
+  background: #5a1c1c;
+}
+
+.topbar__mode {
+  margin: 0 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #2a3a48;
+  color: #e0e6ec;
+  border: 1px solid #4a5a68;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.topbar__mode:hover {
+  background: #3a4a58;
+}

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { computeTotalCosts, computeBoatStats, computeSpeedInfo, computeRaidCost } from '../src/utils/costs'
-import type { PlacedPiece, PiecesConfig } from '../src/types'
+import { computeTotalCosts } from '../src/core/utils/costs'
+import { computeBoatStats, computeSpeedInfo, computeRaidCost } from '../src/modes/boat/computeStats'
+import type { PlacedPiece, PiecesConfig } from '../src/core/types'
 
 const config: PiecesConfig = {
   wall: { label: 'Wall', category: 'structural', placementType: 'edge', floorConstraint: null, maxCount: null, cost: { wood: 300, lowGrade: 15 }, hp: 50, mass: 100 },

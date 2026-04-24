@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isTriangleType } from '../src/scene/pieceGeometry'
+import { isTriangleType } from '../src/core/scene/pieceGeometry'
 
 describe('isTriangleType', () => {
   it('returns true for triangle_hull', () => {
