@@ -256,6 +256,27 @@ export function squareEdgeSnapPosition(
 }
 
 /**
+ * Mirror of squareEdgeSnapPosition: a triangle whose centroid sits INSIDE the square cell,
+ * tip pointing toward the cell's interior. Used for half-height triangle ceilings
+ * covering a foundation cell diagonally.
+ */
+export function squareEdgeInwardSnapPosition(
+  sx: number, sz: number, side: 'north' | 'south' | 'east' | 'west'
+): { worldX: number; worldZ: number; angleDeg: number } {
+  const inR = 1 / (2 * SQRT3)
+  switch (side) {
+    case 'east':
+      return { worldX: sx + 1 - inR, worldZ: sz + 0.5, angleDeg: 180 }
+    case 'west':
+      return { worldX: sx + inR, worldZ: sz + 0.5, angleDeg: 0 }
+    case 'south':
+      return { worldX: sx + 0.5, worldZ: sz + 1 - inR, angleDeg: 270 }
+    case 'north':
+      return { worldX: sx + 0.5, worldZ: sz + inR, angleDeg: 90 }
+  }
+}
+
+/**
  * Compute the two free-edge neighbor positions for a snapped triangle.
  * Each equilateral triangle has 3 edges; one is the "parent" edge (occupied).
  * The other two can accept new triangles.

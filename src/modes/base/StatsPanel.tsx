@@ -45,7 +45,7 @@ export default function StatsPanel() {
       )}
       {entryKeys.length > 0 && (
         <>
-          <div className="base-stats__section-header">Entry points</div>
+          <div className="base-stats__section-header">Counts</div>
           {entryKeys.map((k) => (
             <div key={k} className="base-stats__row">
               <span>{ENTRY_PIECE_LABELS[k] ?? k}</span>

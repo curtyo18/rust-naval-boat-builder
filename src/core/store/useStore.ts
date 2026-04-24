@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { toKey, toEdgeKey, toEdgeKeyUpper, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from '../utils/coordinateKey'
+import { toKey, toKeyUpper, toEdgeKey, toEdgeKeyUpper, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapKeyUpper, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from '../utils/coordinateKey'
 import type { PlacedPiece, XYZ, PieceRotation, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget } from '../types'
 
 const MAX_HISTORY = 50
@@ -24,10 +24,10 @@ interface AppStore {
   _history: PlacedPiece[][]
   _future: PlacedPiece[][]
 
-  placePiece(type: string, position: XYZ, rotation: PieceRotation, side?: PieceSide): void
+  placePiece(type: string, position: XYZ, rotation: PieceRotation, side?: PieceSide, stackLevel?: 0 | 1): void
   placeTrianglePiece(type: string, y: number, triCoord: TriCoord): void
   placeTriangleEdgePiece(type: string, y: number, triCoord: TriCoord, triEdge: 0 | 1 | 2): void
-  placeTriangleSnapped(type: string, snap: TriSnapTarget & { y: number }): void
+  placeTriangleSnapped(type: string, snap: TriSnapTarget & { y: number }, stackLevel?: 0 | 1): void
   placeTriSnapEdgePiece(type: string, snap: TriSnapTarget, y: number, edge: 0 | 1 | 2): void
   placeSquareSnapped(type: string, snap: SquareSnapTarget & { y: number }): void
   placeSquareSnapEdgePiece(type: string, snap: SquareSnapTarget, y: number, side: PieceSide): void
@@ -71,10 +71,10 @@ function buildIndex(pieces: PlacedPiece[]): Map<string, string> {
           piece.id,
         )
       } else {
-        index.set(
-          toTriSnapKey(piece.triSnap.worldX, piece.position.y, piece.triSnap.worldZ),
-          piece.id,
-        )
+        const key = piece.stackLevel === 1
+          ? toTriSnapKeyUpper(piece.triSnap.worldX, piece.position.y, piece.triSnap.worldZ)
+          : toTriSnapKey(piece.triSnap.worldX, piece.position.y, piece.triSnap.worldZ)
+        index.set(key, piece.id)
       }
     } else if (piece.triCoord) {
       if (piece.triEdge !== undefined) {
@@ -94,7 +94,10 @@ function buildIndex(pieces: PlacedPiece[]): Map<string, string> {
         : toEdgeKey(piece.position, piece.side)
       index.set(key, piece.id)
     } else {
-      index.set(toKey(piece.position), piece.id)
+      const key = piece.stackLevel === 1
+        ? toKeyUpper(piece.position)
+        : toKey(piece.position)
+      index.set(key, piece.id)
     }
   }
   return index
@@ -107,8 +110,10 @@ function pushHistory(history: PlacedPiece[][], current: PlacedPiece[]): PlacedPi
 }
 
 /**
- * Extend a deletion set with cascading removals: deleting the lower half of a
- * stacked half_wall pair also removes the orphaned upper half above it.
+ * Extend a deletion set with cascading removals:
+ * - Deleting the lower half of a stacked half_wall pair also removes the orphaned upper half above it.
+ * - Deleting a lower half_wall also removes any half-height stacked ceiling that relied on it for
+ *   support, if no other lower half_wall on the same cell remains.
  */
 function expandDeletionSet(ids: Set<string>, pieces: PlacedPiece[]): Set<string> {
   const result = new Set(ids)
@@ -124,6 +129,28 @@ function expandDeletionSet(ids: Set<string>, pieces: PlacedPiece[]): Set<string>
       && x.position.z === p.position.z
     )
     if (upper) result.add(upper.id)
+
+    // Check whether a stacked ceiling on this cell would lose its last half_wall support.
+    const stacked = pieces.find(x =>
+      x.stackLevel === 1
+      && !x.side
+      && x.position.x === p.position.x
+      && x.position.y === p.position.y
+      && x.position.z === p.position.z
+    )
+    if (stacked) {
+      const otherSupport = pieces.some(x =>
+        x.type === 'half_wall'
+        && x.stackLevel !== 1
+        && !!x.side
+        && x.id !== p.id
+        && !result.has(x.id)
+        && x.position.x === p.position.x
+        && x.position.y === p.position.y
+        && x.position.z === p.position.z
+      )
+      if (!otherSupport) result.add(stacked.id)
+    }
   }
   return result
 }
@@ -133,7 +160,7 @@ export const useStore = create<AppStore>((set) => ({
   coordinateIndex: new Map(),
   visibleLevels: new Set<number>([0, 1]),
   transparentPieces: true,
-  showGrid: true,
+  showGrid: false,
   selectedPieceType: null,
   activeTier: null,
   selectedPieceIds: new Set<string>(),
@@ -141,13 +168,14 @@ export const useStore = create<AppStore>((set) => ({
   _history: [],
   _future: [],
 
-  placePiece(type, position, rotation, side) {
+  placePiece(type, position, rotation, side, explicitStackLevel) {
     const id = crypto.randomUUID()
     const tier = useStore.getState().activeTier ?? undefined
     set((state) => {
-      // Half-walls stack: if lower slot already has a half_wall, this one goes to upper slot
-      let stackLevel: 0 | 1 | undefined = undefined
-      if (type === 'half_wall' && side) {
+      // Half-walls stack: if lower slot already has a half_wall, this one goes to upper slot.
+      // Callers (ceilings on half_walls) can also pass an explicit stackLevel.
+      let stackLevel: 0 | 1 | undefined = explicitStackLevel
+      if (stackLevel === undefined && type === 'half_wall' && side) {
         const lowerPieceId = state.coordinateIndex.get(toEdgeKey(position, side))
         const lowerPiece = lowerPieceId ? state.pieces.find(p => p.id === lowerPieceId) : null
         if (lowerPiece?.type === 'half_wall') {
@@ -224,7 +252,7 @@ export const useStore = create<AppStore>((set) => ({
     })
   },
 
-  placeTriangleSnapped(type, snap) {
+  placeTriangleSnapped(type, snap, stackLevel) {
     const id = crypto.randomUUID()
     const tier = useStore.getState().activeTier ?? undefined
     const piece: PlacedPiece = {
@@ -234,6 +262,7 @@ export const useStore = create<AppStore>((set) => ({
       rotation: 0,
       triSnap: { worldX: snap.worldX, worldZ: snap.worldZ, angleDeg: snap.angleDeg },
       ...(tier ? { tier } : {}),
+      ...(stackLevel !== undefined ? { stackLevel } : {}),
     }
     set((state) => {
       const pieces = [...state.pieces, piece]

@@ -2,6 +2,9 @@ import type { XYZ, PieceSide } from '../types'
 
 export const toKey = (pos: XYZ): string => `${pos.x},${pos.y},${pos.z}`
 
+/** Upper-slot cell key — used for ceilings sitting atop half_walls (half-height above the base floor). */
+export const toKeyUpper = (pos: XYZ): string => `${pos.x},${pos.y},${pos.z},upper`
+
 export const toEdgeKey = (pos: XYZ, side: PieceSide): string => `${pos.x},${pos.y},${pos.z},${side}`
 
 /** Upper-slot key for the top half of a stacked half_wall pair. */
@@ -20,6 +23,10 @@ export const toTriEdgeKey = (hq: number, y: number, hr: number, slot: number, ed
 
 export const toTriSnapKey = (worldX: number, y: number, worldZ: number): string =>
   `tsnap:${Math.round(worldX * 1000)},${y},${Math.round(worldZ * 1000)}`
+
+/** Upper-slot snap-placed triangle key — used for triangle ceilings sitting atop half_walls. */
+export const toTriSnapKeyUpper = (worldX: number, y: number, worldZ: number): string =>
+  `tsnap:${Math.round(worldX * 1000)},${y},${Math.round(worldZ * 1000)},upper`
 
 export const toTriSnapEdgeKey = (worldX: number, y: number, worldZ: number, edge: number): string =>
   `tsnapedge:${Math.round(worldX * 1000)},${y},${Math.round(worldZ * 1000)},${edge}`

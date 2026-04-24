@@ -6,8 +6,8 @@ import { canPlaceWith, canPlaceTriSnapWith, canPlaceTriSnapEdgeWith, canPlaceSqu
 import { detectSide, getCellPieceShape } from './pieceGeometry'
 import type { XYZ, PieceSide, PieceRotation, PlacedPiece } from '../types'
 import GhostPiece from './GhostPiece'
-import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, detectTriEdge, squareEdgeSnapPosition, triSnapNeighbors, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, detectTriSnapEdge, triEdgeSquareSnapPosition, triSnapEdgeSquareSnapPosition, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg, detectSquareSnapSide, HEX_ORIGIN } from '../utils/hexGrid'
-import { toKey, toEdgeKey, toTriKey, toTriEdgeKey, toTriSnapKey, toSquareSnapKey } from '../utils/coordinateKey'
+import { worldToTriCoord, triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, detectTriEdge, squareEdgeSnapPosition, squareEdgeInwardSnapPosition, triSnapNeighbors, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, detectTriSnapEdge, triEdgeSquareSnapPosition, triSnapEdgeSquareSnapPosition, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg, detectSquareSnapSide, HEX_ORIGIN } from '../utils/hexGrid'
+import { toKey, toEdgeKey, toEdgeKeyUpper, toTriKey, toTriEdgeKey, toTriSnapKey, toSquareSnapKey } from '../utils/coordinateKey'
 import { GHOST_VALID_COLOR } from './pieceGeometry'
 import CellMesh from './CellMesh'
 import EdgeMesh from './EdgeMesh'
@@ -59,6 +59,22 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
       const localX = point.x - cellX
       const localZ = point.z - cellZ
       const side = detectSide(localX, localZ)
+      // Half-wall stacking takes priority over climbing to the next floor: if
+      // a lower half_wall exists and its upper slot is empty, target that slot
+      // before looking for a higher support.
+      if (selectedPieceType === 'half_wall') {
+        for (const f of [2, 1, 0] as const) {
+          if (!visibleLevels.has(f)) continue
+          const lowerId = coordinateIndex.get(toEdgeKey({ x: cellX, y: f, z: cellZ }, side))
+          if (!lowerId) continue
+          const lower = pieces.find(p => p.id === lowerId)
+          if (lower?.type !== 'half_wall') continue
+          const hasUpper = coordinateIndex.has(toEdgeKeyUpper({ x: cellX, y: f, z: cellZ }, side))
+          if (!hasUpper) {
+            return { pos: { x: cellX, y: f, z: cellZ }, side, rotation: 0, stackLevel: 1 }
+          }
+        }
+      }
       // Scan visible floors top-to-bottom: target highest floor with support
       // (foundation cell piece, or edge piece below on same side for stacking)
       for (const f of [2, 1, 0] as const) {
@@ -82,6 +98,14 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
       if (constraint === 'ground_only' && f !== 0) continue
       if (constraint === 'upper_only' && f === 0) continue
       if (!coordinateIndex.has(toKey({ x: cellX, y: f, z: cellZ }))) {
+        // Ceiling on a cell whose only support is single half_walls — drop to the cell
+        // below with stackLevel=1 so the ceiling sits at half-height atop the half_walls.
+        if (constraint === 'upper_only' && f > 0) {
+          const belowPos = { x: cellX, y: f - 1, z: cellZ }
+          if (shouldUseHalfCeiling(belowPos, pieces, coordinateIndex)) {
+            return { pos: belowPos, rotation: 0, stackLevel: 1 }
+          }
+        }
         return { pos: { x: cellX, y: f, z: cellZ }, rotation: 0 }
       }
     }
@@ -101,13 +125,13 @@ export default function HitPlane({ floorY }: HitPlaneProps) {
     if (e.delta > 5) return
     e.stopPropagation()
     const state = toGhostState(e.point)
-    if (canPlaceWith(selectedPieceType!, state.pos, pieces, coordinateIndex, config, bounds, effectiveMaxFloors, topSet, state.side)) {
-      placePiece(selectedPieceType!, state.pos, state.rotation, state.side)
+    if (canPlaceWith(selectedPieceType!, state.pos, pieces, coordinateIndex, config, bounds, effectiveMaxFloors, topSet, state.side, undefined, undefined, state.stackLevel)) {
+      placePiece(selectedPieceType!, state.pos, state.rotation, state.side, state.stackLevel)
     }
   }
 
   const isValid = ghost
-    ? canPlaceWith(selectedPieceType, ghost.pos, pieces, coordinateIndex, config, bounds, effectiveMaxFloors, topSet, ghost.side)
+    ? canPlaceWith(selectedPieceType, ghost.pos, pieces, coordinateIndex, config, bounds, effectiveMaxFloors, topSet, ghost.side, undefined, undefined, ghost.stackLevel)
     : false
 
   return (
@@ -141,6 +165,8 @@ interface SnapResult {
   worldZ: number
   angleDeg: number
   y: number
+  /** 1 = half-height slot (triangle ceiling atop a half_wall). */
+  stackLevel?: 0 | 1
 }
 
 interface SnapEdgeResult {
@@ -173,6 +199,30 @@ interface TriGhostState {
 }
 
 const SNAP_THRESHOLD = 0.5
+
+/**
+ * A cell qualifies for a half-height ceiling (stackLevel=1) when it has a foundation,
+ * at least one edge has a single half_wall (empty upper slot), and no edge provides
+ * full-height support (non-half-wall piece, or a stacked half_wall pair).
+ */
+function shouldUseHalfCeiling(
+  cellPos: XYZ,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+): boolean {
+  if (!coordinateIndex.has(toKey(cellPos))) return false
+  const sides: PieceSide[] = ['north', 'south', 'east', 'west']
+  let hasSingleHalfWall = false
+  for (const side of sides) {
+    const lowerId = coordinateIndex.get(toEdgeKey(cellPos, side))
+    if (!lowerId) continue
+    const lower = pieces.find(p => p.id === lowerId)
+    if (lower?.type !== 'half_wall') return false
+    if (coordinateIndex.has(toEdgeKeyUpper(cellPos, side))) return false
+    hasSingleHalfWall = true
+  }
+  return hasSingleHalfWall
+}
 
 /** For a half_wall placement, return 1 if the lower slot already has a half_wall (stacking on top). */
 function halfWallStackLevel(
@@ -239,6 +289,80 @@ function findSquareEdgeSnap(
   return { ...sp, y }
 }
 
+/**
+ * Find the nearest placed half_wall (on a square-cell edge) and emit triangle snap candidates
+ * for its top.
+ *  - Single half_wall (empty upper slot): outward + inward at stackLevel=1 (half-height).
+ *  - Stacked pair (lower + upper both half_walls): inward at y+1 (full-height top).
+ *    Outward at full-height is already covered by findSquareEdgeSnap via the floor-below scan.
+ * pickClosestSnap decides which candidate wins based on cursor position.
+ */
+function findHalfWallTopSnaps(
+  wx: number, wz: number, y: number,
+  pieces: PlacedPiece[],
+  coordinateIndex: Map<string, string>,
+): SnapResult[] {
+  const sides: PieceSide[] = ['north', 'south', 'east', 'west']
+  let best: { side: PieceSide; cx: number; cz: number; dist: number; stacked: boolean } | null = null
+
+  const x0 = Math.floor(wx)
+  const z0 = Math.floor(wz)
+
+  for (let cx = x0 - 1; cx <= x0 + 1; cx++) {
+    for (let cz = z0 - 1; cz <= z0 + 1; cz++) {
+      for (const side of sides) {
+        const lowerId = coordinateIndex.get(toEdgeKey({ x: cx, y, z: cz }, side))
+        if (!lowerId) continue
+        const lower = pieces.find(p => p.id === lowerId)
+        if (lower?.type !== 'half_wall') continue
+        const upperId = coordinateIndex.get(toEdgeKeyUpper({ x: cx, y, z: cz }, side))
+        let stacked = false
+        if (upperId) {
+          const upper = pieces.find(p => p.id === upperId)
+          if (upper?.type !== 'half_wall') continue
+          stacked = true
+        }
+
+        let dist: number
+        let onEdge: boolean
+        switch (side) {
+          case 'east':
+            dist = Math.abs(wx - (cx + 1))
+            onEdge = wz >= cz - 0.1 && wz <= cz + 1.1
+            break
+          case 'west':
+            dist = Math.abs(wx - cx)
+            onEdge = wz >= cz - 0.1 && wz <= cz + 1.1
+            break
+          case 'south':
+            dist = Math.abs(wz - (cz + 1))
+            onEdge = wx >= cx - 0.1 && wx <= cx + 1.1
+            break
+          case 'north':
+            dist = Math.abs(wz - cz)
+            onEdge = wx >= cx - 0.1 && wx <= cx + 1.1
+            break
+        }
+        if (!onEdge || dist >= SNAP_THRESHOLD) continue
+        if (!best || dist < best.dist) {
+          best = { side, cx, cz, dist, stacked }
+        }
+      }
+    }
+  }
+
+  if (!best) return []
+  const outward = squareEdgeSnapPosition(best.cx, best.cz, best.side)
+  const inward = squareEdgeInwardSnapPosition(best.cx, best.cz, best.side)
+  if (best.stacked) {
+    return [{ ...inward, y: y + 1 }]
+  }
+  return [
+    { ...outward, y, stackLevel: 1 },
+    { ...inward, y, stackLevel: 1 },
+  ]
+}
+
 /** Find the nearest snapped-square edge to place a triangle against. */
 function findSnappedSquareEdgeSnap(
   wx: number, wz: number, y: number,
@@ -261,6 +385,7 @@ function findSnappedSquareEdgeSnap(
 
   for (const piece of pieces) {
     if (!piece.squareSnap || piece.side || piece.position.y !== y) continue
+    if (piece.stackLevel === 1) continue
     const { worldX, worldZ, rotDeg } = piece.squareSnap
     const dx = wx - worldX
     const dz = wz - worldZ
@@ -308,6 +433,7 @@ function findTriEdgeSnap(
 
   for (const piece of pieces) {
     if (!piece.triSnap || piece.position.y !== y) continue
+    if (piece.stackLevel === 1) continue
     const neighbors = triSnapNeighbors(piece.triSnap.worldX, piece.triSnap.worldZ, piece.triSnap.angleDeg)
     for (const n of neighbors) {
       // Check if this neighbor slot is already occupied
@@ -363,6 +489,7 @@ function findTriEdgeForSquareSnap(
 
   for (const piece of pieces) {
     if (piece.position.y !== y) continue
+    if (piece.stackLevel === 1) continue
 
     // Hex-grid triangles
     if (piece.triCoord && piece.triEdge === undefined && !piece.triSnap) {
@@ -418,6 +545,7 @@ function findSquareSnapNeighbor(
 
   for (const piece of pieces) {
     if (!piece.squareSnap || piece.side || piece.position.y !== y) continue
+    if (piece.stackLevel === 1) continue
     const { worldX, worldZ, rotDeg } = piece.squareSnap
     const dx = wx - worldX
     const dz = wz - worldZ
@@ -455,6 +583,7 @@ function findSquareSnapForEdge(
 
   for (const piece of pieces) {
     if (!piece.squareSnap || piece.side || piece.position.y !== y) continue
+    if (piece.stackLevel === 1) continue
     const { worldX, worldZ, rotDeg } = piece.squareSnap
     const dx = wx - worldX
     const dz = wz - worldZ
@@ -471,16 +600,22 @@ function findSquareSnapForEdge(
   return best
 }
 
-/** Given multiple snap candidates, return the one closest to the cursor (prefer higher y on tie). */
+/** Given multiple snap candidates, return the one closest to the cursor
+ * (prefer half-height snap on tie so half_wall support wins over floor-above snap; then higher y). */
 function pickClosestSnap(candidates: (SnapResult | null)[], wx: number, wz: number): SnapResult | null {
   let best: SnapResult | null = null
   let bestDist = Infinity
   for (const c of candidates) {
     if (!c) continue
     const dist = (wx - c.worldX) ** 2 + (wz - c.worldZ) ** 2
-    if (dist < bestDist || (dist === bestDist && best && c.y > best.y)) {
+    if (dist < bestDist) {
       bestDist = dist
       best = c
+    } else if (dist === bestDist && best) {
+      const bSl = best.stackLevel === 1
+      const cSl = c.stackLevel === 1
+      if (cSl && !bSl) best = c
+      else if (cSl === bSl && c.y > best.y) best = c
     }
   }
   return best
@@ -518,6 +653,11 @@ function collectFloorSnaps(
         findSnappedSquareEdgeSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
         findTriEdgeSnap(wx, wz, targetY - 1, pieces, coordinateIndex),
       ]) { if (s) results.push({ ...s, y: targetY }) }
+      // Half-wall top snaps keep their own y + stackLevel=1 (physically at halfwall.y + 0.5).
+      // Emits both outward and inward triangle candidates; cursor position picks the winner.
+      for (const s of findHalfWallTopSnaps(wx, wz, targetY - 1, pieces, coordinateIndex)) {
+        results.push(s)
+      }
     }
   }
   return results
@@ -719,8 +859,8 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     const snapCandidates = collectFloorSnaps(e.point.x, e.point.z, snapFloors, pieces, coordinateIndex)
     const snap = pickClosestSnap(snapCandidates, e.point.x, e.point.z)
     if (snap) {
-      if (canPlaceTriSnapWith(selectedPieceType!, snap, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)) {
-        placeTriangleSnapped(selectedPieceType!, snap)
+      if (canPlaceTriSnapWith(selectedPieceType!, snap, pieces, coordinateIndex, config, effectiveMaxFloors, topSet, snap.stackLevel)) {
+        placeTriangleSnapped(selectedPieceType!, snap, snap.stackLevel)
       }
       return
     }
@@ -743,7 +883,7 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
     } else if (ghost.snapEdge) {
       isValid = canPlaceTriSnapEdgeWith(selectedPieceType, ghost.snapEdge.parentSnap, ghost.snapEdge.y, ghost.snapEdge.edge, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)
     } else if (ghost.snap) {
-      isValid = canPlaceTriSnapWith(selectedPieceType, ghost.snap, pieces, coordinateIndex, config, effectiveMaxFloors, topSet)
+      isValid = canPlaceTriSnapWith(selectedPieceType, ghost.snap, pieces, coordinateIndex, config, effectiveMaxFloors, topSet, ghost.snap.stackLevel)
     } else {
       isValid = canPlaceWith(selectedPieceType, { x: 0, y: ghost.y, z: 0 }, pieces, coordinateIndex, config, bounds, effectiveMaxFloors, topSet, undefined, ghost.triCoord, ghost.triEdge)
     }
@@ -816,9 +956,10 @@ export function TriHitPlane({ floorY }: HitPlaneProps) {
 
 function TriSnapGhostPiece({ type, snap, valid }: { type: string; snap: SnapResult; valid: boolean }) {
   const color = valid ? GHOST_VALID_COLOR : '#ff3333'
+  const yOffset = snap.stackLevel === 1 ? 0.5 : 0
 
   return (
-    <group position={[snap.worldX, snap.y, snap.worldZ]}>
+    <group position={[snap.worldX, snap.y + yOffset, snap.worldZ]}>
       <CellMesh type={type} color={color} opacity={0.45} roughness={0.85} angleDeg={snap.angleDeg} />
     </group>
   )

@@ -91,6 +91,10 @@ export default function StatsPanel() {
   const speedInfo = computeSpeedInfo(totalMass)
   const raidCosts = computeRaidCost(totalHp)
   const activeMaterials = MATERIAL_ORDER.filter((m) => (totals[m] ?? 0) > 0)
+  const doorwayCount = pieces.filter((p) => p.type === 'doorway').length
+  const windowCount = pieces.filter((p) => p.type === 'window').length
+  const squareFrameCount = pieces.filter((p) => p.type === 'floor_frame_square').length
+  const triangleFrameCount = pieces.filter((p) => p.type === 'floor_frame_triangle').length
 
   if (pieces.length === 0) return null
 
@@ -108,6 +112,26 @@ export default function StatsPanel() {
         <span className="stats-panel__row-label">Mass</span>
         <span className="stats-panel__row-value">{totalMass.toLocaleString()}</span>
       </div>
+      <div className="stats-panel__row">
+        <span className="stats-panel__row-label">Doorways</span>
+        <span className="stats-panel__row-value">{doorwayCount.toLocaleString()}</span>
+      </div>
+      <div className="stats-panel__row">
+        <span className="stats-panel__row-label">Windows</span>
+        <span className="stats-panel__row-value">{windowCount.toLocaleString()}</span>
+      </div>
+      {squareFrameCount > 0 && (
+        <div className="stats-panel__row">
+          <span className="stats-panel__row-label">Square floor frames</span>
+          <span className="stats-panel__row-value">{squareFrameCount.toLocaleString()}</span>
+        </div>
+      )}
+      {triangleFrameCount > 0 && (
+        <div className="stats-panel__row">
+          <span className="stats-panel__row-label">Triangle floor frames</span>
+          <span className="stats-panel__row-value">{triangleFrameCount.toLocaleString()}</span>
+        </div>
+      )}
 
       {/* Speed */}
       <div className="stats-panel__section-header stats-panel__speed-header">

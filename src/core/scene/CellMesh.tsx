@@ -303,14 +303,17 @@ function TriangleFramePrism({ height, mat, angleDeg }: { height: number; mat: Ma
     shape.lineTo(c[0], c[1])
     shape.closePath()
 
-    // Inner triangle scaled toward centroid
+    // Inner triangle scaled toward centroid.
+    // Hole winding must be opposite the outer shape (CW vs CCW) so ExtrudeGeometry
+    // generates inner side walls with correct normals. Outer goes a→b→c (CCW),
+    // so hole goes a→c→b (CW).
     const cx = (a[0] + b[0] + c[0]) / 3
     const cy = (a[1] + b[1] + c[1]) / 3
     const s = 0.55
     const hole = new THREE.Path()
     hole.moveTo(cx + (a[0] - cx) * s, cy + (a[1] - cy) * s)
-    hole.lineTo(cx + (b[0] - cx) * s, cy + (b[1] - cy) * s)
     hole.lineTo(cx + (c[0] - cx) * s, cy + (c[1] - cy) * s)
+    hole.lineTo(cx + (b[0] - cx) * s, cy + (b[1] - cy) * s)
     hole.closePath()
     shape.holes.push(hole)
 

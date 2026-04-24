@@ -1,5 +1,5 @@
 import type { XYZ, FloorConstraint, PlacedPiece, PiecesConfig, PieceSide, TriCoord, TriSnapTarget, SquareSnapTarget, GridBounds } from '../types'
-import { toKey, toEdgeKey, toEdgeKeyUpper, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from './coordinateKey'
+import { toKey, toKeyUpper, toEdgeKey, toEdgeKeyUpper, toTriKey, toTriEdgeKey, toTriSnapKey, toTriSnapKeyUpper, toTriSnapEdgeKey, toSquareSnapKey, toSquareSnapEdgeKey } from './coordinateKey'
 
 const ALL_SIDES: PieceSide[] = ['north', 'south', 'east', 'west']
 
@@ -330,6 +330,7 @@ export function canPlaceWith(
   side?: PieceSide,
   triCoord?: TriCoord,
   triEdge?: 0 | 1 | 2,
+  stackLevel?: 0 | 1,
 ): boolean {
   // Triangle placement path
   if (triCoord) {
@@ -363,7 +364,9 @@ export function canPlaceWith(
   if (!isInBoundsWith(position, bounds)) return false
   const pieceConfig = config[type]
   if (!pieceConfig) return false
-  if (!isFloorAllowed(position, pieceConfig.floorConstraint)) return false
+  // stackLevel=1 cells sit half a floor up on half_walls; skip the floor-constraint check
+  // (a half-height ceiling is valid on any floor its supporting half_walls are allowed on).
+  if (stackLevel !== 1 && !isFloorAllowed(position, pieceConfig.floorConstraint)) return false
   if (isMaxCountReached(type, pieces, config)) return false
 
   if (pieceConfig.placementType === 'edge') {
@@ -374,6 +377,16 @@ export function canPlaceWith(
     const hasEdgeBelowOnSide = position.y > 0
       && coordinateIndex.has(toEdgeKey({ x: position.x, y: position.y - 1, z: position.z }, side))
     if (!hasFoundation(position, coordinateIndex) && !hasEdgeBelowOnSide) return false
+  } else if (stackLevel === 1) {
+    // Half-height ceiling: must sit atop at least one lower half_wall on this cell's edges.
+    if (coordinateIndex.has(toKeyUpper(position))) return false
+    const hasHalfWallSupport = ALL_SIDES.some((s) => {
+      const id = coordinateIndex.get(toEdgeKey(position, s))
+      if (!id) return false
+      const p = pieces.find((x) => x.id === id)
+      return p?.type === 'half_wall'
+    })
+    if (!hasHalfWallSupport) return false
   } else {
     if (isCellOccupied(position, coordinateIndex)) return false
     if (!hasWallSupport(position, coordinateIndex)) return false
@@ -391,11 +404,19 @@ export function canPlaceTriSnapWith(
   config: PiecesConfig,
   _maxFloors: number | 'infinite',
   _topFloorAllowedTypes: Set<string>,
+  stackLevel?: 0 | 1,
 ): boolean {
   const pieceConfig = config[type]
   if (!pieceConfig) return false
-  if (!isFloorAllowed({ x: 0, y: snap.y, z: 0 }, pieceConfig.floorConstraint)) return false
+  // stackLevel=1 means sitting atop a half_wall — bypass floor constraint since the piece
+  // physically straddles two floor ys.
+  if (stackLevel !== 1 && !isFloorAllowed({ x: 0, y: snap.y, z: 0 }, pieceConfig.floorConstraint)) return false
   if (isMaxCountReached(type, pieces, config)) return false
+  if (stackLevel === 1) {
+    const upperKey = toTriSnapKeyUpper(snap.worldX, snap.y, snap.worldZ)
+    if (coordinateIndex.has(upperKey)) return false
+    return true
+  }
   // Must not already have a triangle at this snap position
   const snapKey = toTriSnapKey(snap.worldX, snap.y, snap.worldZ)
   if (coordinateIndex.has(snapKey)) return false

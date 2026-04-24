@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useStore } from '../store/useStore'
 import { useMode } from '../context/ModeContext'
-import { GHOST_VALID_COLOR, getPiecePosition, isTriangleType, getCellPieceShape, getPieceColor } from './pieceGeometry'
+import { GHOST_VALID_COLOR, getPiecePosition, isTriangleType, getCellPieceShape, getPieceColor, getWallHeight } from './pieceGeometry'
 import EdgeMesh from './EdgeMesh'
 import CellMesh from './CellMesh'
 import { triSlotWorldPosition, triSlotRotationDeg, triEdgeWorldPosition, triEdgeRotationDeg, triSnapEdgeWorldPosition, triSnapEdgeRotationDeg, squareSnapEdgeWorldPosition, squareSnapEdgeRotationDeg } from '../utils/hexGrid'
 import { canPlaceWith, canPlaceTriSnapWith, canPlaceTriSnapEdgeWith, canPlaceSquareSnapWith, canPlaceSquareSnapEdgeWith } from '../utils/validation'
+import { toEdgeKeyUpper } from '../utils/coordinateKey'
 import type { PlacedPiece } from '../types'
 
 export default function PlacedPieces() {
@@ -38,9 +39,17 @@ export default function PlacedPieces() {
   const isTriFloor = isFloorPlacement && selectedPieceType!.includes('triangle')
   const isSquareFloor = isFloorPlacement && !selectedPieceType!.includes('triangle')
 
+  /** Stacking a second half_wall on top of an existing lower half_wall (same floor, upper slot). */
+  function isHalfStack(piece: PlacedPiece): boolean {
+    return selectedPieceType === 'half_wall'
+      && piece.type === 'half_wall'
+      && piece.stackLevel !== 1
+      && !!piece.side && !piece.squareSnap && !piece.triSnap && !piece.triCoord
+  }
+
   function canStackOn(piece: PlacedPiece): boolean {
     if (!selectedPieceType || !isEdgePlacement) return false
-    const sy = piece.position.y + 1
+    const sy = isHalfStack(piece) ? piece.position.y : piece.position.y + 1
     if (piece.squareSnap && piece.side) {
       return canPlaceSquareSnapEdgeWith(selectedPieceType, piece.squareSnap, sy, piece.side, pieces, coordinateIndex, edgeConfig, effectiveMaxFloors, topSet)
     }
@@ -58,7 +67,7 @@ export default function PlacedPieces() {
 
   function placeOnTop(piece: PlacedPiece) {
     if (!selectedPieceType) return
-    const sy = piece.position.y + 1
+    const sy = isHalfStack(piece) ? piece.position.y : piece.position.y + 1
     if (piece.squareSnap && piece.side) {
       placeSquareSnapEdgePiece(selectedPieceType, piece.squareSnap, sy, piece.side)
     } else if (piece.triSnap && piece.triEdge !== undefined) {
@@ -70,13 +79,28 @@ export default function PlacedPieces() {
     }
   }
 
+  /**
+   * A half_wall hovered with a square floor piece selected targets the half-height
+   * ceiling slot on the same cell (stackLevel=1) — only when there is no upper
+   * half_wall already filling the full-height pair.
+   */
+  function isHalfCeilingTarget(piece: PlacedPiece): boolean {
+    if (!isSquareFloor) return false
+    if (piece.type !== 'half_wall' || piece.stackLevel === 1) return false
+    if (!piece.side || piece.squareSnap || piece.triSnap || piece.triCoord) return false
+    return !coordinateIndex.has(toEdgeKeyUpper(piece.position, piece.side))
+  }
+
   /** Can a floor piece be placed on the level above this edge piece? */
   function canFloorAbove(piece: PlacedPiece): boolean {
     if (!selectedPieceType || !isFloorPlacement) return false
     const sy = piece.position.y + 1
-    // Grid square edge → square floor above
+    // Grid square edge → square floor above (or half-height ceiling atop a bare half_wall)
     if (piece.side && !piece.squareSnap && !piece.triSnap && !piece.triCoord) {
       if (!isSquareFloor) return false
+      if (isHalfCeilingTarget(piece)) {
+        return canPlaceWith(selectedPieceType, piece.position, pieces, coordinateIndex, edgeConfig, bounds, effectiveMaxFloors, topSet, undefined, undefined, undefined, 1)
+      }
       return canPlaceWith(selectedPieceType, { ...piece.position, y: sy }, pieces, coordinateIndex, edgeConfig, bounds, effectiveMaxFloors, topSet)
     }
     // Snap-placed square edge → square floor above
@@ -101,7 +125,11 @@ export default function PlacedPieces() {
     if (!selectedPieceType) return
     const sy = piece.position.y + 1
     if (piece.side && !piece.squareSnap && !piece.triSnap && !piece.triCoord) {
-      placePiece(selectedPieceType, { ...piece.position, y: sy }, 0)
+      if (isHalfCeilingTarget(piece)) {
+        placePiece(selectedPieceType, piece.position, 0, undefined, 1)
+      } else {
+        placePiece(selectedPieceType, { ...piece.position, y: sy }, 0)
+      }
     } else if (piece.squareSnap && piece.side) {
       placeSquareSnapped(selectedPieceType, { ...piece.squareSnap, y: sy })
     } else if (piece.triSnap && piece.triEdge !== undefined) {
@@ -134,7 +162,7 @@ export default function PlacedPieces() {
           const wp = squareSnapEdgeWorldPosition(worldX, worldZ, rotDeg, piece.position.y, piece.side)
           const edgeRotDeg = squareSnapEdgeRotationDeg(rotDeg, piece.side)
           const rotRad = (edgeRotDeg * Math.PI) / 180
-          const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 1.0
+          const wallH = getWallHeight(piece.type)
           const canStack = isEdgePlacement && piece.position.y < 1
           const canFloor = isSquareFloor && piece.position.y < 2
           const canInteract = canStack || canFloor
@@ -154,7 +182,7 @@ export default function PlacedPieces() {
           const edgeGhostWp = canStack && isTarget
             ? squareSnapEdgeWorldPosition(worldX, worldZ, rotDeg, piece.position.y + 1, piece.side)
             : null
-          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 1.0
+          const gWallH = selectedPieceType ? getWallHeight(selectedPieceType) : 1.0
           // Floor ghost
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
@@ -217,7 +245,7 @@ export default function PlacedPieces() {
           const wp = triSnapEdgeWorldPosition(worldX, worldZ, angleDeg, piece.position.y, piece.triEdge)
           const rotDeg = triSnapEdgeRotationDeg(worldX, worldZ, angleDeg, piece.triEdge)
           const rotRad = (rotDeg * Math.PI) / 180
-          const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 1.0
+          const wallH = getWallHeight(piece.type)
           const canStack = isEdgePlacement && piece.position.y < 1
           const canFloor = isTriFloor && piece.position.y < 2
           const canInteract = canStack || canFloor
@@ -236,7 +264,7 @@ export default function PlacedPieces() {
           const edgeGhostWp = canStack && isTarget
             ? triSnapEdgeWorldPosition(worldX, worldZ, angleDeg, piece.position.y + 1, piece.triEdge)
             : null
-          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 1.0
+          const gWallH = selectedPieceType ? getWallHeight(selectedPieceType) : 1.0
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
             ? GHOST_VALID_COLOR : '#ff3333'
@@ -271,8 +299,9 @@ export default function PlacedPieces() {
 
         // Triangles snapped to a square cell edge or another triangle edge
         if (piece.triSnap) {
+          const triYOffset = piece.stackLevel === 1 ? 0.5 : 0
           return (
-            <group key={piece.id} position={[piece.triSnap.worldX, piece.position.y, piece.triSnap.worldZ]} onClick={handleClick}>
+            <group key={piece.id} position={[piece.triSnap.worldX, piece.position.y + triYOffset, piece.triSnap.worldZ]} onClick={handleClick}>
               <CellMesh
                 type={piece.type}
                 color={color}
@@ -290,7 +319,7 @@ export default function PlacedPieces() {
           const wp = triEdgeWorldPosition(hq, piece.position.y, hr, slot, piece.triEdge)
           const rotDeg = triEdgeRotationDeg(slot, piece.triEdge)
           const rotRad = (rotDeg * Math.PI) / 180
-          const wallH = piece.type.includes('low') || piece.type.includes('barrier') ? 0.33 : 1.0
+          const wallH = getWallHeight(piece.type)
           const canStack = isEdgePlacement && piece.position.y < 1
           const canFloor = isTriFloor && piece.position.y < 2
           const canInteract = canStack || canFloor
@@ -309,7 +338,7 @@ export default function PlacedPieces() {
           const edgeGhostWp = canStack && isTarget
             ? triEdgeWorldPosition(hq, piece.position.y + 1, hr, slot, piece.triEdge)
             : null
-          const gWallH = selectedPieceType?.includes('low') || selectedPieceType?.includes('barrier') ? 0.33 : 1.0
+          const gWallH = selectedPieceType ? getWallHeight(selectedPieceType) : 1.0
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
             ? GHOST_VALID_COLOR : '#ff3333'
@@ -364,7 +393,8 @@ export default function PlacedPieces() {
 
         // Edge pieces use EdgeMesh for distinct window/doorway shapes
         if (piece.side) {
-          const canStack = isEdgePlacement && piece.position.y < 1
+          const halfStack = isHalfStack(piece)
+          const canStack = isEdgePlacement && (halfStack || piece.position.y < 1)
           const canFloor = isSquareFloor && piece.position.y < 2
           const canInteract = canStack || canFloor
           const isTarget = stackTargetId === piece.id
@@ -380,13 +410,18 @@ export default function PlacedPieces() {
             },
           } : {}
           const edgeGhostPos = canStack && isTarget
-            ? getPiecePosition({ ...piece.position, y: piece.position.y + 1 }, selectedPieceType!, piece.side)
+            ? halfStack
+              ? getPiecePosition(piece.position, selectedPieceType!, piece.side, 1)
+              : getPiecePosition({ ...piece.position, y: piece.position.y + 1 }, selectedPieceType!, piece.side)
             : null
           const floorGhost = canFloor && isTarget && !canStack
           const ghostColor = isTarget && (canStack ? canStackOn(piece) : canFloorAbove(piece))
             ? GHOST_VALID_COLOR : '#ff3333'
+          const halfCeiling = floorGhost && isHalfCeilingTarget(piece)
           const floorGhostPos = floorGhost && selectedPieceType
-            ? getPiecePosition({ ...piece.position, y: piece.position.y + 1 }, selectedPieceType)
+            ? halfCeiling
+              ? getPiecePosition(piece.position, selectedPieceType, undefined, 1)
+              : getPiecePosition({ ...piece.position, y: piece.position.y + 1 }, selectedPieceType)
             : null
           return (
             <group key={piece.id}>

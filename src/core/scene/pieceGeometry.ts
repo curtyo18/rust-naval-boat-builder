@@ -109,12 +109,16 @@ export function getCellPieceShape(type: string): PieceShape {
   return { size: [1, 0.15, 1], offset: [0.5, 0.075, 0.5], rotationY: 0 }
 }
 
+export function getWallHeight(type: string): number {
+  if (type.includes('half')) return 0.5
+  if (type.includes('low') || type.includes('barrier')) return 0.33
+  return 1.0
+}
+
 export function getEdgePieceShape(type: string, side: PieceSide): PieceShape {
   const isNS = side === 'north' || side === 'south'
-  const isHalf = type.includes('half')
-  const isLow = type.includes('low') || type.includes('barrier')
 
-  const wallHeight = isHalf ? 0.5 : isLow ? 0.33 : 1.0
+  const wallHeight = getWallHeight(type)
   const wallThickness = 0.08
 
   // Wall-like pieces
@@ -172,9 +176,11 @@ export function getPiecePosition(
     ]
   }
   const shape = getCellPieceShape(type)
+  // stackLevel=1 on a cell piece places it half a floor height up — ceilings sitting atop half_walls.
+  const yOffset = stackLevel === 1 ? shape.offset[1] + 0.5 : shape.offset[1]
   return [
     cellPos.x + shape.offset[0],
-    cellPos.y + shape.offset[1],
+    cellPos.y + yOffset,
     cellPos.z + shape.offset[2],
   ]
 }
