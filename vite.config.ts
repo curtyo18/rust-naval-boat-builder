@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/rust-naval-boat-builder/',
+  base: '/rust-build-planner/',
   server: {
     hmr: false,
   },

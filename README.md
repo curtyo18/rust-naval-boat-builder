@@ -1,8 +1,8 @@
-# Rust Naval Boat Builder
+# Rust Build Planner
 
-A 3D boat builder for [Rust](https://rust.facepunch.com/). Design naval vessels by placing hulls, floors, walls, and deployables, then share your builds via URL.
+A 3D build planner for [Rust](https://rust.facepunch.com/). Design naval vessels and land bases by placing hulls, floors, walls, and deployables, then share your builds via URL.
 
-**[Try it live](https://curtyo18.github.io/rust-naval-boat-builder/)**
+**[Try it live](https://curtyo18.github.io/rust-build-planner/)**
 
 ## Features
 
@@ -30,7 +30,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173/rust-naval-boat-builder/
+Open http://localhost:5173/rust-build-planner/
 
 ## Scripts
 

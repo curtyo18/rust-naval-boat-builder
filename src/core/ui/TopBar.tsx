@@ -13,7 +13,7 @@ interface TopBarProps {
 export default function TopBar({ onResetCamera, onShare, onClear, shareLabel = 'Share', modeId, onModeChange }: TopBarProps) {
   return (
     <header className="topbar">
-      <span className="topbar__title">Rust Naval Planner</span>
+      <span className="topbar__title">Rust Build Planner</span>
       <select
         className="topbar__mode"
         value={modeId}
