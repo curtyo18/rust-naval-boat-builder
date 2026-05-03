@@ -172,7 +172,7 @@ export default function PlacedPieces() {
             onPointerOver: () => setStackTargetId(piece.id),
             onPointerOut: () => setStackTargetId((p) => p === piece.id ? null : p),
             onClick: (ev: { stopPropagation: () => void; delta?: number }) => {
-              if ((ev as any).delta > 5) return
+              if ((ev.delta ?? 0) > 5) return
               ev.stopPropagation()
               if (canStack && canStackOn(piece)) placeOnTop(piece)
               else if (canFloor && canFloorAbove(piece)) placeFloorAbove(piece)
@@ -255,7 +255,7 @@ export default function PlacedPieces() {
             onPointerOver: () => setStackTargetId(piece.id),
             onPointerOut: () => setStackTargetId((p) => p === piece.id ? null : p),
             onClick: (ev: { stopPropagation: () => void; delta?: number }) => {
-              if ((ev as any).delta > 5) return
+              if ((ev.delta ?? 0) > 5) return
               ev.stopPropagation()
               if (canStack && canStackOn(piece)) placeOnTop(piece)
               else if (canFloor && canFloorAbove(piece)) placeFloorAbove(piece)
@@ -329,7 +329,7 @@ export default function PlacedPieces() {
             onPointerOver: () => setStackTargetId(piece.id),
             onPointerOut: () => setStackTargetId((p) => p === piece.id ? null : p),
             onClick: (ev: { stopPropagation: () => void; delta?: number }) => {
-              if ((ev as any).delta > 5) return
+              if ((ev.delta ?? 0) > 5) return
               ev.stopPropagation()
               if (canStack && canStackOn(piece)) placeOnTop(piece)
               else if (canFloor && canFloorAbove(piece)) placeFloorAbove(piece)
@@ -403,7 +403,7 @@ export default function PlacedPieces() {
             onPointerOver: () => setStackTargetId(piece.id),
             onPointerOut: () => setStackTargetId((p) => p === piece.id ? null : p),
             onClick: (ev: { stopPropagation: () => void; delta?: number }) => {
-              if ((ev as any).delta > 5) return
+              if ((ev.delta ?? 0) > 5) return
               ev.stopPropagation()
               if (canStack && canStackOn(piece)) placeOnTop(piece)
               else if (canFloor && canFloorAbove(piece)) placeFloorAbove(piece)
